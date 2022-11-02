@@ -1,0 +1,69 @@
+const std = @import("std");
+const clap = @import("clap/clap.zig");
+const version = @import("fetch-version.zig");
+const ArrayList = std.ArrayList;
+
+pub fn main() !void {
+    const params = comptime clap.parseParamsComptime(
+        \\-h, --help             Display this help and exit.
+        \\-v, --version          Print out the installed version of zvm.
+        \\<str>...
+        \\
+    );
+    // Initalize our diagnostics, which can be used for reporting useful errors.
+    // This is optional. You can also pass `.{}` to `clap.parse` if you don't
+    // care about the extra information `Diagnostics` provides.
+    var diag = clap.Diagnostic{};
+    var res = clap.parse(clap.Help, &params, clap.parsers.default, .{
+        .diagnostic = &diag,
+    }) catch |err| {
+        // Report useful error and exit
+        diag.report(std.io.getStdErr().writer(), err) catch {};
+        return err;
+    };
+    defer res.deinit();
+
+    if (res.args.help) {
+        return clap.help(std.io.getStdErr().writer(), clap.Help, &params, .{});
+    } else if (res.args.version) {
+        return std.debug.print("zvm (Zig Version Manager) v0.0.1\n", .{});
+    }
+
+    // FETCHING DATA
+    var arena_state = std.heap.ArenaAllocator.init(std.heap.c_allocator);
+    defer arena_state.deinit();
+
+    const allocator = arena_state.allocator();
+    var response_buffer = std.ArrayList(u8).init(allocator);
+
+    // superfluous when using an arena allocator, but
+    // important if the allocator implementation changes
+    defer response_buffer.deinit();
+
+    try version.fetchVersionJSON(&response_buffer);
+    // std.log.info("Got response of {d} bytes", .{response_buffer.items.len});
+    // std.debug.print("{s}\n", .{response_buffer.items});
+    const tree = try version.parseVersionJSON(&response_buffer, &arena_state);
+
+    _ = tree.root.Object.get("master").?.Object.get("version").?;
+    // m_ver.dump();
+
+    for (res.positionals) |val, i| {
+        if (streql("install", val) and res.positionals.len >= i+1) {
+            std.debug.print("{s}\n", .{res.positionals[i+1]});
+        } else if (streql("use", val) and res.positionals.len >= i+1) {
+            std.debug.print("{s}\n", .{res.positionals[i+1]});
+        }
+    }
+}
+
+test "simple test" {
+    var list = std.ArrayList(i32).init(std.testing.allocator);
+    defer list.deinit(); // try commenting this out and see if zig detects the memory leak!
+    try list.append(42);
+    try std.testing.expectEqual(@as(i32, 42), list.pop());
+}
+
+fn streql(original: []const u8, compto: []const u8) bool {
+    return std.mem.eql(u8, original, compto);
+}

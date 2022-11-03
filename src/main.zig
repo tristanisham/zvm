@@ -40,19 +40,25 @@ pub fn main() !void {
     // important if the allocator implementation changes
     defer response_buffer.deinit();
 
-    try version.fetchVersionJSON(&response_buffer);
-    // std.log.info("Got response of {d} bytes", .{response_buffer.items.len});
-    // std.debug.print("{s}\n", .{response_buffer.items});
-    const tree = try version.parseVersionJSON(&response_buffer, &arena_state);
-
-    _ = tree.root.Object.get("master").?.Object.get("version").?;
-    // m_ver.dump();
-
     for (res.positionals) |val, i| {
-        if (streql("install", val) and res.positionals.len >= i+1) {
-            std.debug.print("{s}\n", .{res.positionals[i+1]});
-        } else if (streql("use", val) and res.positionals.len >= i+1) {
-            std.debug.print("{s}\n", .{res.positionals[i+1]});
+        if (streql("install", val) and res.positionals.len >= i + 1) {
+            try version.fetchVersionJSON(&response_buffer);
+            const user_ver = res.positionals[i+1];
+            // std.log.info("Got response of {d} bytes", .{response_buffer.items.len});
+            // std.debug.print("{s}\n", .{response_buffer.items});
+            const tree = try version.parseVersionJSON(&response_buffer, &arena_state);
+
+            if (tree.root.Object.get(user_ver)) |value| {
+                value.dump();
+            } else {
+                std.debug.print("Invalid Zig version provided. Try master or latest-stable\n", .{});
+                return;
+            }
+            std.debug.print("{s}\n", .{res.positionals[i + 1]});
+            std.fs.home().makeDir("");
+            return;
+        } else if (streql("use", val) and res.positionals.len >= i + 1) {
+            
         }
     }
 }

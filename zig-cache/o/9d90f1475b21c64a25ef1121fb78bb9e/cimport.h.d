@@ -54,4 +54,4 @@ cimport.o: \
   /usr/include/bits/types/__locale_t.h /usr/include/sys/time.h \
   /usr/include/curl/easy.h /usr/include/curl/multi.h \
   /usr/include/curl/urlapi.h /usr/include/curl/options.h \
-  /usr/include/curl/header.h
+  /usr/include/curl/header.h /usr/include/curl/websockets.h

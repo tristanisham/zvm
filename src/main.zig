@@ -2,6 +2,7 @@ const std = @import("std");
 const clap = @import("clap/clap.zig");
 const version = @import("fetch-version.zig");
 const ArrayList = std.ArrayList;
+const NativeTargetInfo = std.zig.system.NativeTargetInfo;
 
 pub fn main() !void {
     const params = comptime clap.parseParamsComptime(
@@ -43,7 +44,7 @@ pub fn main() !void {
     for (res.positionals) |val, i| {
         if (streql("install", val) and res.positionals.len >= i + 1) {
             try version.fetchVersionJSON(&response_buffer);
-            const user_ver = res.positionals[i+1];
+            const user_ver = res.positionals[i + 1];
             // std.log.info("Got response of {d} bytes", .{response_buffer.items.len});
             // std.debug.print("{s}\n", .{response_buffer.items});
             const tree = try version.parseVersionJSON(&response_buffer, &arena_state);
@@ -55,11 +56,12 @@ pub fn main() !void {
                 return;
             }
             std.debug.print("{s}\n", .{res.positionals[i + 1]});
-            std.fs.home().makeDir("");
+            var info = try NativeTargetInfo.detect(.{});
+            //  std.log.debug("{}", .{info});
+            std.log.debug("arch: {}", .{info.target.cpu.arch});
+            std.log.debug("os:   {}", .{info.target.os.tag});
             return;
-        } else if (streql("use", val) and res.positionals.len >= i + 1) {
-            
-        }
+        } else if (streql("use", val) and res.positionals.len >= i + 1) {}
     }
 }
 

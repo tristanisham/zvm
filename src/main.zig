@@ -54,14 +54,17 @@ pub fn main() !void {
                 var buf: [100]u8 = undefined;
                 var buf_slice: []u8 = undefined;
 
-                if (streql(info.arch,  "x86")) {
+                if (streql(info.arch, "x86")) {
                     buf_slice = try std.fmt.bufPrint(&buf, "{s}-{s}", .{ "x86_64", info.tag });
                 } else {
                     buf_slice = try std.fmt.bufPrint(&buf, "{s}-{s}", .{ info.arch, info.tag });
                 }
 
-                std.debug.print("{}", .{value.Object.get(buf_slice).?.Object.get("tarball").?});
+                const tarball = value.Object.get(buf_slice).?.Object.get("tarball").?.String;
 
+                try version.downloadFile(tarball, "./download", &arena_state);
+
+                std.debug.print("{s}\n", .{value.Object.get(buf_slice).?.Object.get("tarball").?.String});
             } else {
                 std.debug.print("Invalid Zig version provided. Try master or latest-stable\n", .{});
                 return;
@@ -89,6 +92,7 @@ const SystemInfo = struct { arch: []const u8, tag: []const u8 };
 fn getSystemInfo() !SystemInfo {
     const info = try NativeTargetInfo.detect(.{});
     const arch = info.target.cpu.arch.genericName();
+    // https://discord.com/channels/605571803288698900/1019652020308824145
     const tag = switch (info.target.os.tag) {
         .ananas => "ananas",
         .cloudabi => "cloudabi",

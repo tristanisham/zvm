@@ -53,8 +53,8 @@ pub fn parseVersionJSON(json: *std.ArrayList(u8), alloc: *std.heap.ArenaAllocato
     return tree;
 }
 
-pub fn downloadFile(url: []const u8, path: []const u8, alloc: *std.heap.ArenaAllocator) CurlError!std.fs.File.WriteError!void {
-    var buf = std.ArrayList(u8).init(alloc.*.allocator());
+pub fn downloadFile(url: []const u8, path: []const u8, arena: *std.heap.ArenaAllocator) !void {
+    var buf = std.ArrayList(u8).init(arena.*.allocator());
     defer buf.deinit();
 
     if (cURL.curl_global_init(cURL.CURL_GLOBAL_ALL) != cURL.CURLE_OK) {
@@ -67,7 +67,7 @@ pub fn downloadFile(url: []const u8, path: []const u8, alloc: *std.heap.ArenaAll
     defer cURL.curl_easy_cleanup(handle);
 
     // setup curl options
-    if (cURL.curl_easy_setopt(handle, cURL.CURLOPT_URL, url) != cURL.CURLE_OK)
+    if (cURL.curl_easy_setopt(handle, cURL.CURLOPT_URL, url.ptr) != cURL.CURLE_OK)
         return CurlError.CouldNotSetURL;
 
     if (cURL.curl_easy_setopt(handle, cURL.CURLOPT_USERAGENT, "zvm (Zig Version Manager)/v0.0.1") != cURL.CURLE_OK) {
@@ -77,7 +77,7 @@ pub fn downloadFile(url: []const u8, path: []const u8, alloc: *std.heap.ArenaAll
     if (cURL.curl_easy_setopt(handle, cURL.CURLOPT_WRITEFUNCTION, writeToArrayListCallback) != cURL.CURLE_OK) {
         return CurlError.CouldNotSetWriteCallback;
     }
-    if (cURL.curl_easy_setopt(handle, cURL.CURLOPT_WRITEDATA, buf) != cURL.CURLE_OK) {
+    if (cURL.curl_easy_setopt(handle, cURL.CURLOPT_WRITEDATA, &buf) != cURL.CURLE_OK) {
         return CurlError.CouldNotSetWriteCallback;
     }
 
@@ -85,7 +85,8 @@ pub fn downloadFile(url: []const u8, path: []const u8, alloc: *std.heap.ArenaAll
         return CurlError.FailedToPerformRequest;
     }
 
-    const file = try std.fs.createFileAbsolute(path, .{ .read = true });
+    const file = try std.fs.cwd().createFile(path, .{ .read = true });
     defer file.close();
     try file.writeAll(buf.items);
 }
+

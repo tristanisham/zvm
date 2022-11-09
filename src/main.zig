@@ -60,11 +60,12 @@ pub fn main() !void {
                     buf_slice = try std.fmt.bufPrint(&buf, "{s}-{s}", .{ info.arch, info.tag });
                 }
 
-                const tarball = value.Object.get(buf_slice).?.Object.get("tarball").?.String;
+                const tarball: []const u8 = value.Object.get(buf_slice).?.Object.get("tarball").?.String;
+                std.log.debug("{s}\n", .{tarball});
 
-                try version.downloadFile(tarball, "./download", &arena_state);
 
-                std.debug.print("{s}\n", .{value.Object.get(buf_slice).?.Object.get("tarball").?.String});
+                try version.downloadFile(tarball, "./out.tar.xz", &arena_state);
+
             } else {
                 std.debug.print("Invalid Zig version provided. Try master or latest-stable\n", .{});
                 return;

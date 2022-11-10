@@ -5,6 +5,10 @@ large feature roadmap, Zig is bound to continue changing. Breaking existing bill
 valid sytax, and introducing new features like a package manager. While this is great for developers, it also
 can lead to headaches when you need multiple versions of a language installed to compile your projects.
 
+## Requirements
+1. libcurl
+
+
 ## Using
 Pre-alpha, you can install each zig version by name.
 ```sh

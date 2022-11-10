@@ -30,6 +30,11 @@ pub fn main() !void {
         return std.debug.print("zvm (Zig Version Manager) v0.0.1\n", .{});
     }
 
+
+    // Fetching data. Where we currenlty process the cli.
+
+
+
     // FETCHING DATA
     var arena_state = std.heap.ArenaAllocator.init(std.heap.c_allocator);
     defer arena_state.deinit();
@@ -40,6 +45,10 @@ pub fn main() !void {
     // superfluous when using an arena allocator, but
     // important if the allocator implementation changes
     defer response_buffer.deinit();
+
+    if (res.positionals.len == 0) {
+        return clap.help(std.io.getStdErr().writer(), clap.Help, &params, .{});
+    }
 
     // Command line parser
     for (res.positionals) |val, i| {

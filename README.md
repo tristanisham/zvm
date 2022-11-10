@@ -6,12 +6,12 @@ valid sytax, and introducing new features like a package manager. While this is 
 can lead to headaches when you need multiple versions of a language installed to compile your projects.
 
 ## Requirements
-1. libcurl
+1. libcurl - `sudo apt install libcurl-dev`
 
 ## Building
-1. `git clone git@github.com:tristanisham/zvm.git`
-2. `zig build -Drelease-safe`
-3. Enjoy
+1. `git clone --recursive -j8 git@github.com:tristanisham/zvm.git`
+3. `zig build -Drelease-safe`
+4. Enjoy
 
 ## Using
 Pre-alpha, you can install each zig version by name.

@@ -11,7 +11,7 @@ Pre-alpha, you can install each zig version by name.
 zvm install master
 ```
 
-zvm will determine version is appropriate for your system and currently write it in your current working directory. This behavior will change and future version of zvm will install in a dedicated folder, using symlinks to manager your version of Zig.
+zvm will determine version is appropriate for your system and currently, write it in your current working directory. This behavior will change and future version of zvm will install in a dedicated folder, using symlinks to manager your version of Zig.
 
 
 

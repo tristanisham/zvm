@@ -61,16 +61,14 @@ pub fn main() !void {
                     buf_slice = try std.fmt.bufPrint(&buf, "{s}-{s}", .{ info.arch, info.tag });
                 }
 
-
                 const tarball: []const u8 = value.Object.get(buf_slice).?.Object.get("tarball").?.String;
-                const in = [_][]const u8{tarball};
-                const data = try std.mem.joinZ(allocator, "", &in);
+                const data = try std.mem.Allocator.dupeZ(allocator, u8, tarball);
 
                 var buf2: [40]u8 = undefined;
-                const out_path = try std.fmt.bufPrint(&buf2, comptime "zig-{s}-{s}.tar.xz", .{ user_ver, buf_slice });
+                const out_path = try std.fmt.bufPrint(&buf2, "zig-{s}-{s}.tar.xz", .{ user_ver, buf_slice });
 
                 try version.downloadFile(
-                    std.mem.span(data),
+                    data,
                     out_path,
                 );
             } else {

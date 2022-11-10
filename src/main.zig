@@ -51,7 +51,7 @@ pub fn main() !void {
 
             if (tree.root.Object.get(user_ver)) |value| {
                 var info = try getSystemInfo();
-                var buf: [100]u8 = undefined;
+                var buf: [40]u8 = undefined;
                 var buf_slice: []u8 = undefined;
 
                 if (streql(info.arch, "x86")) {
@@ -60,12 +60,18 @@ pub fn main() !void {
                     buf_slice = try std.fmt.bufPrint(&buf, "{s}-{s}", .{ info.arch, info.tag });
                 }
 
+
                 const tarball: []const u8 = value.Object.get(buf_slice).?.Object.get("tarball").?.String;
-                std.log.debug("{s}\n", .{tarball});
+                const in = [_][]const u8{tarball};
+                const data = try std.mem.joinZ(allocator, "", &in);
 
-                
-                try version.downloadFile(tarball, "./out.tar.xz",);
+                var buf2: [40]u8 = undefined;
+                const out_path = try std.fmt.bufPrint(&buf2, comptime "zig-{s}-{s}.tar.xz", .{ user_ver, buf_slice });
 
+                try version.downloadFile(
+                    std.mem.span(data),
+                    out_path,
+                );
             } else {
                 std.debug.print("Invalid Zig version provided. Try master or latest-stable\n", .{});
                 return;
@@ -74,13 +80,6 @@ pub fn main() !void {
             return;
         } else if (streql("use", val) and res.positionals.len >= i + 1) {}
     }
-}
-
-test "simple test" {
-    var list = std.ArrayList(i32).init(std.testing.allocator);
-    defer list.deinit(); // try commenting this out and see if zig detects the memory leak!
-    try list.append(42);
-    try std.testing.expectEqual(@as(i32, 42), list.pop());
 }
 
 /// Compares two strings. Returns a bool based on their equality.
@@ -142,4 +141,11 @@ fn getSystemInfo() !SystemInfo {
     };
 
     return SystemInfo{ .arch = arch, .tag = @as([]const u8, tag) };
+}
+
+test "simple test" {
+    var list = std.ArrayList(i32).init(std.testing.allocator);
+    defer list.deinit(); // try commenting this out and see if zig detects the memory leak!
+    try list.append(42);
+    try std.testing.expectEqual(@as(i32, 42), list.pop());
 }

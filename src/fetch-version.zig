@@ -71,7 +71,7 @@ pub fn downloadFile(url: [:0]const u8, path: []const u8) !void {
     defer cURL.curl_easy_cleanup(handle);
 
     // setup curl options
-    if (cURL.curl_easy_setopt(handle, cURL.CURLOPT_URL, url) != cURL.CURLE_OK)
+    if (cURL.curl_easy_setopt(handle, cURL.CURLOPT_URL, url.ptr) != cURL.CURLE_OK)
         return CurlError.CouldNotSetURL;
 
     if (cURL.curl_easy_setopt(handle, cURL.CURLOPT_USERAGENT, "zvm (Zig Version Manager)/v0.0.1") != cURL.CURLE_OK) {

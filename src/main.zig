@@ -63,8 +63,8 @@ pub fn main() !void {
                 const tarball: []const u8 = value.Object.get(buf_slice).?.Object.get("tarball").?.String;
                 std.log.debug("{s}\n", .{tarball});
 
-
-                try version.downloadFile(tarball, "./out.tar.xz", &arena_state);
+                
+                try version.downloadFile(tarball, "./out.tar.xz",);
 
             } else {
                 std.debug.print("Invalid Zig version provided. Try master or latest-stable\n", .{});

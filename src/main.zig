@@ -41,6 +41,7 @@ pub fn main() !void {
     // important if the allocator implementation changes
     defer response_buffer.deinit();
 
+    // Command line parser
     for (res.positionals) |val, i| {
         if (streql("install", val) and res.positionals.len >= i + 1) {
             try version.fetchVersionJSON(&response_buffer);

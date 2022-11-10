@@ -5,6 +5,13 @@ large feature roadmap, Zig is bound to continue changing. Breaking existing bill
 valid sytax, and introducing new features like a package manager. While this is great for developers, it also
 can lead to headaches when you need multiple versions of a language installed to compile your projects.
 
+## Using
+Pre-alpha, you can install each zig version by name.
+```sh
+zvm install master
+```
+
+zvm will determine version is appropriate for your system and currently write it in your current working directory. This behavior will change and future version of zvm will install in a dedicated folder, using symlinks to manager your version of Zig.
 
 
 

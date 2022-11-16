@@ -97,6 +97,8 @@ pub fn main() !void {
                     out_path,
                 );
 
+                // https://discord.com/channels/605571803288698900/1042299044824883260/1042301677966999552
+
                 // const args = [_][*:null]const ?[*:0]const u8{"-xf", out_path};               
                 // try std.os.execvpeZ("tar", args, .{out_path});
 

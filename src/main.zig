@@ -3,6 +3,8 @@ const clap = @import("clap/clap.zig");
 const version = @import("fetch-version.zig");
 const ArrayList = std.ArrayList;
 const NativeTargetInfo = std.zig.system.NativeTargetInfo;
+const cli = @import("cli/cli.zig");
+
 
 pub fn main() !void {
     const params = comptime clap.parseParamsComptime(
@@ -73,20 +75,44 @@ pub fn main() !void {
                 const tarball: []const u8 = value.Object.get(buf_slice).?.Object.get("tarball").?.String;
                 const data = try std.mem.Allocator.dupeZ(allocator, u8, tarball);
 
-                var buf2: [40]u8 = undefined;
-                const out_path = try std.fmt.bufPrint(&buf2, "zig-{s}-{s}.tar.xz", .{ user_ver, buf_slice });
+                
+
+                var buf3: [40]u8 = undefined;
+                const USER_HOME = cli.install.homeDir(allocator) orelse "~";
+                const zvm_dir = try std.fmt.bufPrint(&buf3, "{s}/.zvm", .{USER_HOME});
+                const home = try std.fs.openDirAbsolute(cli.install.homeDir(allocator) orelse "~", .{});
+
+                home.makeDir(".zvm") catch |err| {
+                    switch (err) {
+                        error.PathAlreadyExists => std.debug.print("Installing {s} in {s}\n", .{user_ver, zvm_dir}),
+                        else => return err
+                    }
+                };
+
+                var buf2: [100]u8 = undefined;
+                const out_path: []u8 = try std.fmt.bufPrint(&buf2, "{s}/zig-{s}-{s}.tar.xz", .{zvm_dir, user_ver, buf_slice });
 
                 try version.downloadFile(
                     data,
                     out_path,
                 );
+
+                // const args = [_][*:null]const ?[*:0]const u8{"-xf", out_path};               
+                // try std.os.execvpeZ("tar", args, .{out_path});
+
             } else {
-                std.debug.print("Invalid Zig version provided. Try master or latest-stable\n", .{});
+                std.debug.print("Invalid Zig version provided. Try master\n", .{});
                 return;
             }
 
             return;
-        } else if (streql("use", val) and res.positionals.len >= i + 1) {}
+        } else if (streql("use", val) and res.positionals.len >= i + 1) {
+
+        } else if (streql("upgrade", val) and res.positionals.len >= i+1) {
+                std.debug.print("upgrade called\n", .{});
+                std.debug.print("{s}", .{cli.install.homeDir(allocator).?});
+
+        }
     }
 }
 

@@ -59,21 +59,19 @@ pub fn main() !void {
 
             if (tree.root.Object.get(user_ver)) |value| {
                 var info = try getSystemInfo();
-                var buf: [40]u8 = undefined;
                 var buf_slice: []u8 = undefined;
 
                 if (streql(info.arch, "x86")) {
-                    buf_slice = try std.fmt.bufPrint(&buf, "{s}-{s}", .{ "x86_64", info.tag });
+                    buf_slice = try std.fmt.allocPrint(allocator, "{s}-{s}", .{ "x86_64", info.tag });
                 } else {
-                    buf_slice = try std.fmt.bufPrint(&buf, "{s}-{s}", .{ info.arch, info.tag });
+                    buf_slice = try std.fmt.allocPrint(allocator, "{s}-{s}", .{ info.arch, info.tag });
                 }
 
                 const tarball: []const u8 = value.Object.get(buf_slice).?.Object.get("tarball").?.String;
                 const data = try std.mem.Allocator.dupeZ(allocator, u8, tarball);
 
-                var buf3: [40]u8 = undefined;
                 const USER_HOME = cli.install.homeDir(allocator) orelse "~";
-                const zvm_dir = try std.fmt.bufPrint(&buf3, "{s}/.zvm", .{USER_HOME});
+                const zvm_dir = try std.fmt.allocPrint(allocator, "{s}/.zvm", .{USER_HOME});
                 const home = try std.fs.openDirAbsolute(cli.install.homeDir(allocator) orelse "~", .{});
 
                 home.makeDir(".zvm") catch |err| {
@@ -83,8 +81,7 @@ pub fn main() !void {
                     }
                 };
 
-                var buf2: [100]u8 = undefined;
-                const out_path: [:0]u8 = try allocator.dupeZ(u8, try std.fmt.bufPrint(&buf2, "{s}/zig-{s}-{s}.tar.xz", .{ zvm_dir, user_ver, buf_slice }));
+                const out_path: [:0]u8 = try std.fmt.allocPrintZ(allocator, "{s}/zig-{s}-{s}.tar.xz", .{ zvm_dir, user_ver, buf_slice });
                 try version.downloadFile(data, out_path);
 
                 const args = [_:null]?[*:0]const u8{ "-xf", out_path.ptr };

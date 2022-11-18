@@ -1,1 +1,0 @@
-pub const install = @import("install.zig");

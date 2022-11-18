@@ -4,6 +4,7 @@ const version = @import("fetch-version.zig");
 const ArrayList = std.ArrayList;
 const NativeTargetInfo = std.zig.system.NativeTargetInfo;
 const cli = @import("cli/cli.zig");
+const string = []const u8;
 
 pub fn main() !void {
     const params = comptime clap.parseParamsComptime(
@@ -84,18 +85,26 @@ pub fn main() !void {
                 const out_path: [:0]u8 = try std.fmt.allocPrintZ(allocator, "{s}/zig-{s}-{s}.tar.xz", .{ zvm_dir, user_ver, buf_slice });
                 try version.downloadFile(data, out_path);
 
-                const args = [_:null]?[*:0]const u8{ try std.fmt.allocPrintZ(allocator, "-xf={s}", .{out_path.ptr})};
-                const envp = [_:null]?[*:0]const u8{null};
+                // const args = [_:null]?[*:0]const u8{ "xf", try std.fmt.allocPrintZ(allocator, "{s}", .{out_path.ptr}) };
+                // // const envp = [_:null]?[*:0]const u8{};
+                // const envp = try allocator.dupeZ([*:null]const ?[*:0]const u8, @ptrCast([*]?[*:0]const u8, @ptrCast([*:null]const ?[*:0]const u8, std.os.environ.ptr)[0..std.os.environ.len]));
 
-                // for (args) |x| {
-                //     std.debug.print("{s}\n", .{x.?});
+                // // for (args) |x| {
+                // //     std.debug.print("{s}\n", .{x.?});
+                // // }
+                // const exec_err = std.os.execvpeZ("tar", args[0..], envp[0..]);
+                // switch (exec_err) {
+                //     error.Unexpected => std.debug.print("Succsessfully extracted Zig download", .{}),
+                //     else => std.debug.panic("{any}", .{exec_err}),
                 // }
 
-                const exec_err = std.os.execvpeZ("tar", args[0..], envp[0..]);
-                switch (exec_err) {
-                    error.Unexpected => std.debug.print("Succsessfully extracted Zig download", .{}),
-                    else => std.debug.panic("{any}", .{exec_err}),
-                }
+                var env_map = try std.process.getEnvMap(allocator);
+                var tar = try std.ChildProcess.exec(.{
+                    .argv = &[_]string{ "tar", "-xf", out_path },
+                    .allocator = allocator,
+                    .env_map = &env_map,
+                });
+                std.debug.print("stderr {s}\n", .{tar.stderr});
             } else {
                 std.debug.print("Invalid Zig version provided. Try master\n", .{});
                 return;

@@ -5,7 +5,6 @@ const ArrayList = std.ArrayList;
 const NativeTargetInfo = std.zig.system.NativeTargetInfo;
 const cli = @import("cli/cli.zig");
 
-
 pub fn main() !void {
     const params = comptime clap.parseParamsComptime(
         \\-h, --help             Display this help and exit.
@@ -32,10 +31,7 @@ pub fn main() !void {
         return std.debug.print("zvm (Zig Version Manager) v0.0.1\n", .{});
     }
 
-
     // Fetching data. Where we currenlty process the cli.
-
-
 
     // FETCHING DATA
     var arena_state = std.heap.ArenaAllocator.init(std.heap.c_allocator);
@@ -75,8 +71,6 @@ pub fn main() !void {
                 const tarball: []const u8 = value.Object.get(buf_slice).?.Object.get("tarball").?.String;
                 const data = try std.mem.Allocator.dupeZ(allocator, u8, tarball);
 
-                
-
                 var buf3: [40]u8 = undefined;
                 const USER_HOME = cli.install.homeDir(allocator) orelse "~";
                 const zvm_dir = try std.fmt.bufPrint(&buf3, "{s}/.zvm", .{USER_HOME});
@@ -84,36 +78,32 @@ pub fn main() !void {
 
                 home.makeDir(".zvm") catch |err| {
                     switch (err) {
-                        error.PathAlreadyExists => std.debug.print("Installing {s} in {s}\n", .{user_ver, zvm_dir}),
-                        else => return err
+                        error.PathAlreadyExists => std.debug.print("Installing {s} in {s}\n", .{ user_ver, zvm_dir }),
+                        else => return err,
                     }
                 };
 
                 var buf2: [100]u8 = undefined;
-                const out_path: []u8 = try std.fmt.bufPrint(&buf2, "{s}/zig-{s}-{s}.tar.xz", .{zvm_dir, user_ver, buf_slice });
+                const out_path: [:0]u8 = try allocator.dupeZ(u8, try std.fmt.bufPrint(&buf2, "{s}/zig-{s}-{s}.tar.xz", .{ zvm_dir, user_ver, buf_slice }));
+                try version.downloadFile(data, out_path);
 
-                try version.downloadFile(
-                    data,
-                    out_path,
-                );
+                const args = [_:null]?[*:0]const u8{ "-xf", out_path.ptr };
+                const envp = [_:null]?[*:0]const u8{null};
 
-                // https://discord.com/channels/605571803288698900/1042299044824883260/1042301677966999552
-
-                // const args = [_][*:null]const ?[*:0]const u8{"-xf", out_path};               
-                // try std.os.execvpeZ("tar", args, .{out_path});
-
+                const exec_err = std.os.execvpeZ("tar", args[0..], envp[0..]);
+                switch (exec_err) {
+                    error.Unexpected => std.debug.print("Succsessfully extracted Zig download", .{}),
+                    else => std.debug.panic("{any}", .{exec_err}),
+                }
             } else {
                 std.debug.print("Invalid Zig version provided. Try master\n", .{});
                 return;
             }
 
             return;
-        } else if (streql("use", val) and res.positionals.len >= i + 1) {
-
-        } else if (streql("upgrade", val) and res.positionals.len >= i+1) {
-                std.debug.print("upgrade called\n", .{});
-                std.debug.print("{s}", .{cli.install.homeDir(allocator).?});
-
+        } else if (streql("use", val) and res.positionals.len >= i + 1) {} else if (streql("upgrade", val) and res.positionals.len >= i + 1) {
+            std.debug.print("upgrade called\n", .{});
+            std.debug.print("{s}", .{cli.install.homeDir(allocator).?});
         }
     }
 }

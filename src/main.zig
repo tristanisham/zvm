@@ -87,7 +87,7 @@ pub fn main() !void {
                 const args = [_:null]?[*:0]const u8{ "-xf", out_path.ptr };
                 const envp = [_:null]?[*:0]const u8{null};
 
-                const exec_err = std.os.execvpeZ("pax", args[0..], envp[0..]);
+                const exec_err = std.os.execvpeZ("tar", args[0..], envp[0..]);
                 switch (exec_err) {
                     error.Unexpected => std.debug.print("Succsessfully extracted Zig download", .{}),
                     else => std.debug.panic("{any}", .{exec_err}),

@@ -60,12 +60,12 @@ pub fn main() !void {
 
             if (tree.root.Object.get(user_ver)) |value| {
                 var info = try getSystemInfo();
-                var buf_slice: []u8 = undefined;
+                var zig_ver_slice: []u8 = undefined;
 
                 if (streql(info.arch, "x86")) {
-                    buf_slice = try std.fmt.allocPrint(allocator, "{s}-{s}", .{ "x86_64", info.tag });
+                    zig_ver_slice = try std.fmt.allocPrint(allocator, "{s}-{s}", .{ "x86_64", info.tag });
                 } else {
-                    buf_slice = try std.fmt.allocPrint(allocator, "{s}-{s}", .{ info.arch, info.tag });
+                    zig_ver_slice = try std.fmt.allocPrint(allocator, "{s}-{s}", .{ info.arch, info.tag });
                 }
 
                 const tarball: []const u8 = value.Object.get(buf_slice).?.Object.get("tarball").?.String;
@@ -82,7 +82,8 @@ pub fn main() !void {
                     }
                 };
 
-                const out_path: [:0]u8 = try std.fmt.allocPrintZ(allocator, "{s}/zig-{s}-{s}.tar.xz", .{ zvm_dir, user_ver, buf_slice });
+                const out_path: [:0]u8 = try std.fmt.allocPrintZ(allocator, "{s}/zig-{s}-{s}.tar.xz", .{ zvm_dir, user_ver, zig_ver_slice });
+                const untar_path = try std.fmt.allocPrintZ(allocator, "{s}/zig-{s}-{s}", .{ zvm_dir, user_ver, zig_ver_slice });
                 try version.downloadFile(data, out_path);
 
                 // const args = [_:null]?[*:0]const u8{ "xf", try std.fmt.allocPrintZ(allocator, "{s}", .{out_path.ptr}) };
@@ -100,7 +101,7 @@ pub fn main() !void {
 
                 var env_map = try std.process.getEnvMap(allocator);
                 var tar = try std.ChildProcess.exec(.{
-                    .argv = &[_]string{ "tar", "-xf", out_path },
+                    .argv = &.{ "tar", "-xf", out_path, "--directory", zig_ver_slice },
                     .allocator = allocator,
                     .env_map = &env_map,
                 });

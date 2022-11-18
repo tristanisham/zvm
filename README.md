@@ -7,6 +7,7 @@ can lead to headaches when you need multiple versions of a language installed to
 
 ## Requirements
 1. libcurl - `sudo apt install libcurl-dev`
+2. `tar` on your $PATH
 
 ## Building
 1. `git clone --recursive -j8 git@github.com:tristanisham/zvm.git`

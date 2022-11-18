@@ -84,8 +84,12 @@ pub fn main() !void {
                 const out_path: [:0]u8 = try std.fmt.allocPrintZ(allocator, "{s}/zig-{s}-{s}.tar.xz", .{ zvm_dir, user_ver, buf_slice });
                 try version.downloadFile(data, out_path);
 
-                const args = [_:null]?[*:0]const u8{ "-xf", out_path.ptr };
+                const args = [_:null]?[*:0]const u8{ try std.fmt.allocPrintZ(allocator, "-xf={s}", .{out_path.ptr})};
                 const envp = [_:null]?[*:0]const u8{null};
+
+                // for (args) |x| {
+                //     std.debug.print("{s}\n", .{x.?});
+                // }
 
                 const exec_err = std.os.execvpeZ("tar", args[0..], envp[0..]);
                 switch (exec_err) {

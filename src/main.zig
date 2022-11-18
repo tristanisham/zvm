@@ -77,7 +77,7 @@ pub fn main() !void {
 
                 home.makeDir(".zvm") catch |err| {
                     switch (err) {
-                        error.PathAlreadyExists => std.debug.print("Installing {s} in {s}\n", .{ user_ver, zvm_dir }),
+                        error.PathAlreadyExists => std.debug.print("Untaring {s} in {s}\n", .{ user_ver, zvm_dir }),
                         else => return err,
                     }
                 };
@@ -98,14 +98,20 @@ pub fn main() !void {
                 //     error.Unexpected => std.debug.print("Succsessfully extracted Zig download", .{}),
                 //     else => std.debug.panic("{any}", .{exec_err}),
                 // }
+                std.fs.makeDirAbsolute(untar_path) catch |err| {
+                    switch (err) {
+                        error.PathAlreadyExists => std.debug.print("Installing {s} in {s}\n", .{ user_ver, zvm_dir }),
+                        else => return err,
+                    }
+                };
 
                 var env_map = try std.process.getEnvMap(allocator);
                 var tar = try std.ChildProcess.exec(.{
-                    .argv = &.{ "tar", "-xf", out_path, "--directory", untar_path },
+                    .argv = &.{ "tar", "-xf", out_path, "-C", untar_path },
                     .allocator = allocator,
                     .env_map = &env_map,
                 });
-                std.debug.print("stderr {s}\n", .{tar.stderr});
+                if (tar.stderr.len > 0) std.debug.print("{s}\n", .{tar.stderr});
             } else {
                 std.debug.print("Invalid Zig version provided. Try master\n", .{});
                 return;

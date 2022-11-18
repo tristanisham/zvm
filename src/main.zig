@@ -68,7 +68,7 @@ pub fn main() !void {
                     zig_ver_slice = try std.fmt.allocPrint(allocator, "{s}-{s}", .{ info.arch, info.tag });
                 }
 
-                const tarball: []const u8 = value.Object.get(buf_slice).?.Object.get("tarball").?.String;
+                const tarball: []const u8 = value.Object.get(zig_ver_slice).?.Object.get("tarball").?.String;
                 const data = try std.mem.Allocator.dupeZ(allocator, u8, tarball);
 
                 const USER_HOME = cli.install.homeDir(allocator) orelse "~";
@@ -101,7 +101,7 @@ pub fn main() !void {
 
                 var env_map = try std.process.getEnvMap(allocator);
                 var tar = try std.ChildProcess.exec(.{
-                    .argv = &.{ "tar", "-xf", out_path, "--directory", zig_ver_slice },
+                    .argv = &.{ "tar", "-xf", out_path, "--directory", untar_path },
                     .allocator = allocator,
                     .env_map = &env_map,
                 });

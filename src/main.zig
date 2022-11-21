@@ -11,6 +11,7 @@ pub fn main() !void {
     const params = comptime clap.parseParamsComptime(
         \\-h, --help             Display this help and exit.
         \\-v, --version          Print out the installed version of zvm.
+        \\-o, --out <str>             Changes the path at which ZVM installs and unzips Zig.
         \\<str>...
         \\
     );
@@ -82,9 +83,10 @@ pub fn main() !void {
                         else => return err,
                     }
                 };
-
-                const out_path: [:0]u8 = try std.fmt.allocPrintZ(allocator, "{s}/zig-{s}-{s}.tar.xz", .{ zvm_dir, user_ver, zig_ver_slice });
-                const untar_path = try std.fmt.allocPrintZ(allocator, "{s}/zig-{s}-{s}", .{ zvm_dir, user_ver, zig_ver_slice });
+                
+                const pre_out_path = res.args.out orelse try std.fmt.allocPrintZ(allocator, "{s}/zig-{s}-{s}", .{ zvm_dir, user_ver, zig_ver_slice });
+                const out_path: [:0]u8 = try std.fmt.allocPrintZ(allocator, "{s}.tar.xz", .{pre_out_path});
+                const untar_path: [:0]u8 = try std.fmt.allocPrintZ(allocator, "{s}/zig-{s}-{s}", .{ zvm_dir, user_ver, zig_ver_slice });
                 try version.downloadFile(data, out_path);
 
                 // const args = [_:null]?[*:0]const u8{ "xf", try std.fmt.allocPrintZ(allocator, "{s}", .{out_path.ptr}) };
@@ -101,7 +103,7 @@ pub fn main() !void {
                 // }
                 std.fs.makeDirAbsolute(untar_path) catch |err| {
                     switch (err) {
-                        error.PathAlreadyExists => std.debug.print("Untarring {s} in {s}\n", .{ user_ver, zvm_dir}),
+                        error.PathAlreadyExists => std.debug.print("Untarring {s} in {s}\n", .{ user_ver, zvm_dir }),
                         else => return err,
                     }
                 };
@@ -112,7 +114,7 @@ pub fn main() !void {
                     .allocator = allocator,
                     .env_map = &env_map,
                 });
-                if (tar.stderr.len > 0) std.debug.print("\x1b[{s}mThere was an error calling `tar` on your system path:\n\n{s}\x1b[{s}m\n", .{ansi.darkRed, tar.stderr, ansi.reset});
+                if (tar.stderr.len > 0) std.debug.print("\x1b[{s}mThere was an error calling `tar` on your system path:\n\n{s}\x1b[{s}m\n", .{ ansi.darkRed, tar.stderr, ansi.reset });
             } else {
                 std.debug.print("Invalid Zig version provided. Try master\n", .{});
                 return;

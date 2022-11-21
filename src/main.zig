@@ -5,6 +5,7 @@ const ArrayList = std.ArrayList;
 const NativeTargetInfo = std.zig.system.NativeTargetInfo;
 const cli = @import("cli/cli.zig");
 const string = []const u8;
+const ansi = @import("ansi.zig");
 
 pub fn main() !void {
     const params = comptime clap.parseParamsComptime(
@@ -77,7 +78,7 @@ pub fn main() !void {
 
                 home.makeDir(".zvm") catch |err| {
                     switch (err) {
-                        error.PathAlreadyExists => std.debug.print("Untaring {s} in {s}\n", .{ user_ver, zvm_dir }),
+                        error.PathAlreadyExists => std.debug.print("Installing {s} in {s}\n", .{ user_ver, zvm_dir }),
                         else => return err,
                     }
                 };
@@ -100,7 +101,7 @@ pub fn main() !void {
                 // }
                 std.fs.makeDirAbsolute(untar_path) catch |err| {
                     switch (err) {
-                        error.PathAlreadyExists => std.debug.print("Installing {s} in {s}\n", .{ user_ver, zvm_dir }),
+                        error.PathAlreadyExists => std.debug.print("Untarring {s} in {s}\n", .{ user_ver, zvm_dir}),
                         else => return err,
                     }
                 };
@@ -111,7 +112,7 @@ pub fn main() !void {
                     .allocator = allocator,
                     .env_map = &env_map,
                 });
-                if (tar.stderr.len > 0) std.debug.print("{s}\n", .{tar.stderr});
+                if (tar.stderr.len > 0) std.debug.print("\x1b[{s}mThere was an error calling `tar` on your system path:\n\n{s}\x1b[{s}m\n", .{ansi.darkRed, tar.stderr, ansi.reset});
             } else {
                 std.debug.print("Invalid Zig version provided. Try master\n", .{});
                 return;

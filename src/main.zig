@@ -5,6 +5,7 @@ const NativeTargetInfo = std.zig.system.NativeTargetInfo;
 const cli = @import("cli/cli.zig");
 const string = []const u8;
 const ansi = @import("ansi.zig");
+const builtin = @import("builtin");
 
 pub fn main() !void {
 
@@ -22,7 +23,6 @@ pub fn main() !void {
     defer response_buffer.deinit();
     var args = cli.Args{};
     try args.parse(allocator);
-
 
     if (args.positionals == null) {
         return std.debug.print("{s}", .{args.help});
@@ -62,23 +62,25 @@ pub fn main() !void {
                         }
                     };
 
-                    const pre_out_path = args.outpath orelse try std.fmt.allocPrintZ(allocator, "{s}/zig-{s}-{s}", .{ zvm_dir, user_ver, zig_ver_slice });
-                    const out_path: [:0]u8 = try std.fmt.allocPrintZ(allocator, "{s}.tar.xz", .{pre_out_path});
+                    const pre_out_path = try std.fmt.allocPrintZ(allocator, "{s}/zig-{s}-{s}", .{ zvm_dir, user_ver, zig_ver_slice });
+
+                    const extension = switch (builtin.os.tag) {
+                        .windows => "zip",
+                        else => "tar.xz",
+                    };
+
+                    const out_path: [:0]u8 = try std.fmt.allocPrintZ(allocator, "{s}.{s}", .{ pre_out_path, extension });
+
                     const untar_path: [:0]u8 = try std.fmt.allocPrintZ(allocator, "{s}/zig-{s}-{s}", .{ zvm_dir, user_ver, zig_ver_slice });
                     try version.downloadFile(data, out_path);
 
-                    // const args = [_:null]?[*:0]const u8{ "xf", try std.fmt.allocPrintZ(allocator, "{s}", .{out_path.ptr}) };
-                    // // const envp = [_:null]?[*:0]const u8{};
-                    // const envp = try allocator.dupeZ([*:null]const ?[*:0]const u8, @ptrCast([*]?[*:0]const u8, @ptrCast([*:null]const ?[*:0]const u8, std.os.environ.ptr)[0..std.os.environ.len]));
+                    if (args.outpath != null) {
+                        std.debug.print("\x1b[{s}m-o flag is an alpha feature and currently does nothing. It might be depreciated at any time.\x1b[0m\n", .{ansi.darkYellow});
+                    }
 
-                    // // for (args) |x| {
-                    // //     std.debug.print("{s}\n", .{x.?});
-                    // // }
-                    // const exec_err = std.os.execvpeZ("tar", args[0..], envp[0..]);
-                    // switch (exec_err) {
-                    //     error.Unexpected => std.debug.print("Succsessfully extracted Zig download", .{}),
-                    //     else => std.debug.panic("{any}", .{exec_err}),
-                    // }
+                    var env_map = try std.process.getEnvMap(allocator);
+
+                    // Creates the path for tar to extract into
                     std.fs.makeDirAbsolute(untar_path) catch |err| {
                         switch (err) {
                             error.PathAlreadyExists => std.debug.print("Untarring {s} in {s}\n", .{ user_ver, zvm_dir }),
@@ -86,13 +88,19 @@ pub fn main() !void {
                         }
                     };
 
-                    var env_map = try std.process.getEnvMap(allocator);
-                    var tar = try std.ChildProcess.exec(.{
-                        .argv = &.{ "tar", "-xf", out_path, "-C", untar_path },
-                        .allocator = allocator,
-                        .env_map = &env_map,
-                    });
-                    if (tar.stderr.len > 0) std.debug.print("\x1b[{s}mThere was an error calling `tar` on your system path:\n\n{s}\x1b[{s}m\n", .{ ansi.darkRed, tar.stderr, ansi.reset });
+                    var uncompress_proc: std.ChildProcess.ExecResult = switch (builtin.os.tag) {
+                        .windows => try std.ChildProcess.exec(.{
+                            .argv = &.{ "Expand-Archive", out_path, "-DestinationPath", untar_path },
+                            .allocator = allocator,
+                            .env_map = &env_map,
+                        }),
+                        else => try std.ChildProcess.exec(.{
+                            .argv = &.{ "tar", "-xf", out_path, "-C", untar_path },
+                            .allocator = allocator,
+                            .env_map = &env_map,
+                        }),
+                    };
+                    if (uncompress_proc.stderr.len > 0) std.debug.print("\x1b[{s}mThere was an error calling `tar` on your system path:\n\n{s}\x1b[{s}m\n", .{ ansi.darkRed, uncompress_proc.stderr, ansi.reset });
                 } else {
                     std.debug.print("Invalid Zig version provided. Try master\n", .{});
                     return;
@@ -106,8 +114,6 @@ pub fn main() !void {
         }
     }
 }
-
-
 
 const SystemInfo = struct { arch: []const u8, tag: []const u8 };
 

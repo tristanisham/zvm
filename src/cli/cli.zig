@@ -4,7 +4,7 @@ const mem = std.mem;
 const testing = std.testing;
 
 pub const Args = struct {
-    outpath: ?[]u8 = null,
+    outpath: ?[:0]u8 = null,
     help: []const u8 = "(Zig Version Manager)\n-h, --help\tDisplay this help and exit.\n-v, --version\tPrint out the installed version of zvm.\n-o, --out <str>\tChanges the path at which ZVM installs and unzips Zig.",
     version: []const u8 = "zvm (Zig Version Manager) v0.0.1\n",
     positionals: ?[][:0]u8 = null,
@@ -37,4 +37,12 @@ pub const Args = struct {
 //     var args = Args{};
 //     try args.parse(alloc);
 //     testing.expectEqual("test", args.outpath);
+// }
+
+// test "-o is null when not passed" {
+//     const alloc = testing.allocator();
+//     defer alloc.deinit();
+//     var args = Args{};
+//     try args.parse(alloc);
+//     testing.expectEqual(null, args.outpath);
 // }

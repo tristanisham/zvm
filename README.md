@@ -12,7 +12,8 @@ can lead to headaches when you need multiple versions of a language installed to
 2. `tar` on your $PATH
 ### Windows
 1. cURL should already be installed, but [in case it isn't](https://stackoverflow.com/questions/9507353/how-do-i-install-and-use-curl-on-windows).
-2.
+2. Just run `zig build -Drelease-safe`. 
+> I haven't been able to get it to compile on Windows yet myself. I'm not sure if it's an issue with my machine or what. I'll update it here as progress is made"
 
 ## Building
 1. `git clone --recursive -j8 git@github.com:tristanisham/zvm.git`

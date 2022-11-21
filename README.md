@@ -6,7 +6,7 @@ valid sytax, and introducing new features like a package manager. While this is 
 can lead to headaches when you need multiple versions of a language installed to compile your projects.
 
 ## Requirements
-`zvm` is pre-alpha software, and makes no guarentees about its stability until at least v0.1.0. However, the program is under constant development, and the author is very wel willing to work with contributors. If you have any issues, ideas, or contributions you'd like to suggest, create a GitHub issue. 
+`zvm` is pre-alpha software, and makes no guarentees about its stability until at least v0.1.0. However, the program is under constant development, and the author is very willing to work with contributors. If you have any issues, ideas, or contributions you'd like to suggest create a GitHub issue. 
 
 <hr>
 

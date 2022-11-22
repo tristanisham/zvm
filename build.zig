@@ -11,11 +11,13 @@ pub fn build(b: *std.build.Builder) void {
     // between Debug, ReleaseSafe, ReleaseFast, and ReleaseSmall.
     const mode = b.standardReleaseOptions();
 
-    const exe = b.addExecutable("zvm", "src/main.zig");
+    const exe: *std.build.LibExeObjStep = b.addExecutable("zvm", "src/main.zig");
     exe.setTarget(target);
     exe.setBuildMode(mode);
     exe.linkLibC(); // Links libC
+
     exe.linkSystemLibrary("curl"); // link Curl
+
     exe.install();
 
     const run_cmd = exe.run();

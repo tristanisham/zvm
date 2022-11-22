@@ -17,7 +17,7 @@ can lead to headaches when you need multiple versions of a language installed to
 ### Windows
 1. cURL should already be installed, but [in case it isn't](https://stackoverflow.com/questions/9507353/how-do-i-install-and-use-curl-on-windows).
 2. Just run `zig build -Drelease-safe`. 
-> I haven't been able to get it to compile on Windows yet myself. I'm not sure if it's an issue with my machine or what. I'll update it here as progress is made"
+> I haven't been able to get it to compile on Windows yet myself. I'm not sure if it's an issue with my machine or what. I'll update it here as progress is made
 
 ## Building
 1. `git clone --recursive -j8 git@github.com:tristanisham/zvm.git`
@@ -30,7 +30,7 @@ Pre-alpha, you can install each zig version by name.
 zvm install master
 ```
 
-zvm will determine version is appropriate for your system and currently, write it in your current working directory. This behavior will change and future version of zvm will install in a dedicated folder, using symlinks to manager your version of Zig.
+zvm will determine version is appropriate for your system and currently, write it in '~/.zvm/{s}`. This behavior will change and future version of zvm will install in a dedicated folder, using symlinks to manager your version of Zig.
 
 
 

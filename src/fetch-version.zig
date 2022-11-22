@@ -3,6 +3,7 @@ const cURL = @cImport({
     @cInclude("curl/curl.h");
 });
 
+
 const CurlError = error{ CURLGlobalInitFailed, CURLHandleInitFailed, CouldNotSetURL, CouldNotSetWriteCallback, CouldNotWriteData, FailedToPerformRequest, CouldNotSetUserAgent };
 
 pub fn fetchVersionJSON(response_buffer: *std.ArrayList(u8)) CurlError!void {
@@ -93,3 +94,4 @@ pub fn downloadFile(url: [:0]const u8, path: []const u8) !void {
         return CurlError.FailedToPerformRequest;
     }
 }
+

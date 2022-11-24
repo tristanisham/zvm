@@ -14,6 +14,9 @@ can lead to headaches when you need multiple versions of a language installed to
 #### Ubuntu/Debian
 1. libcurl - `sudo apt install libcurl-dev` (Follow your package manger's instructions)
 2. `tar` on your $PATH
+3. `zig build -Drelease-safe`
+4. Enjoy
+
 ### Windows
 1. cURL should already be installed, but [in case it isn't](https://stackoverflow.com/questions/9507353/how-do-i-install-and-use-curl-on-windows).
 2. Just run `zig build -Drelease-safe`. 

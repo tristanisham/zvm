@@ -9,11 +9,33 @@ pub fn homeDir(alloc: std.mem.Allocator) ?[]u8 {
     return std.process.getEnvVarOwned(alloc, "HOME") catch null;
 }
 
-pub fn getSystemInfo() !SystemInfo {
+fn getSystemInfo() !SystemInfo {
     const info = try NativeTargetInfo.detect(.{});
     const arch = info.target.cpu.arch.genericName();
     // https://discord.com/channels/605571803288698900/1019652020308824145
-    const tag = switch (info.target.os.tag) {
+    // A switch with an inline else can be used to make special cases for some
+    // tags.
+    const tag = @tagName(enum_tag);
+    return SystemInfo{ .arch = arch, .tag = @as([]const u8, tag) };
+}
+
+test "simple test" {
+    var list = std.ArrayList(i32).init(std.testing.allocator);
+    defer list.deinit(); // try commenting this out and see if zig detects the memory leak!
+    try list.append(42);
+    try std.testing.expectEqual(@as(i32, 42), list.pop());
+}
+
+// This test is only to detect problems for the first implementation
+// that made the switching pretty unmaintainable. It will fail as
+// soon as the possible targets change, so this test must be deleted then.
+//
+// Compares the old implementation to the new one, by running both functions for
+// the current detected OS.
+test "string returned by the conversion to string of the tag" {
+    // The old implementation
+    const info = try NativeTargetInfo.detect(.{});
+    const old_tag = switch (info.target.os.tag) {
         .ananas => "ananas",
         .cloudabi => "cloudabi",
         .dragonfly => "dragonfly",
@@ -59,6 +81,6 @@ pub fn getSystemInfo() !SystemInfo {
         .other => "other",
         .freestanding => "freestanding",
     };
-
-    return SystemInfo{ .arch = arch, .tag = @as([]const u8, tag) };
+    const new_tag = try getSystemInfo().tag;
+    try std.testing.expectEqualStrings(old_tag, new_tag);
 }

@@ -32,9 +32,6 @@ pub fn main() !void {
                 std.debug.print("upgrade called\n", .{});
                 std.debug.print("{s}", .{cli.system.homeDir(allocator).?});
                 return;
-            } else {
-                std.debug.print("Invalid Zig version provided. Try master\n", .{});
-                return;
             }
         }
     }

@@ -4,11 +4,9 @@ const curl = @import("../curl.zig");
 const sys = @import("system.zig");
 const ansi = @import("../ansi.zig");
 
-
-
 pub fn install(allocator: *std.mem.Allocator, version: [:0]u8) !void {
     // var allocator = arena_state.allocator();
-    
+
     var response_buffer = std.ArrayList(u8).init(allocator.*);
 
     // superfluous when using an arena allocator, but
@@ -37,25 +35,27 @@ pub fn install(allocator: *std.mem.Allocator, version: [:0]u8) !void {
         const zvm_dir = try std.fmt.allocPrint(allocator.*, "{s}/.zvm", .{USER_HOME});
         const home = try std.fs.openDirAbsolute(sys.homeDir(allocator.*) orelse "~", .{});
 
-        home.makeDir(".zvm") catch |err| {
+        const version_path = try std.fmt.allocPrint(allocator.*, "{s}/{s}", .{ zvm_dir, user_ver });
+        // creates specific
+        home.makePath(version_path) catch |err| {
             switch (err) {
-                error.PathAlreadyExists => std.debug.print("Installing {s} in {s}\n", .{ user_ver, zvm_dir }),
+                error.PathAlreadyExists => {},
                 else => return err,
             }
         };
 
         // ~/.zvm/
-        const pre_out_path = try std.fmt.allocPrintZ(allocator.*, "{s}/zig-{s}-{s}", .{ zvm_dir, user_ver, zig_ver_slice });
+        const pre_out_path = try std.fmt.allocPrintZ(allocator.*, "{s}/{s}/zig", .{ zvm_dir, user_ver });
 
         const extension = switch (builtin.os.tag) {
             .windows => "zip",
             else => "tar.xz",
         };
 
-        const out_path: [:0]u8 = try std.fmt.allocPrintZ(allocator.*, "{s}.{s}", .{ pre_out_path, extension });
+        const pre_tared_bundle: [:0]u8 = try std.fmt.allocPrintZ(allocator.*, "{s}.{s}", .{ pre_out_path, extension });
 
-        const untar_path: [:0]u8 = try std.fmt.allocPrintZ(allocator.*, "{s}/zig-{s}-{s}", .{ zvm_dir, user_ver, zig_ver_slice });
-        try curl.downloadFile(data, out_path);
+        const untar_path = pre_out_path;
+        try curl.downloadFile(data, pre_tared_bundle);
 
         // if (args.outpath != null) {
         //     std.debug.print("\x1b[{s}m-o flag is an alpha feature and currently does nothing. It might be depreciated at any time.\x1b[0m\n", .{ansi.darkYellow});
@@ -66,24 +66,40 @@ pub fn install(allocator: *std.mem.Allocator, version: [:0]u8) !void {
         // Creates the path for tar to extract into
         std.fs.makeDirAbsolute(untar_path) catch |err| {
             switch (err) {
-                error.PathAlreadyExists => std.debug.print("Untarring {s} in {s}\n", .{ user_ver, zvm_dir }),
+                error.PathAlreadyExists => std.debug.print("Untarring {s} at {s}\n", .{ user_ver, pre_out_path }),
                 else => return err,
             }
         };
 
         var uncompress_proc: std.ChildProcess.ExecResult = switch (builtin.os.tag) {
             .windows => try std.ChildProcess.exec(.{
-                .argv = &.{ "Expand-Archive", out_path, "-DestinationPath", untar_path },
+                .argv = &.{ "Expand-Archive", pre_tared_bundle, "-DestinationPath", untar_path },
                 .allocator = allocator.*,
                 .env_map = &env_map,
             }),
             else => try std.ChildProcess.exec(.{
-                .argv = &.{ "tar", "-xf", out_path, "-C", untar_path },
+                .argv = &.{ "tar", "-xf", pre_tared_bundle, "-C", untar_path },
                 .allocator = allocator.*,
                 .env_map = &env_map,
             }),
         };
         if (uncompress_proc.stderr.len > 0) std.debug.print("\x1b[{s}mThere was an error calling `tar` on your system path:\n\n{s}\x1b[{s}m\n", .{ ansi.darkRed, uncompress_proc.stderr, ansi.reset });
+
+        // Remove tar
+        try std.fs.deleteFileAbsolute(pre_tared_bundle);
+
+        // Create symlink for profile
+        const bin_symlink = try std.fmt.allocPrint(allocator.*, "{s}/bin", .{zvm_dir});
+        if (std.fs.path.isAbsolute(bin_symlink))
+            std.fs.deleteFileAbsolute(bin_symlink) catch |err| {
+                if (err != error.Unexpected) {
+                    return err;
+                }
+            };
+        try std.fs.symLinkAbsolute(version_path, bin_symlink, .{ .is_directory = true });
+
+        std.debug.print("Please add \x1b[{s}mexport PATH=$PATH:{s}/bin to the end of your ~/.profile file\x1b[0m\n", .{ ansi.darkGreen, zvm_dir });
+        return;
     } else {
         std.debug.print("Invalid Zig version provided. Try master\n", .{});
         return;

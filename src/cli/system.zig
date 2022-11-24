@@ -9,13 +9,13 @@ pub fn homeDir(alloc: std.mem.Allocator) ?[]u8 {
     return std.process.getEnvVarOwned(alloc, "HOME") catch null;
 }
 
-fn getSystemInfo() !SystemInfo {
+pub fn getSystemInfo() !SystemInfo {
     const info = try NativeTargetInfo.detect(.{});
     const arch = info.target.cpu.arch.genericName();
     // https://discord.com/channels/605571803288698900/1019652020308824145
     // A switch with an inline else can be used to make special cases for some
     // tags.
-    const tag = @tagName(enum_tag);
+    const tag = @tagName(info.target.os.tag);
     return SystemInfo{ .arch = arch, .tag = @as([]const u8, tag) };
 }
 

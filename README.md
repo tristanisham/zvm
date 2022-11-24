@@ -10,7 +10,7 @@ can lead to headaches when you need multiple versions of a language installed to
 
 <hr>
 
-### Linux
+### Linux (Primary Development Target)
 #### Ubuntu/Debian
 1. libcurl - `sudo apt install libcurl-dev` (Follow your package manger's instructions)
 2. `tar` on your $PATH

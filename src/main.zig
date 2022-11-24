@@ -7,7 +7,7 @@ const builtin = @import("builtin");
 
 pub fn main() !void {
 
-    // Fetching data. Where we currenlty process the cli.
+    // Fetching data. Where we currently process the cli.
 
     // FETCHING DATA
     var arena_state = std.heap.ArenaAllocator.init(std.heap.c_allocator);
@@ -36,4 +36,3 @@ pub fn main() !void {
         }
     }
 }
-

@@ -1,6 +1,4 @@
 pub const install = @import("install.zig");
-pub const system = @import("system.zig");
-pub const use = @import("use.zig");
 const std = @import("std");
 const mem = std.mem;
 const testing = std.testing;
@@ -14,7 +12,7 @@ pub const Args = struct {
     /// `parse()` analyzes command line arguments and fill the appropriate struct fields.
     ///
     /// If arguments for 'help' or 'version' are detected. `parse()` will print
-    /// the appropiate value to stderr and exit 0.
+    /// the appropriate value to stderr and exit 0.
     pub fn parse(self: *Args, alloc: std.mem.Allocator) !void {
         const args: [][:0]u8 = try std.process.argsAlloc(alloc);
         if (args.len > 0) self.positionals = args else return;

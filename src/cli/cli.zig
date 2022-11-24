@@ -1,4 +1,6 @@
 pub const install = @import("install.zig");
+pub const system = @import("system.zig");
+pub const use = @import("use.zig");
 const std = @import("std");
 const mem = std.mem;
 const testing = std.testing;

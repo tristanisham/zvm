@@ -34,8 +34,6 @@ pub fn main() !void {
                 std.debug.print("Invalid Zig version provided. Try master\n", .{});
                 return;
             }
-
-            return;
         }
     }
 }

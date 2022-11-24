@@ -46,9 +46,9 @@ fn writeToArrayListCallback(data: *anyopaque, size: c_uint, nmemb: c_uint, user_
 }
 
 /// parseVersionJSON takes the resturned result from fetchVersionJSON and parses it into a std.json.ValueTree.
-pub fn parseVersionJSON(json: *std.ArrayList(u8), alloc: *std.heap.ArenaAllocator) !std.json.ValueTree {
+pub fn parseVersionJSON(json: *std.ArrayList(u8), alloc: *std.mem.Allocator) !std.json.ValueTree {
     // std.debug.print("{s}", .{json.items});
-    var parser = std.json.Parser.init(alloc.*.allocator(), false);
+    var parser = std.json.Parser.init(alloc.*, false);
 
     var tree = try parser.parse(json.items);
     return tree;

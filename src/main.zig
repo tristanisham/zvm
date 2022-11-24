@@ -27,9 +27,11 @@ pub fn main() !void {
         for (argv) |val, i| {
             if (std.mem.eql(u8, "install", val) and argv.len >= i + 1) {
                 try cli.install.install(&allocator, argv[i + 1]);
+                return;
             } else if (std.mem.eql(u8, "use", val) and argv.len >= i + 1) {} else if (std.mem.eql(u8, "upgrade", val) and argv.len >= i + 1) {
                 std.debug.print("upgrade called\n", .{});
                 std.debug.print("{s}", .{cli.system.homeDir(allocator).?});
+                return;
             } else {
                 std.debug.print("Invalid Zig version provided. Try master\n", .{});
                 return;

@@ -81,6 +81,7 @@ test "string returned by the conversion to string of the tag" {
         .other => "other",
         .freestanding => "freestanding",
     };
-    const new_tag = try getSystemInfo().tag;
+    const new_func = try getSystemInfo();
+    const new_tag = new_func.tag;
     try std.testing.expectEqualStrings(old_tag, new_tag);
 }

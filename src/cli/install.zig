@@ -16,7 +16,7 @@ pub fn install(allocator: *std.mem.Allocator, version: [:0]u8) !void {
     const user_ver = version;
     // std.log.info("Got response of {d} bytes", .{response_buffer.items.len});
     // std.debug.print("{s}\n", .{response_buffer.items});
-    const tree = try curl.parseVersionJSON(&response_buffer, allocator);
+    const tree = try curl.parseVersionJSON(&response_buffer.items, allocator);
 
     if (tree.root.Object.get(user_ver)) |value| {
         var info = try sys.getSystemInfo();
@@ -33,16 +33,19 @@ pub fn install(allocator: *std.mem.Allocator, version: [:0]u8) !void {
 
         const USER_HOME = sys.homeDir(allocator.*) orelse "~";
         const zvm_dir = try std.fmt.allocPrint(allocator.*, "{s}/.zvm", .{USER_HOME});
-        const home = try std.fs.openDirAbsolute(sys.homeDir(allocator.*) orelse "~", .{});
 
-        const version_path = try std.fmt.allocPrint(allocator.*, "{s}/{s}", .{ zvm_dir, user_ver });
-        // creates specific
-        home.makePath(version_path) catch |err| {
+        // Write versions.json cache file
+        const zvm = try std.fs.openDirAbsolute(zvm_dir, .{});
+        try zvm.writeFile("version.json", response_buffer.items);
+        zvm.makePath(user_ver) catch |err| {
             switch (err) {
                 error.PathAlreadyExists => {},
                 else => return err,
             }
         };
+
+        const version_path = try std.fmt.allocPrint(allocator.*, "{s}/{s}", .{ zvm_dir, user_ver });
+
 
         // ~/.zvm/
         const pre_out_path = try std.fmt.allocPrintZ(allocator.*, "{s}/{s}/", .{ zvm_dir, user_ver });
@@ -64,7 +67,7 @@ pub fn install(allocator: *std.mem.Allocator, version: [:0]u8) !void {
         var env_map = try std.process.getEnvMap(allocator.*);
 
         // Creates the path for tar to extract into
-        std.fs.makeDirAbsolute(untar_path) catch |err| {
+        std.fs.makeDirAbsolute(untar_path) catch |err| { // outdated. Update using `const zvm`
             switch (err) {
                 error.PathAlreadyExists => std.debug.print("Untarring {s} at {s}\n", .{ user_ver, pre_out_path }),
                 else => return err,
@@ -90,15 +93,16 @@ pub fn install(allocator: *std.mem.Allocator, version: [:0]u8) !void {
 
         // Create symlink for profile
         const bin_symlink = try std.fmt.allocPrint(allocator.*, "{s}/bin", .{zvm_dir});
-        if (std.fs.path.isAbsolute(bin_symlink))
-            std.fs.deleteFileAbsolute(bin_symlink) catch |err| {
-                if (err != error.Unexpected) {
-                    return err;
-                }
-            };
+
+        std.fs.deleteFileAbsolute(bin_symlink) catch |err| {
+            if (err == error.FileNotFound or err == error.Unexpected) {
+                // Do nothing. 
+            } else return err;
+        };
+
         try std.fs.symLinkAbsolute(version_path, bin_symlink, .{ .is_directory = true });
 
-        std.debug.print("Please add \x1b[{s}mexport PATH=$PATH:{s}/bin to the end of your ~/.profile file\x1b[0m\n", .{ ansi.darkGreen, zvm_dir });
+        std.debug.print("Please add \x1b[{s}mexport PATH=$PATH:{s}/bin\x1b[0m to the end of your ~/.profile file\n", .{ ansi.darkGreen, zvm_dir });
         return;
     } else {
         std.debug.print("Invalid Zig version provided. Try master\n", .{});

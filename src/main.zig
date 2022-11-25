@@ -26,21 +26,21 @@ pub fn main() !void {
     if (args.positionals) |argv| {
         // Command line parser
         for (argv) |val, i| {
+            const next_arg = argv[i + 1];
             if (std.mem.eql(u8, "install", val) and argv.len >= i + 1) {
-                try cli.install.install(&allocator, argv[i + 1]);
+                try cli.install.install(&allocator, next_arg);
                 return;
             } else if (std.mem.eql(u8, "use", val) and argv.len >= i + 1) {} else if (std.mem.eql(u8, "upgrade", val) and argv.len >= i + 1) {
-                std.debug.print("upgrade called\n", .{});
-                std.debug.print("{s}", .{cli.system.homeDir(allocator).?});
+                try cli.use.use(&allocator, next_arg);
                 return;
             }
         }
     }
 }
 
-test "simple test" {
-    var list = std.ArrayList(i32).init(std.testing.allocator);
-    defer list.deinit(); // try commenting this out and see if zig detects the memory leak!
-    try list.append(42);
-    try std.testing.expectEqual(@as(i32, 42), list.pop());
-}
+// test "simple test" {
+//     var list = std.ArrayList(i32).init(std.testing.allocator);
+//     defer list.deinit(); // try commenting this out and see if zig detects the memory leak!
+//     try list.append(42);
+//     try std.testing.expectEqual(@as(i32, 42), list.pop());
+// }

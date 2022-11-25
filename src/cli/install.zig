@@ -45,7 +45,7 @@ pub fn install(allocator: *std.mem.Allocator, version: [:0]u8) !void {
         };
 
         // ~/.zvm/
-        const pre_out_path = try std.fmt.allocPrintZ(allocator.*, "{s}/{s}/zig", .{ zvm_dir, user_ver });
+        const pre_out_path = try std.fmt.allocPrintZ(allocator.*, "{s}/{s}/", .{ zvm_dir, user_ver });
 
         const extension = switch (builtin.os.tag) {
             .windows => "zip",

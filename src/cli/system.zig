@@ -19,12 +19,7 @@ pub fn getSystemInfo() !SystemInfo {
     return SystemInfo{ .arch = arch, .tag = @as([]const u8, tag) };
 }
 
-test "simple test" {
-    var list = std.ArrayList(i32).init(std.testing.allocator);
-    defer list.deinit(); // try commenting this out and see if zig detects the memory leak!
-    try list.append(42);
-    try std.testing.expectEqual(@as(i32, 42), list.pop());
-}
+
 
 // This test is only to detect problems for the first implementation
 // that made the switching pretty unmaintainable. It will fail as

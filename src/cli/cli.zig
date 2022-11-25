@@ -2,6 +2,7 @@ pub const install = @import("install.zig");
 const std = @import("std");
 const mem = std.mem;
 const testing = std.testing;
+pub const system = @import("system.zig");
 
 pub const Args = struct {
     outpath: ?[:0]u8 = null,

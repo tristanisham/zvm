@@ -20,7 +20,6 @@ pub fn getSystemInfo() !SystemInfo {
 }
 
 
-
 // This test is only to detect problems for the first implementation
 // that made the switching pretty unmaintainable. It will fail as
 // soon as the possible targets change, so this test must be deleted then.

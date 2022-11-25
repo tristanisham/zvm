@@ -18,9 +18,9 @@ pub const Args = struct {
         const args: [][:0]u8 = try std.process.argsAlloc(alloc);
         if (args.len > 0) self.positionals = args else return;
         for (args) |arg, i| {
-            if ((mem.eql(u8, arg, "-o") or mem.eql(u8, arg, "--outfile")) and args.len >= i + 1) {
+            if (self.containsAny(&.{"-o", "--outfile"}) and args.len >= i + 1) {
                 self.outpath = args[i + 1];
-            } else if (mem.eql(u8, arg, "-h") or mem.eql(u8, arg, "--help")) {
+            } else if (self.containsAny(&.{"-h", "--help", "help"})) {
                 std.debug.print("{s}\n", .{self.help});
                 std.os.exit(0);
             } else if (mem.eql(u8, arg, "-v") or mem.eql(u8, arg, "--version")) {
@@ -29,7 +29,30 @@ pub const Args = struct {
             }
         }
     }
+
+    pub fn containsAny(self: *Args, args: []const []const u8) bool {
+        if (self.positionals) |b_args| {
+            for (args) |a| {
+                for (b_args) |b| {
+                    if (mem.eql(u8, a, b)) return true;
+                }
+            }
+        }
+        return false;
+    }
 };
+
+// test "containsAny finds match" {
+//     var args = Args{};
+//     try args.parse(std.testing.allocator);
+//     try std.testing.expect(args.containsAny(&.{"is", "pickle", "function"}));
+// }
+
+// test "containsAny doesn't find match" {
+//     var args = Args{};
+//     try args.parse(std.testing.allocator);
+//     try std.testing.expect(args.containsAny(&.{"purple", "rain", "version"}));
+// }
 
 // This tests passes, but it's annoying to see red when I'm not looking for it.
 // test "-o flag grabs outpath" {

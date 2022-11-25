@@ -45,7 +45,7 @@ fn writeToArrayListCallback(data: *anyopaque, size: c_uint, nmemb: c_uint, user_
     return nmemb * size;
 }
 
-/// parseVersionJSON takes the resturned result from fetchVersionJSON and parses it into a std.json.ValueTree.
+/// parseVersionJSON takes the returned result from fetchVersionJSON and parses it into a std.json.ValueTree.
 pub fn parseVersionJSON(json: *std.ArrayList(u8), alloc: *std.mem.Allocator) !std.json.ValueTree {
     // std.debug.print("{s}", .{json.items});
     var parser = std.json.Parser.init(alloc.*, false);
@@ -94,4 +94,3 @@ pub fn downloadFile(url: [:0]const u8, path: []const u8) !void {
         return CurlError.FailedToPerformRequest;
     }
 }
-

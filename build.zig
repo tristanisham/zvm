@@ -16,7 +16,9 @@ pub fn build(b: *std.build.Builder) void {
     exe.setBuildMode(mode);
     exe.linkLibC(); // Links libC
 
-    exe.linkSystemLibrary("curl"); // link Curl
+    // exe.linkSystemLibrary("curl"); // link Curl
+    exe.addLibraryPath("./curl/");
+    exe.addIncludePath(".curl/");
 
     exe.install();
 

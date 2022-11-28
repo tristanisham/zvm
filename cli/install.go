@@ -37,7 +37,7 @@ func Install(version string) error {
 		return err
 	}
 
-	rawVersionStructure := make (map[any]any)
+	rawVersionStructure := make (map[string]any)
 	if err := json.Unmarshal(versions, &rawVersionStructure); err != nil {
 		return err
 	}
@@ -46,6 +46,7 @@ func Install(version string) error {
 	return installVersion(rawVersionStructure)
 }
 
-func installVersion(data map[any]any) error {
+func installVersion(data map[string]any) error {
+
 	return nil
 }

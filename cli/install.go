@@ -8,6 +8,8 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+
+	"github.com/schollz/progressbar/v3"
 )
 
 func Install(version string) error {
@@ -61,7 +63,13 @@ func Install(version string) error {
 		return err
 	}
 	defer out.Close()
-	written, err := io.Copy(out, tarReq.Body)
+
+	pbar := progressbar.DefaultBytes(
+		tarReq.ContentLength,
+		"Downloading",
+	)
+
+	written, err := io.Copy(io.MultiWriter(out, pbar), tarReq.Body)
 	if err != nil {
 		return err
 	}

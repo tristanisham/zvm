@@ -2,7 +2,10 @@ module zvm
 
 go 1.19
 
-require github.com/schollz/progressbar/v3 v3.12.1
+require (
+	github.com/schollz/progressbar/v3 v3.12.1
+	github.com/tristanisham/clr v0.0.0-20221004001624-00ee60046d85
+)
 
 require (
 	github.com/mattn/go-runewidth v0.0.14 // indirect

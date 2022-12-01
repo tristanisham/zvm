@@ -10,9 +10,10 @@ import (
 	"runtime"
 
 	"github.com/schollz/progressbar/v3"
+	"github.com/tristanisham/clr"
 )
 
-func Install(version string) error {
+func (z *ZVM) Install(version string) error {
 	homedir, err := os.UserHomeDir()
 	if err != nil {
 		homedir = "~"
@@ -41,10 +42,11 @@ func Install(version string) error {
 		return err
 	}
 
-	rawVersionStructure := make(map[string]map[string]any)
+	rawVersionStructure := make(zigVersionMap)
 	if err := json.Unmarshal(versions, &rawVersionStructure); err != nil {
 		return err
 	}
+	z.zigVersions = rawVersionStructure
 
 	tarPath, err := getTarPath(version, &rawVersionStructure)
 	if err != nil {
@@ -66,18 +68,15 @@ func Install(version string) error {
 
 	pbar := progressbar.DefaultBytes(
 		tarReq.ContentLength,
-		"Downloading",
+		fmt.Sprintf("Downloading %s:", clr.Green(version)),
 	)
 
-	written, err := io.Copy(io.MultiWriter(out, pbar), tarReq.Body)
+	_, err = io.Copy(io.MultiWriter(out, pbar), tarReq.Body)
 	if err != nil {
 		return err
 	}
 
-	fmt.Printf("Wrote %d megabytes to %s\n", written/1000, tarDownloadPath)
-
 	return nil
-
 }
 
 func getTarPath(version string, data *map[string]map[string]any) (*string, error) {

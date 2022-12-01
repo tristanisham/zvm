@@ -18,6 +18,8 @@ github.com/schollz/progressbar/v3 v3.12.1/go.mod h1:g7QSuwyGpqCjVQPFZXA31MSxtrhk
 github.com/stretchr/objx v0.1.0/go.mod h1:HFkY916IF+rwdDfMAkV7OtwuqBVzrE8GR6GFx+wExME=
 github.com/stretchr/testify v1.3.0 h1:TivCn/peBQ7UY8ooIcPgZFpTNSz0Q2U6UrFlUfqbe0Q=
 github.com/stretchr/testify v1.3.0/go.mod h1:M5WIy9Dh21IEIfnGCwXGc5bZfKNJtfHm1UVUgZn+9EI=
+github.com/tristanisham/clr v0.0.0-20221004001624-00ee60046d85 h1:zD4b2hs7jZ2sJtgtNdpMZyo4D4/Ifct8SMxvPNNkHzs=
+github.com/tristanisham/clr v0.0.0-20221004001624-00ee60046d85/go.mod h1:cKn2HV8Beq81OHjb2gja2ZiU4HAEQ6LSuxyaIT5Mg7o=
 golang.org/x/sys v0.0.0-20210615035016-665e8c7367d1/go.mod h1:oPkhp1MJrh7nUepCBck5+mAzfO9JrbApNNgaTdGDITg=
 golang.org/x/sys v0.0.0-20220811171246-fbc7d0a398ab/go.mod h1:oPkhp1MJrh7nUepCBck5+mAzfO9JrbApNNgaTdGDITg=
 golang.org/x/sys v0.1.0/go.mod h1:oPkhp1MJrh7nUepCBck5+mAzfO9JrbApNNgaTdGDITg=

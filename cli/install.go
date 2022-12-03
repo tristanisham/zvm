@@ -4,21 +4,25 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"runtime"
+	"strings"
 
 	"github.com/schollz/progressbar/v3"
 	"github.com/tristanisham/clr"
 )
 
 func (z *ZVM) Install(version string) error {
-	homedir, err := os.UserHomeDir()
-	if err != nil {
-		homedir = "~"
-	}
-	zvm := filepath.Join(homedir, ".zvm")
+	// homedir, err := os.UserHomeDir()
+	// if err != nil {
+	// 	homedir = "~"
+	// }
+	// zvm := filepath.Join(homedir, ".zvm")
+	zvm := "./.zvm"
 	os.Mkdir(zvm, 0755)
 
 	req, err := http.NewRequest("GET", "https://ziglang.org/download/index.json", nil)
@@ -58,13 +62,15 @@ func (z *ZVM) Install(version string) error {
 		return err
 	}
 	defer tarReq.Body.Close()
-	_ = os.MkdirAll(filepath.Join(zvm, version), 0755)
-	tarDownloadPath := filepath.Join(zvm, version, fmt.Sprintf("%s.tar.xz", version))
-	out, err := os.Create(tarDownloadPath)
+	// _ = os.MkdirAll(filepath.Join(zvm, version), 0755)
+	// tarDownloadPath := filepath.Join(zvm, version, fmt.Sprintf("%s.tar.xz", version))
+
+	out, err := os.CreateTemp(zvm, "*.tar.xz")
 	if err != nil {
 		return err
 	}
 	defer out.Close()
+	defer os.RemoveAll(out.Name())
 
 	pbar := progressbar.DefaultBytes(
 		tarReq.ContentLength,
@@ -74,6 +80,29 @@ func (z *ZVM) Install(version string) error {
 	_, err = io.Copy(io.MultiWriter(out, pbar), tarReq.Body)
 	if err != nil {
 		return err
+	}
+
+	// The base directory where all Zig files for the appropriate version are installed
+	// installedVersionPath := filepath.Join(zvm, version)
+	fmt.Println("Extracting bundle...")
+
+	if err := extractTarXZ(out.Name(), zvm); err != nil {
+		log.Fatal(clr.Red(err))
+	}
+	tarName := strings.TrimPrefix(*tarPath, "https://ziglang.org/builds/")
+	tarName = strings.TrimSuffix(tarName, ".tar.xz")
+	if err := os.Rename(filepath.Join(zvm, tarName), filepath.Join(zvm, version)); err != nil {
+		log.Fatalln(clr.Yellow(err))
+	}
+
+	if _, err := os.Stat(filepath.Join(zvm, "bin")); os.IsExist(err) {
+	if err := os.Remove(filepath.Join(zvm, "bin")); err != nil {
+		log.Fatal(err)
+	}
+	}
+	// return nil
+	if err := os.Symlink(version, filepath.Join(zvm, "bin")); err != nil {
+		log.Fatal(clr.Red(err))
 	}
 
 	return nil
@@ -107,4 +136,15 @@ func zigStyleSysInfo() (string, string) {
 	}
 
 	return arch, runtime.GOOS
+}
+
+func extractTarXZ(bundle, out string) error {
+	tar := exec.Command("tar", "-xf", bundle, "-C", out)
+	tar.Stdout = os.Stdout
+	tar.Stderr = os.Stderr
+	if err := tar.Run(); err != nil {
+		return err
+	}
+
+	return nil
 }

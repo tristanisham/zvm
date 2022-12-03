@@ -1,8 +1,11 @@
 package cli
 
 import (
+	"log"
 	"os"
 	"path/filepath"
+
+	"github.com/tristanisham/clr"
 )
 
 func (z *ZVM) Use(ver string) error {
@@ -15,13 +18,11 @@ func (z *ZVM) Use(ver string) error {
 
 func (z *ZVM) setBin(ver string) error {
 	version_path := filepath.Join(z.zvmBaseDir, "bin")
-	if _, err := os.Stat(version_path); os.IsExist(err) {
-		if err := os.Remove(filepath.Join(z.zvmBaseDir, "bin")); err != nil {
-			return err
-		}
+	if err := os.Remove(filepath.Join(z.zvmBaseDir, "bin")); err != nil {
+		log.Println(clr.Yellow(err))
 	}
 
-	if err := os.Symlink(version_path, "bin"); err != nil {
+	if err := os.Symlink(version_path, filepath.Join(z.zvmBaseDir, "bin")); err != nil {
 		return err
 	}
 	return nil

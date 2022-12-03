@@ -45,3 +45,10 @@ func (z *ZVM) loadVersionCache() error {
 	}
 	return nil
 }
+
+func (z ZVM) getVersion(version string) *zigVersion {
+	if version, ok := z.zigVersions[version]; ok {
+		return &version
+	}
+	return nil
+}

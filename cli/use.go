@@ -17,7 +17,7 @@ func (z *ZVM) Use(ver string) error {
 }
 
 func (z *ZVM) setBin(ver string) error {
-	version_path := filepath.Join(z.zvmBaseDir, "bin")
+	version_path := filepath.Join(z.zvmBaseDir, ver)
 	if err := os.Remove(filepath.Join(z.zvmBaseDir, "bin")); err != nil {
 		log.Println(clr.Yellow(err))
 	}

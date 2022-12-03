@@ -87,16 +87,27 @@ func (z *ZVM) Install(version string) error {
 	tarName := strings.TrimPrefix(*tarPath, "https://ziglang.org/builds/")
 	tarName = strings.TrimSuffix(tarName, ".tar.xz")
 	if err := os.Rename(filepath.Join(zvm, tarName), filepath.Join(zvm, version)); err != nil {
-		log.Fatalln(clr.Yellow(err))
-	}
-
-	if _, err := os.Stat(filepath.Join(zvm, "bin")); os.IsExist(err) {
-		if err := os.Remove(filepath.Join(zvm, "bin")); err != nil {
-			log.Fatal(err)
+		if _, err := os.Stat(filepath.Join(zvm, version)); os.IsExist(err) {
+			if err := os.Remove(filepath.Join(zvm, version)); err != nil {
+				log.Fatalln(clr.Red(err))
+			} else {
+				if err := os.Rename(filepath.Join(zvm, tarName), filepath.Join(zvm, version)); err != nil {
+					log.Fatalln(clr.Yellow(err))
+				}
+			}
 		}
 	}
-	// return nil
-	if err := os.Symlink(version, filepath.Join(zvm, "bin")); err != nil {
+
+	// This removes the extra download
+	if err := os.RemoveAll(filepath.Join(zvm, tarName)); err != nil {
+		log.Println(clr.Red(err))
+	}
+
+	if err := os.Remove(filepath.Join(zvm, "bin")); err != nil {
+		log.Println(clr.Yellow(err))
+	}
+
+	if err := os.Symlink(filepath.Join(zvm, version), filepath.Join(zvm, "bin")); err != nil {
 		log.Fatal(clr.Red(err))
 	}
 

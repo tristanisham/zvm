@@ -17,12 +17,7 @@ import (
 )
 
 func (z *ZVM) Install(version string) error {
-	// homedir, err := os.UserHomeDir()
-	// if err != nil {
-	// 	homedir = "~"
-	// }
-	// zvm := filepath.Join(homedir, ".zvm")
-	zvm := "./.zvm"
+	zvm := z.zvmBaseDir
 	os.Mkdir(zvm, 0755)
 
 	req, err := http.NewRequest("GET", "https://ziglang.org/download/index.json", nil)
@@ -96,9 +91,9 @@ func (z *ZVM) Install(version string) error {
 	}
 
 	if _, err := os.Stat(filepath.Join(zvm, "bin")); os.IsExist(err) {
-	if err := os.Remove(filepath.Join(zvm, "bin")); err != nil {
-		log.Fatal(err)
-	}
+		if err := os.Remove(filepath.Join(zvm, "bin")); err != nil {
+			log.Fatal(err)
+		}
 	}
 	// return nil
 	if err := os.Symlink(version, filepath.Join(zvm, "bin")); err != nil {

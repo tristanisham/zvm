@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"os"
 	"zvm/cli"
@@ -23,7 +22,6 @@ func main() {
 				if err := zvm.Use(args[i+1]); err != nil {
 					log.Fatal(err)
 				}
-				fmt.Println(*zvm)
 			}
 		}
 	}

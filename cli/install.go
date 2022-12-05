@@ -133,15 +133,20 @@ func getTarPath(version string, data *map[string]map[string]any) (*string, error
 }
 
 func zigStyleSysInfo() (string, string) {
-	var arch string
-	switch runtime.GOARCH {
+    arch := runtime.GOARCH
+    goos := runtime.GOOS
+
+	switch arch {
 	case "amd64":
 		arch = "x86_64"
-	default:
-		arch = runtime.GOARCH
 	}
 
-	return arch, runtime.GOOS
+    switch goos {
+    case "darwin":
+        goos = "macos"
+    }
+
+	return arch, goos
 }
 
 func extractTarXZ(bundle, out string) error {

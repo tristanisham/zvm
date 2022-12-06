@@ -5,6 +5,9 @@ large feature roadmap, Zig is bound to continue changing. Breaking existing buil
 valid sytax, and introducing new features like a package manager. While this is great for developers, it also
 can lead to headaches when you need multiple versions of a language installed to compile your projects.
 
+### Why should I use ZVM
+`zvm` is a widly supported static binary under a permissive license. Unlike other tools, there are no local dependencies besides `tar` and it supports a much wider install-base than other tools. Whether you're on Windows, MacOS, Linux, or a flavor of BSD adn Plan 9 zvm will let you install Zig.
+
 ## Contributing and Notice
 `zvm` is pre-alpha software, and makes no guarentees about its stability until at least v0.1.0. However, the program is under constant development, and the author is very willing to work with contributors. If you have any issues, ideas, or contributions you'd like to suggest create a GitHub issue. 
 

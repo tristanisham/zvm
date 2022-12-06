@@ -25,7 +25,7 @@ func (z *ZVM) Install(version string) error {
 		return err
 	}
 
-	req.Header.Set("User-Agent", "zvm (Zig Version Manager) 0.0.2")
+	req.Header.Set("User-Agent", "zvm (Zig Version Manager) v0.0.1-beta.4")
 	client := http.DefaultClient
 	resp, err := client.Do(req)
 	if err != nil {

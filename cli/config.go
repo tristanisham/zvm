@@ -47,8 +47,13 @@ func (z *ZVM) loadVersionCache() error {
 }
 
 func (z ZVM) getVersion(version string) *zigVersion {
+	if _, err := os.Stat(filepath.Join(z.zvmBaseDir, version)); os.IsNotExist(err) {
+		return nil
+	}
+
 	if version, ok := z.zigVersions[version]; ok {
 		return &version
 	}
+	
 	return nil
 }

@@ -10,17 +10,27 @@ const GOOS = [
     "solaris",
 ]
 
+console.time("Built zvm")
+
 for (const os of GOOS) {
     for (const ar of GOARCH) {
+        if (os == "solaris" && ar == "arm64" || os == "plan9" && ar == "arm64") continue;
         Deno.env.set("GOOS", os)
         Deno.env.set("GOARCH", ar)
+        console.time(`Build zvm: ${os}-${ar}`)
         await exec(`go build -o build/${os}-${ar}/zvm`)
+        console.timeEnd(`Build zvm: ${os}-${ar}`)
     }
 }
 
 Deno.chdir("build")
 for (const os of GOOS) {
     for (const ar of GOARCH) {
-        await exec(`tar -czvf ${os}-${ar}.tar.gz ${os}-${ar}`)
+        if (os == "solaris" && ar == "arm64" || os == "plan9" && ar == "arm64") continue;
+        console.time(`Compress zvm: ${os}-${ar}`)
+        await exec(`tar -czf ${os}-${ar}.tar.gz ${os}-${ar}`)
+        console.timeEnd(`Compress zvm: ${os}-${ar}`)
     }
 }
+
+console.timeEnd(`Built zvm`)

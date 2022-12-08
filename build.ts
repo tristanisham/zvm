@@ -1,4 +1,8 @@
 import { exec } from "https://deno.land/x/exec@0.0.5/mod.ts";
+// import { parse } from "https://deno.land/std@0.167.0/flags/mod.ts";
+
+// const args = parse(Deno.args)
+
 const GOARCH = [
     "amd64", "arm64"
 ];
@@ -34,3 +38,4 @@ for (const os of GOOS) {
 }
 
 console.timeEnd(`Built zvm`)
+

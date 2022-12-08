@@ -29,8 +29,13 @@ func main() {
 					log.Fatal(err)
 				}
 			}
+		case "clean":
+			fmt.Println(clr.Blue("Clean is a beta command, and may not be included in the next release."))
+			if err := zvm.Clean(); err != nil {
+				log.Fatal(clr.Red(err))
+			}
 		case "version", "--version", "-v":
-			fmt.Println("zvm v0.0.1-beta.1")
+			fmt.Println("zvm v0.0.1-beta.5")
 			return
 		case "help", "--help", "-h":
 			var help string

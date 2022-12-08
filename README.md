@@ -24,7 +24,7 @@ can lead to headaches when you need multiple versions of a language installed to
 ## Installation
 Just download one of the release binaries for your system. No external dependencies required. Just a static binary.
 
-Add `~/zvm/bin` to your path and `zvm` will automatically switch between versions of Zig before you.
+Add `~/.zvm/bin` to your path and `zvm` will automatically switch between versions of Zig for you.
 
 ### Community Package
 #### AUR

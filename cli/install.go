@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"archive/zip"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -25,7 +26,7 @@ func (z *ZVM) Install(version string) error {
 		return err
 	}
 
-	req.Header.Set("User-Agent", "zvm (Zig Version Manager) 0.0.2")
+	req.Header.Set("User-Agent", "zvm (Zig Version Manager) v0.0.1-beta.4")
 	client := http.DefaultClient
 	resp, err := client.Do(req)
 	if err != nil {
@@ -60,10 +61,18 @@ func (z *ZVM) Install(version string) error {
 	// _ = os.MkdirAll(filepath.Join(zvm, version), 0755)
 	// tarDownloadPath := filepath.Join(zvm, version, fmt.Sprintf("%s.tar.xz", version))
 
-	out, err := os.CreateTemp(zvm, "*.tar.xz")
+	var pathEnding string
+	if runtime.GOOS == "windows" {
+		pathEnding = "*.zip"
+	} else {
+		pathEnding = "*.tar.xz"
+	}
+
+	out, err := os.CreateTemp(zvm, pathEnding)
 	if err != nil {
 		return err
 	}
+
 	defer out.Close()
 	defer os.RemoveAll(out.Name())
 
@@ -81,11 +90,13 @@ func (z *ZVM) Install(version string) error {
 	// installedVersionPath := filepath.Join(zvm, version)
 	fmt.Println("Extracting bundle...")
 
-	if err := extractTarXZ(out.Name(), zvm); err != nil {
+	if err := ExtractBundle(out.Name(), zvm); err != nil {
 		log.Fatal(clr.Red(err))
 	}
 	tarName := strings.TrimPrefix(*tarPath, "https://ziglang.org/builds/")
+	tarName = strings.TrimPrefix(tarName, fmt.Sprintf("https://ziglang.org/download/%s/", version))
 	tarName = strings.TrimSuffix(tarName, ".tar.xz")
+	tarName = strings.TrimSuffix(tarName, ".zip")
 	if err := os.Rename(filepath.Join(zvm, tarName), filepath.Join(zvm, version)); err != nil {
 		if _, err := os.Stat(filepath.Join(zvm, version)); os.IsExist(err) {
 			if err := os.Remove(filepath.Join(zvm, version)); err != nil {
@@ -103,8 +114,8 @@ func (z *ZVM) Install(version string) error {
 		log.Println(clr.Red(err))
 	}
 
-	if err := os.Remove(filepath.Join(zvm, "bin")); err != nil {
-		log.Println(clr.Yellow(err))
+	if _, err := os.Lstat(filepath.Join(zvm, "bin")); err == nil {
+		os.Remove(filepath.Join(zvm, "bin"))
 	}
 
 	if err := os.Symlink(filepath.Join(zvm, version), filepath.Join(zvm, "bin")); err != nil {
@@ -133,24 +144,101 @@ func getTarPath(version string, data *map[string]map[string]any) (*string, error
 }
 
 func zigStyleSysInfo() (string, string) {
-	var arch string
-	switch runtime.GOARCH {
+	arch := runtime.GOARCH
+	goos := runtime.GOOS
+
+	switch arch {
 	case "amd64":
 		arch = "x86_64"
-	default:
-		arch = runtime.GOARCH
+	case "arm64":
+		arch = "aarch64"
 	}
 
-	return arch, runtime.GOOS
+	switch goos {
+	case "darwin":
+		goos = "macos"
+	}
+
+	return arch, goos
 }
 
-func extractTarXZ(bundle, out string) error {
-	tar := exec.Command("tar", "-xf", bundle, "-C", out)
+func ExtractBundle(bundle, out string) error {
+	if runtime.GOOS == "windows" {
+		return unzipSource(bundle, out)
+	}
+	return untarXZ(bundle, out)
+}
+
+func untarXZ(in, out string) error {
+	tar := exec.Command("tar", "-xf", in, "-C", out)
 	tar.Stdout = os.Stdout
 	tar.Stderr = os.Stderr
 	if err := tar.Run(); err != nil {
 		return err
 	}
+	return nil
+}
 
+func unzipSource(source, destination string) error {
+	// 1. Open the zip file
+	reader, err := zip.OpenReader(source)
+	if err != nil {
+		return err
+	}
+	defer reader.Close()
+
+	// 2. Get the absolute destination path
+	destination, err = filepath.Abs(destination)
+	if err != nil {
+		return err
+	}
+
+	// 3. Iterate over zip files inside the archive and unzip each of them
+	for _, f := range reader.File {
+		err := unzipFile(f, destination)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func unzipFile(f *zip.File, destination string) error {
+	// 4. Check if file paths are not vulnerable to Zip Slip
+	filePath := filepath.Join(destination, f.Name)
+	if !strings.HasPrefix(filePath, filepath.Clean(destination)+string(os.PathSeparator)) {
+		return fmt.Errorf("invalid file path: %s", filePath)
+	}
+
+	// 5. Create directory tree
+	if f.FileInfo().IsDir() {
+		if err := os.MkdirAll(filePath, os.ModePerm); err != nil {
+			return err
+		}
+		return nil
+	}
+
+	if err := os.MkdirAll(filepath.Dir(filePath), os.ModePerm); err != nil {
+		return err
+	}
+
+	// 6. Create a destination file for unzipped content
+	destinationFile, err := os.OpenFile(filePath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, f.Mode())
+	if err != nil {
+		return err
+	}
+	defer destinationFile.Close()
+
+	// 7. Unzip the content of a file and copy it to the destination file
+	zippedFile, err := f.Open()
+	if err != nil {
+		return err
+	}
+	defer zippedFile.Close()
+
+	if _, err := io.Copy(destinationFile, zippedFile); err != nil {
+		return err
+	}
 	return nil
 }

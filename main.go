@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strings"
 	"zvm/cli"
 
 	"github.com/tristanisham/clr"
@@ -16,18 +17,25 @@ func main() {
 		switch arg {
 		case "install", "i":
 			if len(args) > i+1 {
-				if err := zvm.Install(args[i+1]); err != nil {
+				version := strings.TrimPrefix(args[i+1], "v")
+				if err := zvm.Install(version); err != nil {
 					log.Fatal(err)
 				}
 			}
 		case "use":
 			if len(args) > i+1 {
-				if err := zvm.Use(args[i+1]); err != nil {
+				version := strings.TrimPrefix(args[i+1], "v")
+				if err := zvm.Use(version); err != nil {
 					log.Fatal(err)
 				}
 			}
+		case "clean":
+			fmt.Println(clr.Blue("Clean is a beta command, and may not be included in the next release."))
+			if err := zvm.Clean(); err != nil {
+				log.Fatal(clr.Red(err))
+			}
 		case "version", "--version", "-v":
-			fmt.Println("zvm v0.0.1-beta.1")
+			fmt.Println("zvm v0.0.1-beta.5")
 			return
 		case "help", "--help", "-h":
 			var help string

@@ -35,7 +35,7 @@ func main() {
 				log.Fatal(clr.Red(err))
 			}
 		case "version", "--version", "-v":
-			fmt.Println("zvm v0.0.1-beta.5")
+			fmt.Println("zvm v0.1.0")
 			return
 		case "help", "--help", "-h":
 			var help string

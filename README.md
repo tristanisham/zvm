@@ -17,9 +17,12 @@ can lead to headaches when you need multiple versions of a language installed to
 
 `zmv install <zig verion>`
 
-### Switching between versions
+### Switching Between Versions
 `zvm use <zig version>`
 <hr>
+
+### Cleaning Build Residue
+`zvm clean` removed build artifiacts from Zig installs. The ABI works on Linux and Windows, but it's only neccessart to run on Windows. This command is also temporary and may not be included in future releases if the underlying problem it solves gets rectified.
 
 ## Installation
 Just download one of the release binaries for your system. No external dependencies required. Just a static binary.

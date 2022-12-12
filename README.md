@@ -1,4 +1,4 @@
-![zvm_logo_256](https://user-images.githubusercontent.com/23124818/206966435-f5702a58-8b0e-4eb4-9dc4-b5e41ad27d8b.png)
+<center>![zvm_logo_256](https://user-images.githubusercontent.com/23124818/206966435-f5702a58-8b0e-4eb4-9dc4-b5e41ad27d8b.png)</center>
 # zvm (Zig Version Manager)
 
 zvm is a tool for managing your Zig installs. With std under heavy development and a 

@@ -29,6 +29,17 @@ func main() {
 					log.Fatal(err)
 				}
 			}
+		case "ls":
+			if err := zvm.ListVersions(); err != nil {
+				log.Fatal(err)
+			}
+		case "uninstall", "rm":
+			if len(args) > i+1 {
+				version := strings.TrimPrefix(args[i+1], "v")
+				if err := zvm.Uninstall(version); err != nil {
+					log.Fatal(err)
+				}
+			}
 		case "clean":
 			fmt.Println(clr.Blue("Clean is a beta command, and may not be included in the next release."))
 			if err := zvm.Clean(); err != nil {

@@ -17,7 +17,7 @@ func (z *ZVM) Clean() error {
 			continue
 		}
 
-		if filepath.Ext(entry.Name()) == ".zip" || filepath.Ext(entry.Name()) == ".tar.xz" {
+		if filepath.Ext(entry.Name()) == ".zip" || filepath.Ext(entry.Name()) == ".xz" {
 			if err := os.Remove(filepath.Join(z.zvmBaseDir, entry.Name())); err != nil {
 				return err
 			}

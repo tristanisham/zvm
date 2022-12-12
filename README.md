@@ -1,5 +1,5 @@
 <p align="center">
-  ![zvm_logo_256](https://user-images.githubusercontent.com/23124818/206966435-f5702a58-8b0e-4eb4-9dc4-b5e41ad27d8b.png)
+  <img src ="https://user-images.githubusercontent.com/23124818/206966435-f5702a58-8b0e-4eb4-9dc4-b5e41ad27d8b.png"/>
  </p
 # zvm (Zig Version Manager)
 

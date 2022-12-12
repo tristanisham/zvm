@@ -70,6 +70,8 @@ func main() {
 		case "--nocolor":
 			zvm.Settings.NoColor()
 		case "--color":
+			zvm.Settings.ToggleColor()
+		case "--yescolor":
 			zvm.Settings.YesColor()
 		}
 

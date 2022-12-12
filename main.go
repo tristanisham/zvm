@@ -41,7 +41,13 @@ func main() {
 				}
 			}
 		case "clean":
-			fmt.Println(clr.Blue("Clean is a beta command, and may not be included in the next release."))
+			msg := "Clean is a beta command, and may not be included in the next release."
+			if zvm.Settings.UseColor {
+				fmt.Println(clr.Blue(msg))
+			} else {
+				fmt.Println(msg)
+			}
+
 			if err := zvm.Clean(); err != nil {
 				if zvm.Settings.UseColor {
 					log.Fatal(clr.Red(err))

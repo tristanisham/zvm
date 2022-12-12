@@ -32,24 +32,47 @@ func main() {
 		case "clean":
 			fmt.Println(clr.Blue("Clean is a beta command, and may not be included in the next release."))
 			if err := zvm.Clean(); err != nil {
-				log.Fatal(clr.Red(err))
+				if zvm.Settings.UseColor {
+					log.Fatal(clr.Red(err))
+				} else {
+					log.Fatal(err)
+				}
 			}
 		case "version", "--version", "-v":
 			fmt.Println("zvm v0.1.0")
 			return
 		case "help", "--help", "-h":
 			var help string
-			help += clr.Blue("Install\n\t")
-			help += clr.White("zvm i/install ") + clr.Green("<zig version>\n")
-			help += clr.Blue("Use\n\t")
-			help += clr.White("zmv use ") + clr.Green("<zig version>\n")
-			help += clr.Blue("Version\n\t")
-			help += clr.White("version\n")
-			help += clr.Blue("Help\n\t")
-			help += clr.White("help\n")
-			fmt.Println(help)
-			return
+			if zvm.Settings.UseColor {
+				help += clr.Blue("Install\n\t")
+				help += clr.White("zvm i/install ") + clr.Green("<zig version>\n")
+				help += clr.Blue("Use\n\t")
+				help += clr.White("zmv use ") + clr.Green("<zig version>\n")
+				help += clr.Blue("Version\n\t")
+				help += clr.White("version\n")
+				help += clr.Blue("Help\n\t")
+				help += clr.White("help\n")
+				fmt.Println(help)
+				return
+			} else {
+				help += "Install\n\t"
+				help += "zvm i/install <zig version>\n"
+				help += "Use\n\t"
+				help += "zmv use <zig version>\n"
+				help += "Version\n\t"
+				help += "version\n"
+				help += "Help\n\t"
+				help += "help\n"
+				fmt.Println(help)
+				return
+			}
+			// Settings
+		case "--nocolor":
+			zvm.Settings.NoColor()
+		case "--color":
+			zvm.Settings.YesColor()
 		}
+
 	}
 
 }

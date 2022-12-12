@@ -76,9 +76,15 @@ func (z *ZVM) Install(version string) error {
 	defer out.Close()
 	defer os.RemoveAll(out.Name())
 
+	var clr_opt_ver_str string
+	if z.Settings.UseColor {
+		clr_opt_ver_str = clr.Green(version)
+	} else {
+		clr_opt_ver_str = version
+	}
 	pbar := progressbar.DefaultBytes(
 		tarReq.ContentLength,
-		fmt.Sprintf("Downloading %s:", clr.Green(version)),
+		fmt.Sprintf("Downloading %s:", clr_opt_ver_str),
 	)
 
 	_, err = io.Copy(io.MultiWriter(out, pbar), tarReq.Body)
@@ -91,7 +97,7 @@ func (z *ZVM) Install(version string) error {
 	fmt.Println("Extracting bundle...")
 
 	if err := ExtractBundle(out.Name(), zvm); err != nil {
-		log.Fatal(clr.Red(err))
+		log.Fatal(err)
 	}
 	tarName := strings.TrimPrefix(*tarPath, "https://ziglang.org/builds/")
 	tarName = strings.TrimPrefix(tarName, fmt.Sprintf("https://ziglang.org/download/%s/", version))
@@ -100,7 +106,7 @@ func (z *ZVM) Install(version string) error {
 	if err := os.Rename(filepath.Join(zvm, tarName), filepath.Join(zvm, version)); err != nil {
 		if _, err := os.Stat(filepath.Join(zvm, version)); os.IsExist(err) {
 			if err := os.Remove(filepath.Join(zvm, version)); err != nil {
-				log.Fatalln(clr.Red(err))
+				log.Fatalln(err)
 			} else {
 				if err := os.Rename(filepath.Join(zvm, tarName), filepath.Join(zvm, version)); err != nil {
 					log.Fatalln(clr.Yellow(err))
@@ -111,7 +117,7 @@ func (z *ZVM) Install(version string) error {
 
 	// This removes the extra download
 	if err := os.RemoveAll(filepath.Join(zvm, tarName)); err != nil {
-		log.Println(clr.Red(err))
+		log.Println(err)
 	}
 
 	if _, err := os.Lstat(filepath.Join(zvm, "bin")); err == nil {
@@ -119,7 +125,7 @@ func (z *ZVM) Install(version string) error {
 	}
 
 	if err := os.Symlink(filepath.Join(zvm, version), filepath.Join(zvm, "bin")); err != nil {
-		log.Fatal(clr.Red(err))
+		log.Fatal(err)
 	}
 
 	return nil

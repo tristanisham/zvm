@@ -1,7 +1,8 @@
 <p align="center">
   <img src ="https://user-images.githubusercontent.com/23124818/206966435-f5702a58-8b0e-4eb4-9dc4-b5e41ad27d8b.png"/>
  </p
-# zvm (Zig Version Manager)
+  
+<h1 align="center">zvm (Zig Version Manager)</h1>
 
 zvm is a tool for managing your Zig installs. With std under heavy development and a 
 large feature roadmap, Zig is bound to continue changing. Breaking existing builds, updating 

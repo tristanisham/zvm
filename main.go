@@ -67,11 +67,11 @@ func main() {
 				return
 			}
 			// Settings
-		case "--nocolor":
+		case "--nocolor", "--nocolour":
 			zvm.Settings.NoColor()
-		case "--color":
+		case "--color", "--colour":
 			zvm.Settings.ToggleColor()
-		case "--yescolor":
+		case "--yescolor", "--yescolour":
 			zvm.Settings.YesColor()
 		}
 

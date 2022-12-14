@@ -61,6 +61,7 @@ type zigVersionMap = map[string]zigVersion
 // A representation of individual Zig versions
 type zigVersion = map[string]any
 
+
 func (z *ZVM) loadVersionCache() error {
 	ver, err := os.ReadFile(filepath.Join(z.zvmBaseDir, "versions.json"))
 	if err != nil {
@@ -97,3 +98,4 @@ func (z *ZVM) loadSettings() error {
 
 	return json.Unmarshal(data, &z.Settings)
 }
+

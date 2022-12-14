@@ -2,6 +2,8 @@ package cli
 
 import (
 	"archive/zip"
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -26,7 +28,7 @@ func (z *ZVM) Install(version string) error {
 		return err
 	}
 
-	req.Header.Set("User-Agent", "zvm (Zig Version Manager) v0.0.1-beta.4")
+	req.Header.Set("User-Agent", "zvm (Zig Version Manager) v0.1.4")
 	client := http.DefaultClient
 	resp, err := client.Do(req)
 	if err != nil {
@@ -87,11 +89,23 @@ func (z *ZVM) Install(version string) error {
 		fmt.Sprintf("Downloading %s:", clr_opt_ver_str),
 	)
 
-	_, err = io.Copy(io.MultiWriter(out, pbar), tarReq.Body)
+	hash := sha256.New()
+
+	_, err = io.Copy(io.MultiWriter(out, hash, pbar), tarReq.Body)
 	if err != nil {
 		return err
 	}
 
+	shasum, err := getVersionShasum(version, &rawVersionStructure)
+	if err != nil {
+		return err
+	}
+
+	fmt.Println("Checking shasum...")
+	if hex.EncodeToString(hash.Sum(nil)) != *shasum {
+		return fmt.Errorf("shasum for %v does not match expected value", version)
+	}
+	fmt.Println("Shasum's match! 🎉")
 	// The base directory where all Zig files for the appropriate version are installed
 	// installedVersionPath := filepath.Join(zvm, version)
 	fmt.Println("Extracting bundle...")
@@ -138,6 +152,24 @@ func getTarPath(version string, data *map[string]map[string]any) (*string, error
 			if base, ok := systemInfo.(map[string]any); ok {
 				if tar, ok := base["tarball"].(string); ok {
 					return &tar, nil
+				}
+			} else {
+				return nil, fmt.Errorf("unable to find necessary download path")
+			}
+		} else {
+			return nil, fmt.Errorf("invalid/unsupported system: ARCH: %s OS: %s", arch, ops)
+		}
+	}
+	return nil, fmt.Errorf("invalid Zig version: %s", version)
+}
+
+func getVersionShasum(version string, data *map[string]map[string]any) (*string, error) {
+	if info, ok := (*data)[version]; ok {
+		arch, ops := zigStyleSysInfo()
+		if systemInfo, ok := info[fmt.Sprintf("%s-%s", arch, ops)]; ok {
+			if base, ok := systemInfo.(map[string]any); ok {
+				if shasum, ok := base["shasum"].(string); ok {
+					return &shasum, nil
 				}
 			} else {
 				return nil, fmt.Errorf("unable to find necessary download path")

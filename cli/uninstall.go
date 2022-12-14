@@ -13,7 +13,7 @@ func (z *ZVM) Uninstall(ver string) error {
 		if err := os.RemoveAll(version); err != nil {
 			return err
 		}
-		fmt.Printf("Uninstalled %s.\nRun `zvm ls` to view installed versions.\n", ver)
+		fmt.Printf("✔ Uninstalled %s.\nRun `zvm ls` to view installed versions.\n", ver)
 		return nil
 	}
 	fmt.Printf("Version: %s not found locally.\nHere are your installed versions:\n", ver)

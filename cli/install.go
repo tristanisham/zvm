@@ -105,7 +105,7 @@ func (z *ZVM) Install(version string) error {
 	if hex.EncodeToString(hash.Sum(nil)) != *shasum {
 		return fmt.Errorf("shasum for %v does not match expected value", version)
 	}
-	fmt.Println("Shasum's match! 🎉")
+	fmt.Println("Shasums match! 🎉")
 	// The base directory where all Zig files for the appropriate version are installed
 	// installedVersionPath := filepath.Join(zvm, version)
 	fmt.Println("Extracting bundle...")

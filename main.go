@@ -56,7 +56,7 @@ func main() {
 				}
 			}
 		case "version", "--version", "-v":
-			fmt.Println("zvm v0.1.4")
+			fmt.Println("zvm v0.1.5")
 			return
 		case "help", "--help", "-h":
 			var help string

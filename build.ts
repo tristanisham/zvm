@@ -34,6 +34,13 @@ for (const os of GOOS) {
         if (os == "solaris" && ar == "arm64" || os == "plan9" && ar == "arm64") continue;
         const zvm_str = `zvm-${os}-${ar}`
 
+        if (os == "windows") {
+            console.time(`Compress zvm: ${zvm_str}`)
+            await exec(`zip ${zvm_str}.zip ${zvm_str}`)
+            console.timeEnd(`Compress zvm: ${zvm_str}`)
+            continue;
+        }
+
         console.time(`Compress zvm: ${zvm_str}`)
         await exec(`tar -czf ${zvm_str}.tar.gz ${zvm_str}`)
         console.timeEnd(`Compress zvm: ${zvm_str}`)

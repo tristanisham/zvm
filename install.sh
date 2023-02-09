@@ -56,4 +56,5 @@ fi
 echo
 echo "Append the following to your $HOME/.profile or $HOME/.bash_rc"
 echo
-echo -e "export PATH=\$PATH:\$HOME/.zvm"
+echo -e "\texport PATH=\$PATH:\$HOME/.zvm/bin"
+echo

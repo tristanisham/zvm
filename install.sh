@@ -21,13 +21,11 @@ install_latest() {
         wget -q --show-progress --max-redirect 5 -O zvm.tar.gz "https://github.com/tristanisham/zvm/releases/latest/download/$1"
         tar -xf zvm.tar.gz
         rm "zvm.tar.gz"
-        chmod +x "$1/zvm"
     elif [ $OS = "Linux" ]; then
      # Do something under GNU/Linux platform
         wget -q --show-progress --max-redirect 5 -O zvm.tar.gz "https://github.com/tristanisham/zvm/releases/latest/download/$1"
         tar -xf zvm.tar.gz
         rm "zvm.tar.gz"
-        chmod +x "$1/zvm"
     elif [ $OS = "MINGW32_NT" ]; then
     # Do something under 32 bits Windows NT platform
         curl "https://github.com/tristanisham/zvm/releases/latest/download/$($1) -o zvm.zip"

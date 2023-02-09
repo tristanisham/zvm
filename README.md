@@ -7,6 +7,11 @@ large feature roadmap, Zig is bound to continue changing. Breaking existing buil
 valid sytax, and introducing new features like a package manager. While this is great for developers, it also
 can lead to headaches when you need multiple versions of a language installed to compile your projects.
 
+### Installing ZVM
+```sh
+curl https://raw.githubusercontent.com/tristanisham/zvm/master/install.sh | bash
+```
+
 ### Why should I use ZVM
 `zvm` is a widly supported static binary under a permissive license. Unlike other tools, there are no local dependencies besides `tar`. It doesn't require linking to any libraries, and `zvm` supports a much wider install-base than any other Zig version manager. Whether you're on Windows, MacOS, Linux, a flavor of BSD, or Plan 9 `zvm` will let you install, switch between, and run multiple versions of Zig.
 

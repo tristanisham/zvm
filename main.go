@@ -8,7 +8,11 @@ import (
 	"zvm/cli"
 
 	"github.com/tristanisham/clr"
+	_ "embed"
 )
+
+//go:embed help.txt
+var helpTxt string
 
 func main() {
 	zvm := cli.Initialize()
@@ -56,33 +60,11 @@ func main() {
 				}
 			}
 		case "version", "--version", "-v":
-			fmt.Println("zvm v0.1.5")
+			fmt.Println("zvm v0.1.6")
 			return
 		case "help", "--help", "-h":
-			var help string
-			if zvm.Settings.UseColor {
-				help += clr.Blue("Install\n\t")
-				help += clr.White("zvm i/install ") + clr.Green("<zig version>\n")
-				help += clr.Blue("Use\n\t")
-				help += clr.White("zmv use ") + clr.Green("<zig version>\n")
-				help += clr.Blue("Version\n\t")
-				help += clr.White("version\n")
-				help += clr.Blue("Help\n\t")
-				help += clr.White("help\n")
-				fmt.Println(help)
-				return
-			} else {
-				help += "Install\n\t"
-				help += "zvm i/install <zig version>\n"
-				help += "Use\n\t"
-				help += "zmv use <zig version>\n"
-				help += "Version\n\t"
-				help += "version\n"
-				help += "Help\n\t"
-				help += "help\n"
-				fmt.Println(help)
-				return
-			}
+			//zvm.Settings.UseColor 
+			fmt.Println(helpTxt)
 			// Settings
 		case "--nocolor", "--nocolour":
 			zvm.Settings.NoColor()

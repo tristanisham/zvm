@@ -208,7 +208,7 @@ func ExtractBundle(bundle, out string) error {
 }
 
 func untarXZ(in, out string) error {
-	tar := exec.Command("tar", "-xf", in, "-C", out)
+	tar := exec.Command("tar", "-xmf", in, "-C", out)
 	tar.Stdout = os.Stdout
 	tar.Stderr = os.Stderr
 	if err := tar.Run(); err != nil {

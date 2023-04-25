@@ -3,26 +3,29 @@ zvm (Zig Version Manager) v0.1.6
 
 install, i <version>
   Use `install` or `i` to download a specific version of Zig.
-  To install the latest version, use "master"
+  To install the latest version, use "master".
 
 use <version>
   Use `use` to switch between versions of Zig.
 
 ls
   Use `ls` to list all installed version of Zig.
+
 uninstall, rm <version>
-  Use `uninstall` or `rm` to remove an uninstalled version from your system
+  Use `uninstall` or `rm` to remove an uninstalled version from your system.
 
 clean
   Use `clean` to remove build artifacts (Good if you're on Windows).
 
 version, --version, -v
-  Prints the version of ZVM you have installed
+  Prints the version of ZVM you have installed.
 
 help, --help, -h
-  Prints this message
+  Prints this message.
 
---nocolor, --nocolour | Turns off color
---color, --colour     | Toggles color
+------------- Flags -----------------
 
---yescolor, --yescolour | Turns on color
+--nocolor, --nocolour | Turns off color.
+--color, --colour     | Toggles color.
+
+--yescolor, --yescolour | Turns on color.

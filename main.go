@@ -17,6 +17,12 @@ var helpTxt string
 func main() {
 	zvm := cli.Initialize()
 	args := os.Args[1:]
+
+	if len(args) == 0 {
+		fmt.Println(helpTxt)
+		os.Exit(0)
+	}
+	
 	for i, arg := range args {
 		switch arg {
 		case "install", "i":
@@ -65,6 +71,7 @@ func main() {
 		case "help", "--help", "-h":
 			//zvm.Settings.UseColor 
 			fmt.Println(helpTxt)
+			return
 			// Settings
 		case "--nocolor", "--nocolour":
 			zvm.Settings.NoColor()

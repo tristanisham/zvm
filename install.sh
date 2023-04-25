@@ -18,14 +18,14 @@ install_latest() {
     echo -e "Installing $1 in $(pwd)/zvm"
     if [ "$(uname)" = "Darwin" ]; then
     # Do something under Mac OS X platform
-        wget -q --show-progress --max-redirect 5 -O zvm.tar.gz "https://github.com/tristanisham/zvm/releases/latest/download/$1"
-        tar -xf zvm.tar.gz
-        rm "zvm.tar.gz"
+        wget -q --show-progress --max-redirect 5 -O zvm.tar "https://github.com/tristanisham/zvm/releases/latest/download/$1"
+        tar -xf zvm.tar
+        rm "zvm.tar"
     elif [ $OS = "Linux" ]; then
      # Do something under GNU/Linux platform
-        wget -q --show-progress --max-redirect 5 -O zvm.tar.gz "https://github.com/tristanisham/zvm/releases/latest/download/$1"
-        tar -xf zvm.tar.gz
-        rm "zvm.tar.gz"
+        wget -q --show-progress --max-redirect 5 -O zvm.tar "https://github.com/tristanisham/zvm/releases/latest/download/$1"
+        tar -xf zvm.tar
+        rm "zvm.tar"
     elif [ $OS = "MINGW32_NT" ]; then
     # Do something under 32 bits Windows NT platform
         curl "https://github.com/tristanisham/zvm/releases/latest/download/$($1) -o zvm.zip"
@@ -41,10 +41,10 @@ install_latest() {
 
 if [ "$(uname)" = "Darwin" ]; then
     # Do something under Mac OS X platform
-    install_latest "zvm-darwin-$ARCH.tar.gz"
+    install_latest "zvm-darwin-$ARCH.tar"
 elif [ $OS = "Linux" ]; then
      # Do something under GNU/Linux platform
-    install_latest "zvm-linux-$ARCH.tar.gz"
+    install_latest "zvm-linux-$ARCH.tar"
 elif [ $OS = "MINGW32_NT" ]; then
     # Do something under 32 bits Windows NT platform
     install_latest "zvm-windows-$ARCH.zip"

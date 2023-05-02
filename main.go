@@ -79,6 +79,9 @@ func main() {
 			zvm.Settings.ToggleColor()
 		case "--yescolor", "--yescolour":
 			zvm.Settings.YesColor()
+		default:
+			fmt.Printf("ERROR: Invalid argument %s. Please check out --help.\n", arg)
+			os.Exit(1)
 		}
 
 	}

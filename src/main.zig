@@ -11,10 +11,13 @@ pub fn main() !void {
 
     const args = try std.process.argsAlloc(allocator);
     defer std.process.argsFree(allocator, args);
-    
+
+    if (args.len == 1) {
+        cli.Args.printHelp();
+    }
+
     //TODO: Consider switching to while loop for greater control.
-    for (args) |arg, i| {
-        if (i == 0) continue;
+    for (args[1..]) |arg, i| {
         switch (std.meta.stringToEnum(cli.Args, arg) orelse continue) {
             .install, .i => {
                 if (args.len > i + 1) {

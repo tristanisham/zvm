@@ -87,6 +87,6 @@ pub const Args = enum {
     help,
 
     pub fn printHelp() void {
-        std.debug.print("Hi", .{});
+        std.debug.print("Hi\n", .{});
     }
 };

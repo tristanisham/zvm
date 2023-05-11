@@ -33,6 +33,7 @@ func main() {
 					log.Fatal(err)
 				}
 			}
+			return
 		case "use":
 			if len(args) > i+1 {
 				version := strings.TrimPrefix(args[i+1], "v")
@@ -40,6 +41,8 @@ func main() {
 					log.Fatal(err)
 				}
 			}
+			return
+
 		case "ls":
 			if err := zvm.ListVersions(); err != nil {
 				log.Fatal(err)
@@ -51,6 +54,8 @@ func main() {
 					log.Fatal(err)
 				}
 			}
+			return
+			
 		case "clean":
 			msg := "Clean is a beta command, and may not be included in the next release."
 			if zvm.Settings.UseColor {
@@ -66,6 +71,8 @@ func main() {
 					log.Fatal(err)
 				}
 			}
+			return
+
 		case "version", "--version", "-v":
 			fmt.Println(VERSION)
 			return

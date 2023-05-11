@@ -40,9 +40,7 @@ func (z *ZVM) Install(version string) error {
 	if err != nil {
 		return err
 	}
-	if err := os.WriteFile(filepath.Join(zvm, "versions.json"), versions, 0755); err != nil {
-		return err
-	}
+	
 
 	rawVersionStructure := make(zigVersionMap)
 	if err := json.Unmarshal(versions, &rawVersionStructure); err != nil {

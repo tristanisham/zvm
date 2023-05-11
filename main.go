@@ -13,6 +13,7 @@ import (
 
 //go:embed help.txt
 var helpTxt string
+var VERSION = "v0.1.7"
 
 func main() {
 	zvm := cli.Initialize()
@@ -66,7 +67,7 @@ func main() {
 				}
 			}
 		case "version", "--version", "-v":
-			fmt.Println("zvm v0.1.6")
+			fmt.Println(VERSION)
 			return
 		case "help", "--help", "-h":
 			//zvm.Settings.UseColor 
@@ -79,6 +80,9 @@ func main() {
 			zvm.Settings.ToggleColor()
 		case "--yescolor", "--yescolour":
 			zvm.Settings.YesColor()
+		default:
+			fmt.Printf("ERROR: Invalid argument %s. Please check out --help.\n", arg)
+			os.Exit(1)
 		}
 
 	}

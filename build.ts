@@ -1,3 +1,4 @@
+#!/usr/bin/env -S deno run -A
 import { exec } from "https://deno.land/x/exec@0.0.5/mod.ts";
 import * as zip from "https://deno.land/x/zipjs@v2.7.6/index.js";
 import { Tar } from "https://deno.land/std@0.184.0/archive/mod.ts";

@@ -17,7 +17,7 @@ pub fn main() !void {
     }
 
     //TODO: Consider switching to while loop for greater control.
-    for (args[1..]) |arg, i| {
+    for (args[1..], 1..) |arg, i| {
         switch (std.meta.stringToEnum(cli.Args, arg) orelse continue) {
             .install, .i => {
                 if (args.len > i + 1) {

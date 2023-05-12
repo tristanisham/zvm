@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"io"
 	"net/http"
+	"os"
+	"path/filepath"
 )
 
 const VERSION = "v0.2.0"
@@ -25,6 +27,10 @@ func (z *ZVM) fetchVersionMap() (zigVersionMap, error) {
 
 	versions, err := io.ReadAll(resp.Body)
 	if err != nil {
+		return nil, err
+	}
+
+	if err := os.WriteFile(filepath.Join(z.zvmBaseDir, "versions.json"), versions, 0755); err != nil {
 		return nil, err
 	}
 

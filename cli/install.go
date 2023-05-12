@@ -23,10 +23,13 @@ func (z *ZVM) Install(version string) error {
 
 	os.Mkdir(z.zvmBaseDir, 0755)
 
+
 	rawVersionStructure, err := z.fetchVersionMap()
 	if err != nil {
 		return err
 	}
+
+	
 
 	// masterVersion := loadMasterVersion(&rawVersionStructure)
 

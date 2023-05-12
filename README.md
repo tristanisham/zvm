@@ -25,7 +25,7 @@ If you're on Windows, please grab the
 `zvm` on the [Arch AUR](https://aur.archlinux.org/packages/zvm) is a community
 maintained package, and may be out of date.
 
-# Why should I use ZVM
+# Why should I use ZVM?
 
 While Zig is still pre-1.0 if you're going to stay up-to-date with the master
 branch, you're going to be downloading Zig quite often. You could do it

@@ -2,18 +2,19 @@ package main
 
 import (
 	"fmt"
+	"html/template"
 	"log"
 	"os"
 	"strings"
 	"zvm/cli"
 
-	"github.com/tristanisham/clr"
 	_ "embed"
+
+	"github.com/tristanisham/clr"
 )
 
 //go:embed help.txt
 var helpTxt string
-var VERSION = "v0.1.7"
 
 func main() {
 	zvm := cli.Initialize()
@@ -23,7 +24,7 @@ func main() {
 		fmt.Println(helpTxt)
 		os.Exit(0)
 	}
-	
+
 	for i, arg := range args {
 		switch arg {
 		case "install", "i":
@@ -55,7 +56,7 @@ func main() {
 				}
 			}
 			return
-			
+
 		case "clean":
 			msg := "Clean is a beta command, and may not be included in the next release."
 			if zvm.Settings.UseColor {
@@ -74,11 +75,23 @@ func main() {
 			return
 
 		case "version", "--version", "-v":
-			fmt.Println(VERSION)
+			fmt.Println(cli.VERSION)
 			return
 		case "help", "--help", "-h":
-			//zvm.Settings.UseColor 
-			fmt.Println(helpTxt)
+			//zvm.Settings.UseColor
+			helpTmpl, err := template.New("help").Parse(helpTxt)
+			if err != nil {
+				fmt.Printf("Sorry! There was a rendering error (%q). The version is %s\n", err, cli.VERSION)
+				fmt.Println(helpTxt)
+				return
+			}
+
+			if err := helpTmpl.Execute(os.Stdout, map[string]string{"Version": cli.VERSION}); err != nil {
+				fmt.Printf("Sorry! There was a rendering error (%q). The version is %s\n", err, cli.VERSION)
+				fmt.Println(helpTxt)
+				return
+			}
+
 			return
 			// Settings
 		case "--nocolor", "--nocolour":

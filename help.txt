@@ -1,4 +1,4 @@
-zvm (Zig Version Manager) v0.1.6
+zvm (Zig Version Manager) {{.Version}}
 --------------------------------
 
 install, i <version>
@@ -29,3 +29,5 @@ help, --help, -h
 --color, --colour     | Toggles color.
 
 --yescolor, --yescolour | Turns on color.
+
+Looking for more help? https://github.com/tristanisham/zvm

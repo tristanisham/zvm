@@ -58,6 +58,15 @@ type ZVM struct {
 // A representaiton of the offical json schema for Zig versions
 type zigVersionMap = map[string]zigVersion
 
+// LoadMasterVersion takes a zigVersionMap and returns the master disto's version if it's present. 
+// If it's not, this function returns an empty string.
+func LoadMasterVersion(zigMap *zigVersionMap) string {
+	if ver, ok := (*zigMap)["master"]["version"].(string); ok {
+		return ver
+	}
+	return ""
+}
+
 // A representation of individual Zig versions
 type zigVersion = map[string]any
 

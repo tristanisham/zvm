@@ -4,10 +4,8 @@ import (
 	"archive/zip"
 	"crypto/sha256"
 	"encoding/hex"
-	"encoding/json"
 	"fmt"
 	"io"
-	"log"
 	"net/http"
 	"os"
 	"os/exec"
@@ -15,37 +13,22 @@ import (
 	"runtime"
 	"strings"
 
+	"github.com/charmbracelet/log"
+
 	"github.com/schollz/progressbar/v3"
 	"github.com/tristanisham/clr"
 )
 
 func (z *ZVM) Install(version string) error {
-	zvm := z.zvmBaseDir
-	os.Mkdir(zvm, 0755)
 
-	req, err := http.NewRequest("GET", "https://ziglang.org/download/index.json", nil)
+	os.Mkdir(z.zvmBaseDir, 0755)
+
+	rawVersionStructure, err := z.fetchVersionMap()
 	if err != nil {
 		return err
 	}
 
-	req.Header.Set("User-Agent", "zvm (Zig Version Manager) v0.1.6")
-	client := http.DefaultClient
-	resp, err := client.Do(req)
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
-
-	versions, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return err
-	}
-
-	rawVersionStructure := make(zigVersionMap)
-	if err := json.Unmarshal(versions, &rawVersionStructure); err != nil {
-		return err
-	}
-	z.zigVersions = rawVersionStructure
+	// masterVersion := loadMasterVersion(&rawVersionStructure)
 
 	tarPath, err := getTarPath(version, &rawVersionStructure)
 	if err != nil {
@@ -57,8 +40,8 @@ func (z *ZVM) Install(version string) error {
 		return err
 	}
 	defer tarReq.Body.Close()
-	// _ = os.MkdirAll(filepath.Join(zvm, version), 0755)
-	// tarDownloadPath := filepath.Join(zvm, version, fmt.Sprintf("%s.tar.xz", version))
+	// _ = os.MkdirAll(filepath.Join(z.zvmBaseDir, version), 0755)
+	// tarDownloadPath := filepath.Join(z.zvmBaseDir, version, fmt.Sprintf("%s.tar.xz", version))
 
 	var pathEnding string
 	if runtime.GOOS == "windows" {
@@ -67,13 +50,13 @@ func (z *ZVM) Install(version string) error {
 		pathEnding = "*.tar.xz"
 	}
 
-	out, err := os.CreateTemp(zvm, pathEnding)
+	tempDir, err := os.CreateTemp(z.zvmBaseDir, pathEnding)
 	if err != nil {
 		return err
 	}
 
-	defer out.Close()
-	defer os.RemoveAll(out.Name())
+	defer tempDir.Close()
+	defer os.RemoveAll(tempDir.Name())
 
 	var clr_opt_ver_str string
 	if z.Settings.UseColor {
@@ -88,7 +71,7 @@ func (z *ZVM) Install(version string) error {
 
 	hash := sha256.New()
 
-	_, err = io.Copy(io.MultiWriter(out, hash, pbar), tarReq.Body)
+	_, err = io.Copy(io.MultiWriter(tempDir, hash, pbar), tarReq.Body)
 	if err != nil {
 		return err
 	}
@@ -104,38 +87,46 @@ func (z *ZVM) Install(version string) error {
 	}
 	fmt.Println("Shasums match! 🎉")
 	// The base directory where all Zig files for the appropriate version are installed
-	// installedVersionPath := filepath.Join(zvm, version)
+	// installedVersionPath := filepath.Join(z.zvmBaseDir, version)
 	fmt.Println("Extracting bundle...")
 
-	if err := ExtractBundle(out.Name(), zvm); err != nil {
+	if err := ExtractBundle(tempDir.Name(), z.zvmBaseDir); err != nil {
 		log.Fatal(err)
 	}
 	tarName := strings.TrimPrefix(*tarPath, "https://ziglang.org/builds/")
 	tarName = strings.TrimPrefix(tarName, fmt.Sprintf("https://ziglang.org/download/%s/", version))
 	tarName = strings.TrimSuffix(tarName, ".tar.xz")
 	tarName = strings.TrimSuffix(tarName, ".zip")
-	if err := os.Rename(filepath.Join(zvm, tarName), filepath.Join(zvm, version)); err != nil {
-		if _, err := os.Stat(filepath.Join(zvm, version)); os.IsExist(err) {
-			if err := os.Remove(filepath.Join(zvm, version)); err != nil {
-				log.Fatalln(err)
+
+	// var finalInstallFolderName string = version
+
+	// if version == "master" {
+
+	// }
+
+	if err := os.Rename(filepath.Join(z.zvmBaseDir, tarName), filepath.Join(z.zvmBaseDir, version)); err != nil {
+		if _, err := os.Stat(filepath.Join(z.zvmBaseDir, version)); err == nil {
+			// Room here to make the backup file.
+			if err := os.RemoveAll(filepath.Join(z.zvmBaseDir, version)); err != nil {
+				log.Fatal(err)
 			} else {
-				if err := os.Rename(filepath.Join(zvm, tarName), filepath.Join(zvm, version)); err != nil {
-					log.Fatalln(clr.Yellow(err))
+				if err := os.Rename(filepath.Join(z.zvmBaseDir, tarName), filepath.Join(z.zvmBaseDir, version)); err != nil {
+					log.Fatal(clr.Yellow(err))
 				}
 			}
 		}
 	}
 
 	// This removes the extra download
-	if err := os.RemoveAll(filepath.Join(zvm, tarName)); err != nil {
-		log.Println(err)
+	if err := os.RemoveAll(filepath.Join(z.zvmBaseDir, tarName)); err != nil {
+		log.Warn(err)
 	}
 
-	if _, err := os.Lstat(filepath.Join(zvm, "bin")); err == nil {
-		os.Remove(filepath.Join(zvm, "bin"))
+	if _, err := os.Lstat(filepath.Join(z.zvmBaseDir, "bin")); err == nil {
+		os.Remove(filepath.Join(z.zvmBaseDir, "bin"))
 	}
 
-	if err := os.Symlink(filepath.Join(zvm, version), filepath.Join(zvm, "bin")); err != nil {
+	if err := os.Symlink(filepath.Join(z.zvmBaseDir, version), filepath.Join(z.zvmBaseDir, "bin")); err != nil {
 		log.Fatal(err)
 	}
 

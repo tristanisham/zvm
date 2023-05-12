@@ -1,6 +1,5 @@
 #!/usr/bin/env -S deno run -A
 import { exec } from "https://deno.land/x/exec@0.0.5/mod.ts";
-import * as zip from "https://deno.land/x/zipjs@v2.7.6/index.js";
 import { Tar } from "https://deno.land/std@0.184.0/archive/mod.ts";
 import { copy } from "https://deno.land/std@0.184.0/streams/copy.ts";
 
@@ -28,7 +27,7 @@ for (const os of GOOS) {
         // Deno.env.set("CGO_ENABLED", "1")
         const zvm_str = `zvm-${os}-${ar}`
         console.time(`Build zvm: ${zvm_str}`)
-        await exec(`go build -o build/${zvm_str}/zvm`)
+        await exec(`go build -o build/${zvm_str}/zvm${(os == "windows" ? ".exe" : "")}`)
         console.timeEnd(`Build zvm: ${zvm_str}`)
     }
 }
@@ -41,14 +40,15 @@ for (const os of GOOS) {
 
         if (os == "windows") {
             console.time(`Compress zvm: ${zvm_str}`)
-            const zipWriter = new zip.BlobWriter();
-            const output = new zip.TextReader(await Deno.readTextFile(`${zvm_str}/zvm`))
-            const zipper = new zip.ZipWriter(zipWriter);
-            await zipper.add("zvm", output)
+            const zip = new Deno.Command(`zip`, {
+                args: [`${zvm_str}.zip`, `${zvm_str}/zvm.exe`],
+                stdin: "piped",
+                stdout: "piped",
+            });
+            zip.spawn();
             console.timeEnd(`Compress zvm: ${zvm_str}`)
             continue;
         }
-
         const tar = new Tar()
         console.time(`Compress zvm: ${zvm_str}`)
         await tar.append("zvm", {

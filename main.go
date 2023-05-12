@@ -48,6 +48,7 @@ func main() {
 			if err := zvm.ListVersions(); err != nil {
 				log.Fatal(err)
 			}
+			return
 		case "uninstall", "rm":
 			if len(args) > i+1 {
 				version := strings.TrimPrefix(args[i+1], "v")

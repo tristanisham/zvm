@@ -1,6 +1,12 @@
 <p align="center">
   <img width="100px"  src ="https://user-images.githubusercontent.com/23124818/206966435-f5702a58-8b0e-4eb4-9dc4-b5e41ad27d8b.png"/>
-</p
+</p>
+
+## Join our Community
+- [Discord](https://discord.gg/NhaNhCMYX8)
+- [Twitch](https://twitch.tv/atalocke)
+
+<hr>
 
 Zig Version Manager (zvm) is a tool for managing your Zig installs. With std
 under heavy development and a large feature roadmap, Zig is bound to continue

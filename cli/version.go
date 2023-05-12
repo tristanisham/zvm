@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 )
 
-const VERSION = "v0.2.0"
+const VERSION = "v0.2.1"
 
 func (z *ZVM) fetchVersionMap() (zigVersionMap, error) {
 

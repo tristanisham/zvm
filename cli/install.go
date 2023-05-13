@@ -137,6 +137,8 @@ func (z *ZVM) Install(version string) error {
 	return nil
 }
 
+
+
 func getTarPath(version string, data *map[string]map[string]any) (*string, error) {
 	if info, ok := (*data)[version]; ok {
 		arch, ops := zigStyleSysInfo()

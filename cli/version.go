@@ -41,3 +41,5 @@ func (z *ZVM) fetchVersionMap() (zigVersionMap, error) {
 
 	return rawVersionStructure, nil
 }
+
+// statelessFetchVersionMap is the same as fetchVersionMap but it doesn't write to disk. Will probably be depreciated and nuked from orbit when my

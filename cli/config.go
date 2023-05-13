@@ -2,13 +2,13 @@ package cli
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
-	"log"
 	"os"
 	"path/filepath"
+
+	"github.com/charmbracelet/log"
 )
-
-
 
 func Initialize() *ZVM {
 	home, err := os.UserHomeDir()
@@ -22,8 +22,6 @@ func Initialize() *ZVM {
 		}
 	}
 
-	
-
 	zvm := &ZVM{
 		zvmBaseDir: zvm_path,
 	}
@@ -36,11 +34,11 @@ func Initialize() *ZVM {
 
 			out_settings, err := json.MarshalIndent(&zvm.Settings, "", "    ")
 			if err != nil {
-				log.Println("Unable to generate settings.json file", err)
+				log.Warn("Unable to generate settings.json file", err)
 			}
 
 			if err := os.WriteFile(filepath.Join(zvm_path, "settings.json"), out_settings, 0755); err != nil {
-				log.Println("Unable to create settings.json file", err)
+				log.Warn("Unable to create settings.json file", err)
 			}
 		}
 	}
@@ -50,15 +48,15 @@ func Initialize() *ZVM {
 }
 
 type ZVM struct {
-	zvmBaseDir  string
-	zigVersions zigVersionMap
-	Settings    Settings
+	zvmBaseDir     string
+	zigVersions    zigVersionMap
+	Settings       Settings
 }
 
 // A representaiton of the offical json schema for Zig versions
 type zigVersionMap = map[string]zigVersion
 
-// LoadMasterVersion takes a zigVersionMap and returns the master disto's version if it's present. 
+// LoadMasterVersion takes a zigVersionMap and returns the master disto's version if it's present.
 // If it's not, this function returns an empty string.
 func LoadMasterVersion(zigMap *zigVersionMap) string {
 	if ver, ok := (*zigMap)["master"]["version"].(string); ok {
@@ -69,7 +67,6 @@ func LoadMasterVersion(zigMap *zigVersionMap) string {
 
 // A representation of individual Zig versions
 type zigVersion = map[string]any
-
 
 func (z *ZVM) loadVersionCache() error {
 	ver, err := os.ReadFile(filepath.Join(z.zvmBaseDir, "versions.json"))
@@ -83,7 +80,7 @@ func (z *ZVM) loadVersionCache() error {
 }
 
 func (z ZVM) getVersion(version string) *zigVersion {
-	if _, err := os.Stat(filepath.Join(z.zvmBaseDir, version)); os.IsNotExist(err) {
+	if _, err := os.Stat(filepath.Join(z.zvmBaseDir, version)); errors.Is(err, os.ErrNotExist) {
 		return nil
 	}
 
@@ -96,7 +93,7 @@ func (z ZVM) getVersion(version string) *zigVersion {
 
 func (z *ZVM) loadSettings() error {
 	set_path := filepath.Join(z.zvmBaseDir, "settings.json")
-	if _, err := os.Stat(set_path); os.IsNotExist(err) {
+	if _, err := os.Stat(set_path); errors.Is(err, os.ErrNotExist) {
 		return fmt.Errorf("settings.json not found")
 	}
 
@@ -107,4 +104,3 @@ func (z *ZVM) loadSettings() error {
 
 	return json.Unmarshal(data, &z.Settings)
 }
-

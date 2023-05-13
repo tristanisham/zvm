@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 	"html/template"
-	"log"
+	"github.com/charmbracelet/log"
 	"os"
 	"strings"
 	"zvm/cli"
@@ -57,6 +57,11 @@ func main() {
 				}
 			}
 			return
+
+		case "sync":
+			if err := zvm.Sync(); err != nil {
+				log.Fatal(err)
+			}
 
 		case "clean":
 			msg := "Clean is a beta command, and may not be included in the next release."

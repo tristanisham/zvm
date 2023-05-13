@@ -3,7 +3,12 @@ package cli
 import (
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
+	"strings"
+	"github.com/charmbracelet/log"
+
+	"github.com/tristanisham/clr"
 )
 
 func (z *ZVM) ListVersions() error {
@@ -12,12 +17,28 @@ func (z *ZVM) ListVersions() error {
 		return err
 	}
 
-	var versions string
-	for key := range *iv {
-		versions += fmt.Sprintf("%s\n", key)
+	cmd := exec.Command("zig", "version")
+	var zigVersion strings.Builder
+	cmd.Stdout = &zigVersion
+	err = cmd.Run()
+	if err != nil {
+		log.Warn(err)
 	}
 
-	fmt.Print(versions)
+	var version string = zigVersion.String()
+	if strings.Contains(version, "-dev") {
+		version = "master"
+	}
+
+	for key := range *iv {
+		if key == strings.TrimSpace(version) {
+			fmt.Println(clr.Green(key))
+
+		} else {
+			fmt.Println(key)
+
+		}
+	}
 
 	return nil
 }

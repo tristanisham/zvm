@@ -32,11 +32,13 @@ func (z *ZVM) ListVersions() error {
 
 	for key := range *iv {
 		if key == strings.TrimSpace(version) {
-			fmt.Println(clr.Green(key))
-
+			if z.Settings.UseColor {
+				fmt.Println(clr.Green(key))
+			} else {
+				fmt.Printf("%s [x]", key)
+			}
 		} else {
 			fmt.Println(key)
-
 		}
 	}
 

@@ -158,7 +158,7 @@ func getTarPath(version string, data *map[string]map[string]any) (*string, error
 		verMap = append(verMap, key)
 	}
 
-	return nil, fmt.Errorf("invalid Zig version: %s\n\nAllowed versions:%s", version, strings.Join(verMap, "\n  "))
+	return nil, fmt.Errorf("invalid Zig version: %s\nAllowed versions:%s", version, strings.Join(verMap, "\n  "))
 }
 
 func getVersionShasum(version string, data *map[string]map[string]any) (*string, error) {
@@ -181,7 +181,7 @@ func getVersionShasum(version string, data *map[string]map[string]any) (*string,
 		verMap = append(verMap, key)
 	}
 
-	return nil, fmt.Errorf("invalid Zig version: %s\n\nAllowed versions:%s", version, strings.Join(verMap, "\n  "))
+	return nil, fmt.Errorf("invalid Zig version: %s\nAllowed versions:%s", version, strings.Join(verMap, "\n  "))
 }
 
 func zigStyleSysInfo() (string, string) {

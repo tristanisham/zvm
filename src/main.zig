@@ -9,40 +9,55 @@ pub fn main() !void {
 
     var zvm = try cli.Zvm.init(allocator);
 
-    const args = try std.process.argsAlloc(allocator);
+    var args = try std.process.argsAlloc(allocator);
     defer std.process.argsFree(allocator, args);
 
     if (args.len == 1) {
-        cli.Args.printHelp();
+        return cli.Args.printHelp("", .{});
     }
 
-    //TODO: Consider switching to while loop for greater control.
-    for (args[1..], 1..) |arg, i| {
-        switch (std.meta.stringToEnum(cli.Args, arg) orelse continue) {
+    var i: usize = 1;
+    while (i < args.len) : (i += 1) {
+        const arg = std.meta.stringToEnum(cli.Args, args[i]) orelse .unknown;
+        switch (arg) {
             .install, .i => {
-                if (args.len > i + 1) {
-                    const version = extractVersion(args[i + 1]);
-                    try zvm.install(version);
-                }
+                const version = nextArg(&i, args) orelse
+                    return cli.Args.printHelp("{s} missing version", .{@tagName(arg)});
+                try zvm.install(version);
+                break;
             },
             .use => {
-                if (args.len > i + 1) {
-                    const version = extractVersion(args[i + 1]);
-                    try zvm.use(version);
-                }
+                const version = nextArg(&i, args) orelse
+                    return cli.Args.printHelp("{s} missing version", .{@tagName(arg)});
+                try zvm.use(version);
+                break;
             },
             .uninstall, .rm => {
-                if (args.len > i + 1) {
-                    const version = extractVersion(args[i + 1]);
-                    try zvm.uninstall(version);
-                }
+                const version = nextArg(&i, args) orelse
+                    return cli.Args.printHelp("{s} missing version", .{@tagName(arg)});
+                try zvm.uninstall(version);
+                break;
             },
             .ls => {
                 try zvm.listVersions();
+                break;
             },
-            .help => cli.Args.printHelp(),
+            .unknown => {
+                cli.Args.printHelp("unknown arg {s}\n", .{args[i]});
+                break;
+            },
+            .help => {
+                cli.Args.printHelp("", .{});
+                break;
+            },
         }
     }
+}
+
+fn nextArg(i: *usize, args: []const []const u8) ?[]const u8 {
+    if (i.* >= args.len) return null;
+    i.* += 1;
+    return args[i.*];
 }
 
 fn extractVersion(v: []const u8) []const u8 {

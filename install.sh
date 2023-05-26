@@ -54,7 +54,5 @@ elif [ $OS == "MINGW64_NT" ]; then
 fi
 
 echo
-echo "Append the following to your $HOME/.profile or $HOME/.bash_rc"
-echo
-echo -e "\texport PATH=\$PATH:\$HOME/.zvm/bin"
-echo
+echo "If this is your first time installing 'zvm' append the following to $HOME/.profile or $HOME/.bashrc"
+echo -e "\x1b[1;32mexport PATH=\$PATH:\$HOME/.zvm/bin\x1b[1;0m"

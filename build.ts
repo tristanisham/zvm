@@ -1,5 +1,4 @@
 #!/usr/bin/env -S deno run -A
-import { exec } from "https://deno.land/x/exec@0.0.5/mod.ts";
 import { Tar } from "https://deno.land/std@0.184.0/archive/mod.ts";
 import { copy } from "https://deno.land/std@0.184.0/streams/copy.ts";
 
@@ -17,7 +16,10 @@ const GOOS = [
     "solaris",
 ]
 
+await Deno.mkdir("./build", {recursive: true});
+
 console.time("Built zvm")
+
 
 for (const os of GOOS) {
     for (const ar of GOARCH) {
@@ -27,7 +29,22 @@ for (const os of GOOS) {
         // Deno.env.set("CGO_ENABLED", "1")
         const zvm_str = `zvm-${os}-${ar}`
         console.time(`Build zvm: ${zvm_str}`)
-        await exec(`go build -o build/${zvm_str}/zvm${(os == "windows" ? ".exe" : "")}`)
+        const build_cmd = Deno.run({
+            cmd: [
+                "go",
+                "build",
+                "-o",
+                `build/${zvm_str}/zvm${(os == "windows" ? ".exe" : "")}`,
+                '-ldflags=-s -w',
+            ],
+        });
+
+        const {code} = await build_cmd.status();
+        if (code !== 0) {
+            console.error("Something went wrong")
+            Deno.exit(1);
+        }
+        
         console.timeEnd(`Build zvm: ${zvm_str}`)
     }
 }

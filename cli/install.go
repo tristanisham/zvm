@@ -14,7 +14,6 @@ import (
 	"strings"
 
 	"github.com/charmbracelet/log"
-	
 
 	"github.com/schollz/progressbar/v3"
 	"github.com/tristanisham/clr"
@@ -24,13 +23,10 @@ func (z *ZVM) Install(version string) error {
 
 	os.Mkdir(z.zvmBaseDir, 0755)
 
-
 	rawVersionStructure, err := z.fetchVersionMap()
 	if err != nil {
 		return err
 	}
-
-	
 
 	// masterVersion := loadMasterVersion(&rawVersionStructure)
 
@@ -137,43 +133,30 @@ func (z *ZVM) Install(version string) error {
 	return nil
 }
 
-
-
-func getTarPath(version string, data *map[string]map[string]any) (*string, error) {
+func getTarPath(version string, data *map[string]ZigRelease) (*string, error) {
+	arch, ops := zigStyleSysInfo()
 	if info, ok := (*data)[version]; ok {
-		arch, ops := zigStyleSysInfo()
-		if systemInfo, ok := info[fmt.Sprintf("%s-%s", arch, ops)]; ok {
-			if base, ok := systemInfo.(map[string]any); ok {
-				if tar, ok := base["tarball"].(string); ok {
-					return &tar, nil
-				}
-			} else {
-				return nil, fmt.Errorf("unable to find necessary download path")
-			}
+		// log.Infof("%q", info.Releases)
+		if systemInfo, ok := info.Releases[fmt.Sprintf("%s-%s", arch, ops)]; ok {
+			return &systemInfo.Tarball, nil
 		} else {
-			return nil, fmt.Errorf("invalid/unsupported system: ARCH: %s OS: %s", arch, ops)
+			verMap := []string{"  "}
+			for key := range *data {
+				verMap = append(verMap, key)
+			}
+			return nil, fmt.Errorf("invalid Zig version: %s\nAllowed versions:%s", version, strings.Join(verMap, "\n  "))
 		}
+	} else {
+		return nil, fmt.Errorf("invalid/unsupported system: ARCH: %s OS: %s", arch, ops)
 	}
 
-	verMap := []string{"  "}
-	for key := range *data {
-		verMap = append(verMap, key)
-	}
-
-	return nil, fmt.Errorf("invalid Zig version: %s\nAllowed versions:%s", version, strings.Join(verMap, "\n  "))
 }
 
-func getVersionShasum(version string, data *map[string]map[string]any) (*string, error) {
+func getVersionShasum(version string, data *map[string]ZigRelease) (*string, error) {
 	if info, ok := (*data)[version]; ok {
 		arch, ops := zigStyleSysInfo()
-		if systemInfo, ok := info[fmt.Sprintf("%s-%s", arch, ops)]; ok {
-			if base, ok := systemInfo.(map[string]any); ok {
-				if shasum, ok := base["shasum"].(string); ok {
-					return &shasum, nil
-				}
-			} else {
-				return nil, fmt.Errorf("unable to find necessary download path")
-			}
+		if systemInfo, ok := info.Releases[fmt.Sprintf("%s-%s", arch, ops)]; ok {
+			return &systemInfo.Shasum, nil
 		} else {
 			return nil, fmt.Errorf("invalid/unsupported system: ARCH: %s OS: %s", arch, ops)
 		}

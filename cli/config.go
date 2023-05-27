@@ -104,3 +104,20 @@ func (z *ZVM) loadSettings() error {
 
 	return json.Unmarshal(data, &z.Settings)
 }
+
+
+type ZigRelease struct {
+	Version string `json:"version,omitempty"`
+	Date string `json:"date"`
+	Docs string `json:"docs"`
+	StdDoc string `json:"stdDocs"`
+	Notes string `json:"notes,omitempty"`
+	Releases map[string]tarball
+}
+
+
+type tarball struct {
+	Tarball string `json:"tarball"`
+	Shasum string `json:"shasum"`
+	Size string `json:"size"`
+}

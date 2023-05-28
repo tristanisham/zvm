@@ -4,6 +4,7 @@ import (
 	"archive/zip"
 	"crypto/sha256"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -14,7 +15,6 @@ import (
 	"strings"
 
 	"github.com/charmbracelet/log"
-	
 
 	"github.com/schollz/progressbar/v3"
 	"github.com/tristanisham/clr"
@@ -24,22 +24,28 @@ func (z *ZVM) Install(version string) error {
 
 	os.Mkdir(z.zvmBaseDir, 0755)
 
-
 	rawVersionStructure, err := z.fetchVersionMap()
 	if err != nil {
 		return err
 	}
 
-	
-
 	// masterVersion := loadMasterVersion(&rawVersionStructure)
 
 	tarPath, err := getTarPath(version, &rawVersionStructure)
 	if err != nil {
-		return err
+		if errors.Is(err, ErrUnsupportedVersion) {
+			log.Info("hi")
+			tarPath, err = checkBaselBuild(version)
+			if err != nil {
+				return err
+			}
+		} else {
+			return err
+
+		}
 	}
 
-	tarReq, err := http.Get(*tarPath)
+	tarReq, err := http.Get(tarPath)
 	if err != nil {
 		return err
 	}
@@ -97,7 +103,7 @@ func (z *ZVM) Install(version string) error {
 	if err := ExtractBundle(tempDir.Name(), z.zvmBaseDir); err != nil {
 		log.Fatal(err)
 	}
-	tarName := strings.TrimPrefix(*tarPath, "https://ziglang.org/builds/")
+	tarName := strings.TrimPrefix(tarPath, "https://ziglang.org/builds/")
 	tarName = strings.TrimPrefix(tarName, fmt.Sprintf("https://ziglang.org/download/%s/", version))
 	tarName = strings.TrimSuffix(tarName, ".tar.xz")
 	tarName = strings.TrimSuffix(tarName, ".zip")
@@ -137,30 +143,32 @@ func (z *ZVM) Install(version string) error {
 	return nil
 }
 
+func getTarPath(version string, data *map[string]map[string]any) (string, error) {
+	arch, ops := zigStyleSysInfo()
 
-
-func getTarPath(version string, data *map[string]map[string]any) (*string, error) {
 	if info, ok := (*data)[version]; ok {
-		arch, ops := zigStyleSysInfo()
 		if systemInfo, ok := info[fmt.Sprintf("%s-%s", arch, ops)]; ok {
 			if base, ok := systemInfo.(map[string]any); ok {
 				if tar, ok := base["tarball"].(string); ok {
-					return &tar, nil
+					return tar, nil
 				}
 			} else {
-				return nil, fmt.Errorf("unable to find necessary download path")
+				return "", ErrMissingBundlePath
 			}
 		} else {
-			return nil, fmt.Errorf("invalid/unsupported system: ARCH: %s OS: %s", arch, ops)
+			return "", ErrUnsupportedSystem
 		}
 	}
 
-	verMap := []string{"  "}
-	for key := range *data {
-		verMap = append(verMap, key)
-	}
+	// verMap := []string{"  "}
+	// for key := range *data {
+	// 	verMap = append(verMap, key)
+	// }
 
-	return nil, fmt.Errorf("invalid Zig version: %s\nAllowed versions:%s", version, strings.Join(verMap, "\n  "))
+	// return nil, fmt.Errorf("invalid Zig version: %s\nAllowed versions:%s", version, strings.Join(verMap, "\n  "))
+
+	return "", ErrUnsupportedVersion
+
 }
 
 func getVersionShasum(version string, data *map[string]map[string]any) (*string, error) {
@@ -284,4 +292,9 @@ func unzipFile(f *zip.File, destination string) error {
 		return err
 	}
 	return nil
+}
+
+func checkBaselBuild(version string) (string, error) {
+
+	return "", ErrUnsupportedVersion
 }

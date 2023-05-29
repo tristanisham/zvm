@@ -12,7 +12,6 @@ import (
 type Settings struct {
 	basePath string
 	UseColor bool `json:"useColor"`
-
 }
 
 func (s *Settings) ToggleColor() {
@@ -25,7 +24,7 @@ func (s *Settings) ToggleColor() {
 		fmt.Printf("Terminal color output: %s\n", clr.Green("ON"))
 		return
 	}
-	
+
 	fmt.Println("Terminal color output: OFF")
 
 }
@@ -47,8 +46,6 @@ func (s *Settings) YesColor() {
 	fmt.Printf("Terminal color output: %s\n", clr.Green("ON"))
 
 }
-
-
 
 func (s Settings) save() error {
 	out_settings, err := json.MarshalIndent(&s, "", "    ")

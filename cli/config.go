@@ -48,9 +48,9 @@ func Initialize() *ZVM {
 }
 
 type ZVM struct {
-	zvmBaseDir     string
-	zigVersions    zigVersionMap
-	Settings       Settings
+	zvmBaseDir  string
+	zigVersions zigVersionMap
+	Settings    Settings
 }
 
 // A representaiton of the offical json schema for Zig versions

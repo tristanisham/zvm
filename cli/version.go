@@ -17,7 +17,7 @@ func (z *ZVM) fetchVersionMap() (zigVersionMap, error) {
 		return nil, err
 	}
 
-	req.Header.Set("User-Agent", "zvm (Zig Version Manager) " + VERSION)
+	req.Header.Set("User-Agent", "zvm (Zig Version Manager) "+VERSION)
 	client := http.DefaultClient
 	resp, err := client.Do(req)
 	if err != nil {

@@ -48,9 +48,9 @@ func Initialize() *ZVM {
 }
 
 type ZVM struct {
-	zvmBaseDir     string
-	zigVersions    zigVersionMap
-	Settings       Settings
+	zvmBaseDir  string
+	zigVersions zigVersionMap
+	Settings    Settings
 }
 
 // A representaiton of the offical json schema for Zig versions
@@ -105,19 +105,17 @@ func (z *ZVM) loadSettings() error {
 	return json.Unmarshal(data, &z.Settings)
 }
 
-
 type ZigRelease struct {
-	Version string `json:"version,omitempty"`
-	Date string `json:"date"`
-	Docs string `json:"docs"`
-	StdDoc string `json:"stdDocs"`
-	Notes string `json:"notes,omitempty"`
+	Version  string `json:"version,omitempty"`
+	Date     string `json:"date"`
+	Docs     string `json:"docs"`
+	StdDoc   string `json:"stdDocs"`
+	Notes    string `json:"notes,omitempty"`
 	Releases map[string]tarball
 }
 
-
 type tarball struct {
 	Tarball string `json:"tarball"`
-	Shasum string `json:"shasum"`
-	Size string `json:"size"`
+	Shasum  string `json:"shasum"`
+	Size    string `json:"size"`
 }

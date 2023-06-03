@@ -19,14 +19,13 @@ const GOOS = [
 await Deno.mkdir("./build", {recursive: true});
 
 console.time("Built zvm")
-
+Deno.env.set("CGO_ENABLED", "0")
 
 for (const os of GOOS) {
     for (const ar of GOARCH) {
         if (os == "solaris" && ar == "arm64" || os == "plan9" && ar == "arm64") continue;
         Deno.env.set("GOOS", os)
         Deno.env.set("GOARCH", ar)
-        // Deno.env.set("CGO_ENABLED", "1")
         const zvm_str = `zvm-${os}-${ar}`
         console.time(`Build zvm: ${zvm_str}`)
         const build_cmd = Deno.run({

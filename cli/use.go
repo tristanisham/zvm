@@ -2,6 +2,7 @@ package cli
 
 import (
 	"bufio"
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -12,16 +13,20 @@ import (
 
 func (z *ZVM) Use(ver string) error {
 	z.loadVersionCache()
-	if verMapPtr := z.getVersion(ver); verMapPtr == nil {
+	_, err := z.getVersion(ver)
+	if errors.Is(err, os.ErrNotExist) {
 		fmt.Printf("It looks like %s isn't installed. Would you like to install it? [y/n]\n", ver)
 		if getConfirmation() {
-			return z.Install(ver)
+			err = z.Install(ver)
 		} else {
-			os.Exit(0)
+			return fmt.Errorf("version %s is not installed", ver)
 		}
 	}
 
-	
+	if err != nil {
+		return err
+	}
+
 	return z.setBin(ver)
 }
 
@@ -34,7 +39,6 @@ func (z *ZVM) setBin(ver string) error {
 	if err := os.Symlink(version_path, filepath.Join(z.zvmBaseDir, "bin")); err != nil {
 		return err
 	}
-	
 
 	return nil
 }

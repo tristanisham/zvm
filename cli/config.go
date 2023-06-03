@@ -48,9 +48,9 @@ func Initialize() *ZVM {
 }
 
 type ZVM struct {
-	zvmBaseDir     string
-	zigVersions    zigVersionMap
-	Settings       Settings
+	zvmBaseDir  string
+	zigVersions zigVersionMap
+	Settings    Settings
 }
 
 // A representaiton of the offical json schema for Zig versions
@@ -79,16 +79,16 @@ func (z *ZVM) loadVersionCache() error {
 	return nil
 }
 
-func (z ZVM) getVersion(version string) *zigVersion {
-	if _, err := os.Stat(filepath.Join(z.zvmBaseDir, version)); errors.Is(err, os.ErrNotExist) {
-		return nil
+func (z ZVM) getVersion(version string) (zigVersion, error) {
+	if _, err := os.Stat(filepath.Join(z.zvmBaseDir, version)); err != nil {
+		return nil, err
 	}
 
 	if version, ok := z.zigVersions[version]; ok {
-		return &version
+		return version, nil
+	} else {
+		return nil, fmt.Errorf("version %s is not a released version", version)
 	}
-
-	return nil
 }
 
 func (z *ZVM) loadSettings() error {

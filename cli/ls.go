@@ -2,11 +2,11 @@ package cli
 
 import (
 	"fmt"
+	"github.com/charmbracelet/log"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
-	"github.com/charmbracelet/log"
 
 	"github.com/tristanisham/clr"
 )

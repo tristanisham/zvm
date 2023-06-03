@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -34,8 +35,7 @@ func (z *ZVM) Install(version string) error {
 	tarPath, err := getTarPath(version, &rawVersionStructure)
 	if err != nil {
 		if errors.Is(err, ErrUnsupportedVersion) {
-			log.Info("hi")
-			tarPath, err = checkBaselBuild(version)
+			tarPath, err = checkZigOnl(version)
 			if err != nil {
 				return err
 			}
@@ -194,9 +194,9 @@ func getVersionShasum(version string, data *map[string]map[string]any) (*string,
 	return nil, fmt.Errorf("invalid Zig version: %s\nAllowed versions:%s", version, strings.Join(verMap, "\n  "))
 }
 
-func zigStyleSysInfo() (string, string) {
-	arch := runtime.GOARCH
-	goos := runtime.GOOS
+func zigStyleSysInfo() (arch string, os string) {
+	arch = runtime.GOARCH
+	os = runtime.GOOS
 
 	switch arch {
 	case "amd64":
@@ -205,12 +205,12 @@ func zigStyleSysInfo() (string, string) {
 		arch = "aarch64"
 	}
 
-	switch goos {
+	switch os {
 	case "darwin":
-		goos = "macos"
+		os = "macos"
 	}
 
-	return arch, goos
+	return arch, os
 }
 
 func ExtractBundle(bundle, out string) error {
@@ -294,7 +294,23 @@ func unzipFile(f *zip.File, destination string) error {
 	return nil
 }
 
-func checkBaselBuild(version string) (string, error) {
+func checkZigOnl(version string) (string, error) {
+	arch, os := zigStyleSysInfo()
+	zigOnl := fmt.Sprintf("https://zig.onl/versions?release=%s&os=%s&arch=%s", version, os, arch)
+	resp, err := http.Get(zigOnl)
+	if err != nil {
+		if err, ok := err.(*url.Error); ok {
+			if err.Timeout() {
+				return "", fmt.Errorf("timeout fetching %s", version)
+			} else if err.Temporary() {
+				return "", fmt.Errorf("temporary error fetching %s. Please try again", version)
+			}
+		}
+	}
+
+	if resp.StatusCode == 200 {
+		return zigOnl, nil
+	}
 
 	return "", ErrUnsupportedVersion
 }

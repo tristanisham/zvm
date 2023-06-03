@@ -3,6 +3,7 @@
 </p>
 
 ## Join our Community
+
 - [Discord](https://discord.gg/NhaNhCMYX8)
 - [Twitch](https://twitch.tv/atalocke)
 
@@ -25,6 +26,7 @@ If you're on Windows, please grab the
 [latest release](https://github.com/tristanisham/zvm/releases/latest).
 
 ## Community Package
+
 ### AUR
 
 `zvm` on the [Arch AUR](https://aur.archlinux.org/packages/zvm) is a community

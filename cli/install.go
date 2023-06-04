@@ -161,7 +161,9 @@ func (z *ZVM) Install(version string) error {
 
 	if wasZigOnl {
 		zigArch, zigOS := zigStyleSysInfo()
-		os.Rename(filepath.Join(z.zvmBaseDir, fmt.Sprintf("zig-%s-%s-%s", zigOS, zigArch, version)), filepath.Join(z.zvmBaseDir, tarName))
+		if err := os.Rename(filepath.Join(z.zvmBaseDir, fmt.Sprintf("zig-%s-%s-%s", zigOS, zigArch, version)), filepath.Join(z.zvmBaseDir, tarName)); err != nil {
+			return fmt.Errorf("renaming error: rename %q to %q", filepath.Join(z.zvmBaseDir, fmt.Sprintf("zig-%s-%s-%s", zigOS, zigArch, version)), filepath.Join(z.zvmBaseDir, tarName))
+		}
 	}
 
 	if err := os.Symlink(filepath.Join(z.zvmBaseDir, version), filepath.Join(z.zvmBaseDir, "bin")); err != nil {

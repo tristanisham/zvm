@@ -105,7 +105,7 @@ func (z *ZVM) Install(version string) error {
 	} else {
 		log.Warnf("No shasum. Downloaded from zig.onl: %v", wasZigOnl)
 	}
-	
+
 	// The base directory where all Zig files for the appropriate version are installed
 	// installedVersionPath := filepath.Join(z.zvmBaseDir, version)
 	fmt.Println("Extracting bundle...")
@@ -113,16 +113,29 @@ func (z *ZVM) Install(version string) error {
 	if err := ExtractBundle(tempDir.Name(), z.zvmBaseDir); err != nil {
 		log.Fatal(err)
 	}
-	tarName := strings.TrimPrefix(tarPath, "https://ziglang.org/builds/")
-	tarName = strings.TrimPrefix(tarName, fmt.Sprintf("https://ziglang.org/download/%s/", version))
-	tarName = strings.TrimSuffix(tarName, ".tar.xz")
-	tarName = strings.TrimSuffix(tarName, ".zip")
+	var tarName string
 
-	// var finalInstallFolderName string = version
+	if wasZigOnl {
+		resultUrl, err := url.Parse(tarPath)
+		if err != nil {
+			log.Error(err)
+			tarName = version
+		}
 
-	// if version == "master" {
+		if rel := resultUrl.Query().Get("release"); len(rel) > 0 {
+			tarName = strings.Replace(rel, " ", "+", 1)
+		} else {
+			tarName = version
+		}
 
-	// }
+	} else {
+		tarName = strings.TrimPrefix(tarPath, "https://ziglang.org/builds/")
+		tarName = strings.TrimPrefix(tarName, fmt.Sprintf("https://ziglang.org/download/%s/", version))
+		tarName = strings.TrimSuffix(tarName, ".tar.xz")
+		tarName = strings.TrimSuffix(tarName, ".zip")
+	}
+
+	log.Info(tarName, "version", version)
 
 	if err := os.Rename(filepath.Join(z.zvmBaseDir, tarName), filepath.Join(z.zvmBaseDir, version)); err != nil {
 		if _, err := os.Stat(filepath.Join(z.zvmBaseDir, version)); err == nil {
@@ -144,6 +157,11 @@ func (z *ZVM) Install(version string) error {
 
 	if _, err := os.Lstat(filepath.Join(z.zvmBaseDir, "bin")); err == nil {
 		os.Remove(filepath.Join(z.zvmBaseDir, "bin"))
+	}
+
+	if wasZigOnl {
+		zigArch, zigOS := zigStyleSysInfo()
+		os.Rename(filepath.Join(z.zvmBaseDir, fmt.Sprintf("zig-%s-%s-%s", zigOS, zigArch, version)), filepath.Join(z.zvmBaseDir, tarName))
 	}
 
 	if err := os.Symlink(filepath.Join(z.zvmBaseDir, version), filepath.Join(z.zvmBaseDir, "bin")); err != nil {

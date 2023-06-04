@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -29,15 +30,15 @@ func (z *ZVM) Install(version string) error {
 		return err
 	}
 
-	// masterVersion := loadMasterVersion(&rawVersionStructure)
-
+	wasZigOnl := false
 	tarPath, err := getTarPath(version, &rawVersionStructure)
 	if err != nil {
 		if errors.Is(err, ErrUnsupportedVersion) {
-			tarPath, err = getFromZigCDN(version)
+			tarPath, err = checkZigOnl(version)
 			if err != nil {
 				return err
 			}
+			wasZigOnl = true
 		} else {
 			return err
 
@@ -85,16 +86,26 @@ func (z *ZVM) Install(version string) error {
 		return err
 	}
 
-	shasum, err := getVersionShasum(version, &rawVersionStructure)
-	if err != nil {
-		return err
+	var shasum string
+	if wasZigOnl {
+		shasum = tarReq.Header.Get("X-Sha256")
+	} else {
+		shasum, err = getVersionShasum(version, &rawVersionStructure)
+		if err != nil {
+			return err
+		}
 	}
 
 	fmt.Println("Checking shasum...")
-	if hex.EncodeToString(hash.Sum(nil)) != *shasum {
-		return fmt.Errorf("shasum for %v does not match expected value", version)
+	if len(shasum) > 0 {
+		if hex.EncodeToString(hash.Sum(nil)) != shasum {
+			return fmt.Errorf("shasum for %v does not match expected value", version)
+		}
+		fmt.Println("Shasums match! 🎉")
+	} else {
+		log.Warnf("No shasum. Downloaded from zig.onl: %v", wasZigOnl)
 	}
-	fmt.Println("Shasums match! 🎉")
+	
 	// The base directory where all Zig files for the appropriate version are installed
 	// installedVersionPath := filepath.Join(z.zvmBaseDir, version)
 	fmt.Println("Extracting bundle...")
@@ -170,19 +181,19 @@ func getTarPath(version string, data *map[string]map[string]any) (string, error)
 
 }
 
-func getVersionShasum(version string, data *map[string]map[string]any) (*string, error) {
+func getVersionShasum(version string, data *map[string]map[string]any) (string, error) {
 	if info, ok := (*data)[version]; ok {
 		arch, ops := zigStyleSysInfo()
 		if systemInfo, ok := info[fmt.Sprintf("%s-%s", arch, ops)]; ok {
 			if base, ok := systemInfo.(map[string]any); ok {
 				if shasum, ok := base["shasum"].(string); ok {
-					return &shasum, nil
+					return shasum, nil
 				}
 			} else {
-				return nil, fmt.Errorf("unable to find necessary download path")
+				return "", fmt.Errorf("unable to find necessary download path")
 			}
 		} else {
-			return nil, fmt.Errorf("invalid/unsupported system: ARCH: %s OS: %s", arch, ops)
+			return "", fmt.Errorf("invalid/unsupported system: ARCH: %s OS: %s", arch, ops)
 		}
 	}
 	verMap := []string{"  "}
@@ -190,13 +201,12 @@ func getVersionShasum(version string, data *map[string]map[string]any) (*string,
 		verMap = append(verMap, key)
 	}
 
-	return nil, fmt.Errorf("invalid Zig version: %s\nAllowed versions:%s", version, strings.Join(verMap, "\n  "))
+	return "", fmt.Errorf("invalid Zig version: %s\nAllowed versions:%s", version, strings.Join(verMap, "\n  "))
 }
 
-// zigStyleSysInfo returns (ARCH, OS)
-func zigStyleSysInfo() (string, string) {
-	arch := runtime.GOARCH
-	goos := runtime.GOOS
+func zigStyleSysInfo() (arch string, os string) {
+	arch = runtime.GOARCH
+	os = runtime.GOOS
 
 	switch arch {
 	case "amd64":
@@ -205,12 +215,12 @@ func zigStyleSysInfo() (string, string) {
 		arch = "aarch64"
 	}
 
-	switch goos {
+	switch os {
 	case "darwin":
-		goos = "macos"
+		os = "macos"
 	}
 
-	return arch, goos
+	return arch, os
 }
 
 func ExtractBundle(bundle, out string) error {
@@ -294,11 +304,22 @@ func unzipFile(f *zip.File, destination string) error {
 	return nil
 }
 
-func getFromZigCDN(release string) (string, error) {
-	os, arch := zigStyleSysInfo()
-	resp, err := http.Get(fmt.Sprintf("https://zig.onl/versions?release=%s&os=%s&arch=%s", release, os, arch))
+func checkZigOnl(version string) (string, error) {
+	arch, os := zigStyleSysInfo()
+	zigOnl := fmt.Sprintf("https://zig.onl/versions?release=%s&os=%s&arch=%s", version, os, arch)
+	resp, err := http.Get(zigOnl)
 	if err != nil {
-		return "", err
+		if err, ok := err.(*url.Error); ok {
+			if err.Timeout() {
+				return "", fmt.Errorf("timeout fetching %s", version)
+			} else if err.Temporary() {
+				return "", fmt.Errorf("temporary error fetching %s. Please try again", version)
+			}
+		}
+	}
+
+	if resp.StatusCode == 200 {
+		return zigOnl, nil
 	}
 
 	if resp.StatusCode != 200 {

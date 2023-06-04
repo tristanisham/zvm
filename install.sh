@@ -17,15 +17,31 @@ fi
 install_latest() {
     echo -e "Installing $1 in $(pwd)/zvm"
     if [ "$(uname)" = "Darwin" ]; then
-    # Do something under Mac OS X platform
-        wget -q --show-progress --max-redirect 5 -O zvm.tar "https://github.com/tristanisham/zvm/releases/latest/download/$1"
-        tar -xf zvm.tar
-        rm "zvm.tar"
+     # Do something under MacOS platform
+
+        if command -v wget >/dev/null 2>&1; then
+    
+            echo "wget is installed. Using wget..."
+            wget -q --show-progress --max-redirect 5 -O zvm.tar "https://github.com/tristanisham/zvm/releases/latest/download/$1"
+            tar -xf zvm.tar
+            rm "zvm.tar"
+        else
+            echo "wget is not installed. Using curl..."
+            curl "https://github.com/tristanisham/zvm/releases/latest/download/$1" -o zvm.tar
+        fi
+        
     elif [ $OS = "Linux" ]; then
      # Do something under GNU/Linux platform
-        wget -q --show-progress --max-redirect 5 -O zvm.tar "https://github.com/tristanisham/zvm/releases/latest/download/$1"
-        tar -xf zvm.tar
-        rm "zvm.tar"
+        if command -v wget >/dev/null 2>&1; then
+    
+            echo "wget is installed. Using wget..."
+            wget -q --show-progress --max-redirect 5 -O zvm.tar "https://github.com/tristanisham/zvm/releases/latest/download/$1"
+            tar -xf zvm.tar
+            rm "zvm.tar"
+        else
+            echo "wget is not installed. Using curl..."
+            curl "https://github.com/tristanisham/zvm/releases/latest/download/$1" -o zvm.tar
+        fi
     elif [ $OS = "MINGW32_NT" ]; then
     # Do something under 32 bits Windows NT platform
         curl "https://github.com/tristanisham/zvm/releases/latest/download/$($1) -o zvm.zip"

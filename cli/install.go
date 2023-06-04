@@ -34,8 +34,7 @@ func (z *ZVM) Install(version string) error {
 	tarPath, err := getTarPath(version, &rawVersionStructure)
 	if err != nil {
 		if errors.Is(err, ErrUnsupportedVersion) {
-			log.Info("hi")
-			tarPath, err = checkBaselBuild(version)
+			tarPath, err = getFromZigCDN(version)
 			if err != nil {
 				return err
 			}
@@ -194,6 +193,7 @@ func getVersionShasum(version string, data *map[string]map[string]any) (*string,
 	return nil, fmt.Errorf("invalid Zig version: %s\nAllowed versions:%s", version, strings.Join(verMap, "\n  "))
 }
 
+// zigStyleSysInfo returns (ARCH, OS)
 func zigStyleSysInfo() (string, string) {
 	arch := runtime.GOARCH
 	goos := runtime.GOOS
@@ -294,7 +294,15 @@ func unzipFile(f *zip.File, destination string) error {
 	return nil
 }
 
-func checkBaselBuild(version string) (string, error) {
+func getFromZigCDN(release string) (string, error) {
+	os, arch := zigStyleSysInfo()
+	resp, err := http.Get(fmt.Sprintf("https://zig.onl/versions?release=%s&os=%s&arch=%s", release, os, arch))
+	if err != nil {
+		return "", err
+	}
 
-	return "", ErrUnsupportedVersion
+	if resp.StatusCode != 200 {
+		return "", ErrUnsupportedVersion
+	}
+	return "", nil
 }

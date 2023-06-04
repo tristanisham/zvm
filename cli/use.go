@@ -21,7 +21,6 @@ func (z *ZVM) Use(ver string) error {
 		}
 	}
 
-	
 	return z.setBin(ver)
 }
 
@@ -34,7 +33,6 @@ func (z *ZVM) setBin(ver string) error {
 	if err := os.Symlink(version_path, filepath.Join(z.zvmBaseDir, "bin")); err != nil {
 		return err
 	}
-	
 
 	return nil
 }

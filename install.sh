@@ -23,12 +23,13 @@ install_latest() {
     
             echo "wget is installed. Using wget..."
             wget -q --show-progress --max-redirect 5 -O zvm.tar "https://github.com/tristanisham/zvm/releases/latest/download/$1"
-            tar -xf zvm.tar
-            rm "zvm.tar"
         else
             echo "wget is not installed. Using curl..."
-            curl "https://github.com/tristanisham/zvm/releases/latest/download/$1" -o zvm.tar
+            curl -L --max-redirs 5 "https://github.com/tristanisham/zvm/releases/latest/download/$1" -o zvm.tar
         fi
+        
+        tar -xf zvm.tar
+        rm "zvm.tar"
         
     elif [ $OS = "Linux" ]; then
      # Do something under GNU/Linux platform
@@ -36,19 +37,20 @@ install_latest() {
     
             echo "wget is installed. Using wget..."
             wget -q --show-progress --max-redirect 5 -O zvm.tar "https://github.com/tristanisham/zvm/releases/latest/download/$1"
-            tar -xf zvm.tar
-            rm "zvm.tar"
         else
             echo "wget is not installed. Using curl..."
-            curl "https://github.com/tristanisham/zvm/releases/latest/download/$1" -o zvm.tar
+            curl -L --max-redirs 5 "https://github.com/tristanisham/zvm/releases/latest/download/$1" -o zvm.tar
         fi
+        
+        tar -xf zvm.tar
+        rm "zvm.tar"
     elif [ $OS = "MINGW32_NT" ]; then
     # Do something under 32 bits Windows NT platform
-        curl "https://github.com/tristanisham/zvm/releases/latest/download/$($1) -o zvm.zip"
+        curl -L --max-redirs 5 "https://github.com/tristanisham/zvm/releases/latest/download/$($1)" -o zvm.zip
 
     elif [ $OS == "MINGW64_NT" ]; then
     # Do something under 64 bits Windows NT platform
-        curl "https://github.com/tristanisham/zvm/releases/latest/download/$($1) -o zvm.zip"
+        curl -L --max-redirs 5 "https://github.com/tristanisham/zvm/releases/latest/download/$($1)" -o zvm.zip
 
     fi
 }

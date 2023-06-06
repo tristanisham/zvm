@@ -5,7 +5,9 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
+	"strings"
 
 	"github.com/charmbracelet/log"
 )
@@ -48,9 +50,8 @@ func Initialize() *ZVM {
 }
 
 type ZVM struct {
-	zvmBaseDir  string
-	zigVersions zigVersionMap
-	Settings    Settings
+	zvmBaseDir string
+	Settings   Settings
 }
 
 // A representaiton of the offical json schema for Zig versions
@@ -68,26 +69,40 @@ func LoadMasterVersion(zigMap *zigVersionMap) string {
 // A representation of individual Zig versions
 type zigVersion = map[string]any
 
-func (z *ZVM) loadVersionCache() error {
-	ver, err := os.ReadFile(filepath.Join(z.zvmBaseDir, "versions.json"))
-	if err != nil {
-		return err
-	}
-	if err := json.Unmarshal(ver, &z.zigVersions); err != nil {
-		return err
-	}
-	return nil
-}
+type ZigOnlVersion = map[string][]map[string]string
 
-func (z ZVM) getVersion(version string) (zigVersion, error) {
+// func (z *ZVM) loadVersionCache() error {
+// 	ver, err := os.ReadFile(filepath.Join(z.zvmBaseDir, "versions.json"))
+// 	if err != nil {
+// 		return err
+// 	}
+// 	if err := json.Unmarshal(ver, &z.zigVersions); err != nil {
+// 		return err
+// 	}
+// 	return nil
+// }
+
+func (z ZVM) getVersion(version string) error {
 	if _, err := os.Stat(filepath.Join(z.zvmBaseDir, version)); err != nil {
-		return nil, err
+		return err
+	}
+	targetZig := strings.TrimSpace(filepath.Join(z.zvmBaseDir, version, "zig"))
+	cmd := exec.Command(targetZig, "version")
+	var zigVersion strings.Builder
+	cmd.Stdout = &zigVersion
+	err := cmd.Run()
+	if err != nil {
+		log.Warn(err)
 	}
 
-	if version, ok := z.zigVersions[version]; ok {
-		return version, nil
+	outputVersion := strings.TrimSpace(zigVersion.String())
+
+	log.Debug("getVersion:", "output", outputVersion, "version", version, "program", targetZig)
+
+	if version == outputVersion {
+		return nil
 	} else {
-		return nil, fmt.Errorf("version %s is not a released version", version)
+		return fmt.Errorf("version %s is not a released version", version)
 	}
 }
 

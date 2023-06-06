@@ -19,6 +19,10 @@ var helpTxt string
 func main() {
 	zvm := cli.Initialize()
 	args := os.Args[1:]
+	if len(os.Getenv("DEBUG")) > 0 {
+		log.SetLevel(log.DebugLevel)
+
+	}
 
 	if len(args) == 0 {
 		fmt.Println(helpTxt)

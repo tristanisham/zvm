@@ -10,9 +10,9 @@ import (
 
 const VERSION = "v0.2.2"
 
-func (z *ZVM) fetchVersionMap() (zigVersionMap, error) {
+func (z *ZVM) fetchOfficialVersionMap() (zigVersionMap, error) {
 
-	req, err := http.NewRequest("GET", "https://ziglang.org/download/index.json", nil)
+	req, err := http.NewRequest("GET", "https://zig.onl/versions", nil)
 	if err != nil {
 		return nil, err
 	}

@@ -25,7 +25,7 @@ func (z *ZVM) Install(version string) error {
 
 	os.Mkdir(z.zvmBaseDir, 0755)
 
-	rawVersionStructure, err := z.fetchVersionMap()
+	rawVersionStructure, err := z.fetchOfficialVersionMap()
 	if err != nil {
 		return err
 	}
@@ -39,6 +39,7 @@ func (z *ZVM) Install(version string) error {
 				return err
 			}
 			wasZigOnl = true
+			log.Debug("source", "zig.onl", wasZigOnl)
 		} else {
 			return err
 
@@ -81,7 +82,7 @@ func (z *ZVM) Install(version string) error {
 
 	hash := sha256.New()
 
-	_, err = io.Copy(io.MultiWriter(tempDir, hash, pbar), tarReq.Body)
+	_, err = io.Copy(io.MultiWriter(tempDir, pbar, hash), tarReq.Body)
 	if err != nil {
 		return err
 	}
@@ -95,6 +96,8 @@ func (z *ZVM) Install(version string) error {
 			return err
 		}
 	}
+
+	log.Debug("shasum", "value", shasum, "zig.onl", wasZigOnl)
 
 	fmt.Println("Checking shasum...")
 	if len(shasum) > 0 {
@@ -135,35 +138,57 @@ func (z *ZVM) Install(version string) error {
 		tarName = strings.TrimSuffix(tarName, ".zip")
 	}
 
-	log.Info(tarName, "version", version)
+	if wasZigOnl {
 
-	if err := os.Rename(filepath.Join(z.zvmBaseDir, tarName), filepath.Join(z.zvmBaseDir, version)); err != nil {
-		if _, err := os.Stat(filepath.Join(z.zvmBaseDir, version)); err == nil {
-			// Room here to make the backup file.
-			if err := os.RemoveAll(filepath.Join(z.zvmBaseDir, version)); err != nil {
-				log.Fatal(err)
-			} else {
-				if err := os.Rename(filepath.Join(z.zvmBaseDir, tarName), filepath.Join(z.zvmBaseDir, version)); err != nil {
-					log.Fatal(clr.Yellow(err))
+		zigArch, zigOS := zigStyleSysInfo()
+		untarredPath := filepath.Join(z.zvmBaseDir, fmt.Sprintf("zig-%s-%s-%s", zigOS, zigArch, version))
+		newPath := filepath.Join(z.zvmBaseDir, tarName)
+
+		if _, err := os.Stat(untarredPath); err == nil {
+			if os.Stat(newPath); err == nil {
+				if err := os.RemoveAll(newPath); err == nil {
+					if err := os.Rename(untarredPath, newPath); err != nil {
+						log.Debug("rename err", "untarrPath", untarredPath, "newPath", newPath, "err", err)
+						return fmt.Errorf("renaming error: rename %q to %q", untarredPath, newPath)
+					}
+				} else {
+					log.Debug("remove existing install", "err", err)
+					return err
 				}
+
+			}
+
+		}
+	} else {
+		if err := os.Rename(filepath.Join(z.zvmBaseDir, tarName), filepath.Join(z.zvmBaseDir, version)); err != nil {
+			if _, err := os.Stat(filepath.Join(z.zvmBaseDir, version)); err == nil {
+				// Room here to make the backup file.
+				log.Debug("removing", "path", filepath.Join(z.zvmBaseDir, version))
+				if err := os.RemoveAll(filepath.Join(z.zvmBaseDir, version)); err != nil {
+					log.Fatal(err)
+				} else {
+					oldName := filepath.Join(z.zvmBaseDir, tarName)
+					newName := filepath.Join(z.zvmBaseDir, version)
+					log.Debug("renaming", "old", oldName, "new", newName, "identical", oldName == newName)
+					if oldName != newName {
+						if err := os.Rename(oldName, newName); err != nil {
+							log.Fatal(clr.Yellow(err))
+						}
+					}
+
+				}
+
 			}
 		}
-	}
 
-	// This removes the extra download
-	if err := os.RemoveAll(filepath.Join(z.zvmBaseDir, tarName)); err != nil {
-		log.Warn(err)
+		// This removes the extra download
+		if err := os.RemoveAll(filepath.Join(z.zvmBaseDir, tarName)); err != nil {
+			log.Warn(err)
+		}
 	}
 
 	if _, err := os.Lstat(filepath.Join(z.zvmBaseDir, "bin")); err == nil {
 		os.Remove(filepath.Join(z.zvmBaseDir, "bin"))
-	}
-
-	if wasZigOnl {
-		zigArch, zigOS := zigStyleSysInfo()
-		if err := os.Rename(filepath.Join(z.zvmBaseDir, fmt.Sprintf("zig-%s-%s-%s", zigOS, zigArch, version)), filepath.Join(z.zvmBaseDir, tarName)); err != nil {
-			return fmt.Errorf("renaming error: rename %q to %q", filepath.Join(z.zvmBaseDir, fmt.Sprintf("zig-%s-%s-%s", zigOS, zigArch, version)), filepath.Join(z.zvmBaseDir, tarName))
-		}
 	}
 
 	if err := os.Symlink(filepath.Join(z.zvmBaseDir, version), filepath.Join(z.zvmBaseDir, "bin")); err != nil {
@@ -327,6 +352,7 @@ func unzipFile(f *zip.File, destination string) error {
 func checkZigOnl(version string) (string, error) {
 	arch, os := zigStyleSysInfo()
 	zigOnl := fmt.Sprintf("https://zig.onl/versions?release=%s&os=%s&arch=%s", version, os, arch)
+	log.Debug(zigOnl)
 	resp, err := http.Get(zigOnl)
 	if err != nil {
 		if err, ok := err.(*url.Error); ok {

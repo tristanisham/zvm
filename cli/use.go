@@ -12,8 +12,7 @@ import (
 )
 
 func (z *ZVM) Use(ver string) error {
-	z.loadVersionCache()
-	_, err := z.getVersion(ver)
+	err := z.getVersion(ver)
 	if errors.Is(err, os.ErrNotExist) {
 		fmt.Printf("It looks like %s isn't installed. Would you like to install it? [y/n]\n", ver)
 		if getConfirmation() {
@@ -39,7 +38,7 @@ func (z *ZVM) setBin(ver string) error {
 	if err := os.Symlink(version_path, filepath.Join(z.zvmBaseDir, "bin")); err != nil {
 		return err
 	}
-
+	
 	return nil
 }
 

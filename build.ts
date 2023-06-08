@@ -21,7 +21,7 @@ const GOOS = [
 await Deno.mkdir("./build", { recursive: true });
 
 console.time("Built zvm");
-Deno.env.set("CGO_ENABLED", "0")
+Deno.env.set("CGO_ENABLED", "0");
 
 for (const os of GOOS) {
   for (const ar of GOARCH) {
@@ -32,13 +32,14 @@ for (const os of GOOS) {
     Deno.env.set("GOARCH", ar);
     const zvm_str = `zvm-${os}-${ar}`;
     console.time(`Build zvm: ${zvm_str}`);
+    // deno-lint-ignore no-deprecated-deno-api
     const build_cmd = Deno.run({
       cmd: [
         "go",
         "build",
         "-o",
         `build/${zvm_str}/zvm${(os == "windows" ? ".exe" : "")}`,
-        "-ldflags=-s -w",
+        "-ldflags=-w",
       ],
     });
 

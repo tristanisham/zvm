@@ -92,7 +92,7 @@ func (z *ZVM) Install(version string) error {
 
 	log.Debug("tarReq", "content-length", versionFetch.FileSize)
 	pbar := progressbar.DefaultBytes(
-		tarResp.ContentLength,
+		int64(versionFetch.FileSize),
 		fmt.Sprintf("Downloading %s:", clr_opt_ver_str),
 	)
 
@@ -104,6 +104,7 @@ func (z *ZVM) Install(version string) error {
 
 	var shasum string
 	if wasZigOnl {
+
 		if ver := versionFetch; ver != nil {
 			if len(ver.Shasum) > 0 {
 				shasum = ver.Shasum

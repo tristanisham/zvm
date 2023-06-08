@@ -11,7 +11,9 @@ import (
 )
 
 func (z *ZVM) ListVersions() error {
-
+	if err := z.Clean(); err != nil {
+		return err
+	}
 	cmd := exec.Command("zig", "version")
 	var zigVersion strings.Builder
 	cmd.Stdout = &zigVersion

@@ -126,6 +126,10 @@ func (z *ZVM) Install(version string) error {
 		ourHexHash := hex.EncodeToString(hash.Sum(nil))
 		log.Debug("shasum check:", "theirs", shasum, "ours", ourHexHash)
 		if ourHexHash != shasum {
+			// TODO (tristan)
+			// Why is my sha256 identical on the server and sha256sum, 
+			// but not when I download it in ZVM? Oh shit. 
+			// It's because it's a compressed download.
 			return fmt.Errorf("shasum for %v does not match expected value", version)
 		}
 		fmt.Println("Shasums match! 🎉")

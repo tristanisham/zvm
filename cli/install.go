@@ -32,16 +32,16 @@ func (z *ZVM) Install(version string) error {
 	}
 
 	wasZigOnl := false
-	var zigVer *zigOnlVersion
+	var versionFetch *zigOnlVersion
 	tarPath, err := getTarPath(version, &rawVersionStructure)
 	if err != nil {
 		if errors.Is(err, ErrUnsupportedVersion) {
-			zigVer, err = checkZigOnl(version)
+			versionFetch, err = checkZigOnl(version)
 			if err != nil {
 				return err
 			}
 			wasZigOnl = true
-			tarPath = zigVer.FilePath
+			tarPath = versionFetch.FilePath
 			log.Debug("source", "zig.onl", wasZigOnl)
 		} else {
 			return err
@@ -50,7 +50,7 @@ func (z *ZVM) Install(version string) error {
 	}
 
 	zigArch, zigOS := zigStyleSysInfo()
-
+	log.Debug("tarPath", "url", tarPath)
 	zigDownloadReq, err := http.NewRequest("GET", tarPath, nil)
 	if err != nil {
 		return err
@@ -89,13 +89,14 @@ func (z *ZVM) Install(version string) error {
 	} else {
 		clr_opt_ver_str = version
 	}
+
+	log.Debug("tarReq", "content-length", versionFetch.FileSize)
 	pbar := progressbar.DefaultBytes(
 		tarResp.ContentLength,
 		fmt.Sprintf("Downloading %s:", clr_opt_ver_str),
 	)
 
 	hash := sha256.New()
-
 	_, err = io.Copy(io.MultiWriter(tempDir, pbar, hash), tarResp.Body)
 	if err != nil {
 		return err
@@ -103,12 +104,11 @@ func (z *ZVM) Install(version string) error {
 
 	var shasum string
 	if wasZigOnl {
-		if ver := zigVer; ver != nil {
+		if ver := versionFetch; ver != nil {
 			if len(ver.Shasum) > 0 {
 				shasum = ver.Shasum
 			} else {
 				shasum = tarResp.Header.Get("X-Sha256")
-				log.Info("hi")
 			}
 			log.Debug("shasum fetch", "zig.onl", ver.Shasum, "header", tarResp.Header.Get("X-Sha256"), "result", shasum)
 
@@ -372,9 +372,14 @@ func unzipFile(f *zip.File, destination string) error {
 }
 
 func checkZigOnl(version string) (*zigOnlVersion, error) {
+	var core string = "https://zig.onl"
+	if len(os.Getenv("DEBUG")) > 0 {
+		core = "http://localhost:3000"
+	}
+
 	arch, os := zigStyleSysInfo()
-	zigOnl := fmt.Sprintf("https://zig.onl/versions?release=%s&os=%s&arch=%s", version, os, arch)
-	log.Debug(zigOnl)
+	zigOnl := fmt.Sprintf("%s/versions?release=%s&os=%s&arch=%s", core, version, os, arch)
+	log.Debug("checkZigOnl", "url", zigOnl)
 	resp, err := http.Get(zigOnl)
 	if err != nil {
 		if err, ok := err.(*url.Error); ok {
@@ -384,6 +389,8 @@ func checkZigOnl(version string) (*zigOnlVersion, error) {
 				return nil, fmt.Errorf("temporary error fetching %s. Please try again", version)
 			}
 		}
+
+		return nil, err
 	}
 
 	if resp.StatusCode == 200 {

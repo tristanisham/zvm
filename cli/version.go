@@ -12,12 +12,12 @@ const VERSION = "v0.2.2"
 
 func (z *ZVM) fetchOfficialVersionMap() (zigVersionMap, error) {
 
-	req, err := http.NewRequest("GET", "https://zig.onl/versions", nil)
+	req, err := http.NewRequest("GET", "https://ziglang.org/download/index.json", nil)
 	if err != nil {
 		return nil, err
 	}
 
-	req.Header.Set("User-Agent", "zvm (Zig Version Manager) "+VERSION)
+	req.Header.Set("User-Agent", "zvm "+VERSION)
 	client := http.DefaultClient
 	resp, err := client.Do(req)
 	if err != nil {

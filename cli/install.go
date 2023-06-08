@@ -4,6 +4,7 @@ import (
 	"archive/zip"
 	"crypto/sha256"
 	"encoding/hex"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -31,14 +32,16 @@ func (z *ZVM) Install(version string) error {
 	}
 
 	wasZigOnl := false
+	var zigVer *zigOnlVersion
 	tarPath, err := getTarPath(version, &rawVersionStructure)
 	if err != nil {
 		if errors.Is(err, ErrUnsupportedVersion) {
-			tarPath, err = checkZigOnl(version)
+			zigVer, err = checkZigOnl(version)
 			if err != nil {
 				return err
 			}
 			wasZigOnl = true
+			tarPath = zigVer.FilePath
 			log.Debug("source", "zig.onl", wasZigOnl)
 		} else {
 			return err
@@ -46,11 +49,22 @@ func (z *ZVM) Install(version string) error {
 		}
 	}
 
-	tarReq, err := http.Get(tarPath)
+	zigArch, zigOS := zigStyleSysInfo()
+
+	zigDownloadReq, err := http.NewRequest("GET", tarPath, nil)
 	if err != nil {
 		return err
 	}
-	defer tarReq.Body.Close()
+
+	zigDownloadReq.Header.Set("User-Agent", "zvm "+VERSION)
+	zigDownloadReq.Header.Set("X-Client-Os", zigOS)
+	zigDownloadReq.Header.Set("X-Client-Arch", zigArch)
+
+	tarResp, err := http.DefaultClient.Do(zigDownloadReq)
+	if err != nil {
+		return err
+	}
+	defer tarResp.Body.Close()
 	// _ = os.MkdirAll(filepath.Join(z.zvmBaseDir, version), 0755)
 	// tarDownloadPath := filepath.Join(z.zvmBaseDir, version, fmt.Sprintf("%s.tar.xz", version))
 
@@ -76,20 +90,29 @@ func (z *ZVM) Install(version string) error {
 		clr_opt_ver_str = version
 	}
 	pbar := progressbar.DefaultBytes(
-		tarReq.ContentLength,
+		tarResp.ContentLength,
 		fmt.Sprintf("Downloading %s:", clr_opt_ver_str),
 	)
 
 	hash := sha256.New()
 
-	_, err = io.Copy(io.MultiWriter(tempDir, pbar, hash), tarReq.Body)
+	_, err = io.Copy(io.MultiWriter(tempDir, pbar, hash), tarResp.Body)
 	if err != nil {
 		return err
 	}
 
 	var shasum string
 	if wasZigOnl {
-		shasum = tarReq.Header.Get("X-Sha256")
+		if ver := zigVer; ver != nil {
+			if len(ver.Shasum) > 0 {
+				shasum = ver.Shasum
+			} else {
+				shasum = tarResp.Header.Get("X-Sha256")
+				log.Info("hi")
+			}
+			log.Debug("shasum fetch", "zig.onl", ver.Shasum, "header", tarResp.Header.Get("X-Sha256"), "result", shasum)
+
+		}
 	} else {
 		shasum, err = getVersionShasum(version, &rawVersionStructure)
 		if err != nil {
@@ -97,11 +120,11 @@ func (z *ZVM) Install(version string) error {
 		}
 	}
 
-	log.Debug("shasum", "value", shasum, "zig.onl", wasZigOnl)
-
 	fmt.Println("Checking shasum...")
 	if len(shasum) > 0 {
-		if hex.EncodeToString(hash.Sum(nil)) != shasum {
+		ourHexHash := hex.EncodeToString(hash.Sum(nil))
+		log.Debug("shasum check:", "theirs", shasum, "ours", ourHexHash)
+		if ourHexHash != shasum {
 			return fmt.Errorf("shasum for %v does not match expected value", version)
 		}
 		fmt.Println("Shasums match! 🎉")
@@ -140,7 +163,6 @@ func (z *ZVM) Install(version string) error {
 
 	if wasZigOnl {
 
-		zigArch, zigOS := zigStyleSysInfo()
 		untarredPath := filepath.Join(z.zvmBaseDir, fmt.Sprintf("zig-%s-%s-%s", zigOS, zigArch, version))
 		newPath := filepath.Join(z.zvmBaseDir, tarName)
 
@@ -349,7 +371,7 @@ func unzipFile(f *zip.File, destination string) error {
 	return nil
 }
 
-func checkZigOnl(version string) (string, error) {
+func checkZigOnl(version string) (*zigOnlVersion, error) {
 	arch, os := zigStyleSysInfo()
 	zigOnl := fmt.Sprintf("https://zig.onl/versions?release=%s&os=%s&arch=%s", version, os, arch)
 	log.Debug(zigOnl)
@@ -357,19 +379,30 @@ func checkZigOnl(version string) (string, error) {
 	if err != nil {
 		if err, ok := err.(*url.Error); ok {
 			if err.Timeout() {
-				return "", fmt.Errorf("timeout fetching %s", version)
+				return nil, fmt.Errorf("timeout fetching %s", version)
 			} else if err.Temporary() {
-				return "", fmt.Errorf("temporary error fetching %s. Please try again", version)
+				return nil, fmt.Errorf("temporary error fetching %s. Please try again", version)
 			}
 		}
 	}
 
 	if resp.StatusCode == 200 {
-		return zigOnl, nil
+		body, err := io.ReadAll(resp.Body)
+		if err != nil {
+			return nil, err
+		}
+		var bodyResp zigOnlVersion
+		if err := json.Unmarshal(body, &bodyResp); err != nil {
+			return nil, err
+		}
+		return &bodyResp, nil
 	}
+	return nil, ErrUnsupportedVersion
 
-	if resp.StatusCode != 200 {
-		return "", ErrUnsupportedVersion
-	}
-	return "", nil
+}
+
+type zigOnlVersion struct {
+	FilePath string `json:"filePath"`
+	FileSize int    `json:"fileSize,omitempty"`
+	Shasum   string `json:"shasum,omitempty"`
 }

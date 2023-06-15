@@ -102,8 +102,12 @@ func (z ZVM) getVersion(version string) error {
 	if version == outputVersion {
 		return nil
 	} else {
+		if version == "master" {
+			return nil
+		}
 		return fmt.Errorf("version %s is not a released version", version)
 	}
+
 }
 
 func (z *ZVM) loadSettings() error {

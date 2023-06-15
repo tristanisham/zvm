@@ -35,6 +35,7 @@ func (z *ZVM) ListVersions() error {
 		default:
 			if key.Name() == strings.TrimSpace(version) {
 				if z.Settings.UseColor {
+					// Should just check bin for used version
 					fmt.Println(clr.Green(key.Name()))
 				} else {
 					fmt.Printf("%s [x]", key.Name())

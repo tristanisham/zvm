@@ -4,7 +4,6 @@ import (
 	"archive/zip"
 	"crypto/sha256"
 	"encoding/hex"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -32,20 +31,12 @@ func (z *ZVM) Install(version string) error {
 	}
 
 	wasZigOnl := false
-	var versionFetch *zigOnlVersion
 	tarPath, err := getTarPath(version, &rawVersionStructure)
 	if err != nil {
 		if errors.Is(err, ErrUnsupportedVersion) {
-			versionFetch, err = checkZigOnl(version)
-			if err != nil {
-				return err
-			}
-			wasZigOnl = true
-			tarPath = versionFetch.FilePath
-			log.Debug("source", "zig.onl", wasZigOnl)
+			log.Fatal(err)
 		} else {
 			return err
-
 		}
 	}
 
@@ -90,9 +81,8 @@ func (z *ZVM) Install(version string) error {
 		clr_opt_ver_str = version
 	}
 
-	log.Debug("tarReq", "content-length", versionFetch.FileSize)
 	pbar := progressbar.DefaultBytes(
-		int64(versionFetch.FileSize),
+		int64(tarResp.ContentLength),
 		fmt.Sprintf("Downloading %s:", clr_opt_ver_str),
 	)
 
@@ -103,22 +93,10 @@ func (z *ZVM) Install(version string) error {
 	}
 
 	var shasum string
-	if wasZigOnl {
 
-		if ver := versionFetch; ver != nil {
-			if len(ver.Shasum) > 0 {
-				shasum = ver.Shasum
-			} else {
-				shasum = tarResp.Header.Get("X-Sha256")
-			}
-			log.Debug("shasum fetch", "zig.onl", ver.Shasum, "header", tarResp.Header.Get("X-Sha256"), "result", shasum)
-
-		}
-	} else {
-		shasum, err = getVersionShasum(version, &rawVersionStructure)
-		if err != nil {
-			return err
-		}
+	shasum, err = getVersionShasum(version, &rawVersionStructure)
+	if err != nil {
+		return err
 	}
 
 	fmt.Println("Checking shasum...")
@@ -127,8 +105,8 @@ func (z *ZVM) Install(version string) error {
 		log.Debug("shasum check:", "theirs", shasum, "ours", ourHexHash)
 		if ourHexHash != shasum {
 			// TODO (tristan)
-			// Why is my sha256 identical on the server and sha256sum, 
-			// but not when I download it in ZVM? Oh shit. 
+			// Why is my sha256 identical on the server and sha256sum,
+			// but not when I download it in ZVM? Oh shit.
 			// It's because it's a compressed download.
 			return fmt.Errorf("shasum for %v does not match expected value", version)
 		}
@@ -374,47 +352,4 @@ func unzipFile(f *zip.File, destination string) error {
 		return err
 	}
 	return nil
-}
-
-func checkZigOnl(version string) (*zigOnlVersion, error) {
-	var core string = "https://zig.onl"
-	if len(os.Getenv("DEBUG")) > 0 {
-		core = "http://localhost:3000"
-	}
-
-	arch, os := zigStyleSysInfo()
-	zigOnl := fmt.Sprintf("%s/versions?release=%s&os=%s&arch=%s", core, version, os, arch)
-	log.Debug("checkZigOnl", "url", zigOnl)
-	resp, err := http.Get(zigOnl)
-	if err != nil {
-		if err, ok := err.(*url.Error); ok {
-			if err.Timeout() {
-				return nil, fmt.Errorf("timeout fetching %s", version)
-			} else if err.Temporary() {
-				return nil, fmt.Errorf("temporary error fetching %s. Please try again", version)
-			}
-		}
-
-		return nil, err
-	}
-
-	if resp.StatusCode == 200 {
-		body, err := io.ReadAll(resp.Body)
-		if err != nil {
-			return nil, err
-		}
-		var bodyResp zigOnlVersion
-		if err := json.Unmarshal(body, &bodyResp); err != nil {
-			return nil, err
-		}
-		return &bodyResp, nil
-	}
-	return nil, ErrUnsupportedVersion
-
-}
-
-type zigOnlVersion struct {
-	FilePath string `json:"filePath"`
-	FileSize int    `json:"fileSize,omitempty"`
-	Shasum   string `json:"shasum,omitempty"`
 }

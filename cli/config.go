@@ -19,7 +19,7 @@ func Initialize() *ZVM {
 	}
 	zvm_path := filepath.Join(home, ".zvm")
 	if _, err := os.Stat(zvm_path); os.IsNotExist(err) {
-		if err := os.MkdirAll(zvm_path, 0775); err != nil {
+		if err := os.MkdirAll(filepath.Join(zvm_path, "self"), 0775); err != nil {
 			log.Fatal(err)
 		}
 	}

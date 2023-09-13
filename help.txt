@@ -17,6 +17,9 @@ uninstall, rm <version>
 clean
   Use `clean` to remove build artifacts (Good if you're on Windows).
 
+upgrade 
+  Use `upgrade` to update your ZVM install
+
 version, --version, -v
   Prints the version of ZVM you have installed.
 

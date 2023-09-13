@@ -6,6 +6,7 @@ require (
 	github.com/charmbracelet/log v0.2.1
 	github.com/schollz/progressbar/v3 v3.13.1
 	github.com/tristanisham/clr v0.0.0-20221004001624-00ee60046d85
+	golang.org/x/mod v0.12.0
 )
 
 require (

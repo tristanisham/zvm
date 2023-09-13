@@ -20,9 +20,8 @@ var helpTxt string
 func main() {
 	zvm := cli.Initialize()
 	args := os.Args[1:]
-	if len(os.Getenv("DEBUG")) > 0 {
+	if _, ok := os.LookupEnv("ZVM_DEBUG"); ok {
 		log.SetLevel(log.DebugLevel)
-
 	}
 
 	if len(args) == 0 {
@@ -84,6 +83,11 @@ func main() {
 				}
 			}
 			return
+
+		case "upgrade":
+			if err := zvm.Upgrade(); err != nil {
+				log.Fatal(err)
+			}
 
 		case "version", "--version", "-v":
 			fmt.Println(meta.VERSION)

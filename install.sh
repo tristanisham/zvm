@@ -28,7 +28,8 @@ install_latest() {
             curl -L --max-redirs 5 "https://github.com/tristanisham/zvm/releases/latest/download/$1" -o zvm.tar
         fi
         
-        tar -xf zvm.tar
+        mkdir -p $HOME/.zvm/self
+        tar -xf zvm.tar -C $HOME/.zvm/self
         rm "zvm.tar"
         
     elif [ $OS = "Linux" ]; then
@@ -42,7 +43,8 @@ install_latest() {
             curl -L --max-redirs 5 "https://github.com/tristanisham/zvm/releases/latest/download/$1" -o zvm.tar
         fi
         
-        tar -xf zvm.tar
+        mkdir -p $HOME/.zvm/self
+        tar -xf zvm.tar -C $HOME/.zvm/self
         rm "zvm.tar"
     elif [ $OS = "MINGW32_NT" ]; then
     # Do something under 32 bits Windows NT platform
@@ -71,6 +73,12 @@ elif [ $OS == "MINGW64_NT" ]; then
     install_latest "zvm-windows-$ARCH.zip"
 fi
 
-echo
-echo "If this is your first time installing 'zvm' append the following to $HOME/.profile or $HOME/.bashrc"
-echo -e "\x1b[1;32mexport PATH=\$PATH:\$HOME/.zvm/bin\x1b[1;0m"
+# Check if ZVM_INSTALL is not set
+if [ -z "$ZVM_INSTALL" ]; then
+    # Append the lines to $HOME/.profile
+    echo 'export ZVM_INSTALL="$HOME/.zvm/self"' >> $HOME/.profile
+    echo 'export PATH="$PATH:/home/tristan/.zvm/bin"' >> $HOME/.profile
+    echo 'export PATH="$ZVM_INSTALL/self:$PATH"' >> $HOME/.profile
+fi
+
+echo "Run 'source ~/.profile' to start using ZVM in this shell!"

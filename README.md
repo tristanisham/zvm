@@ -18,12 +18,45 @@ compile your projects, or a language gets updated frequently.
 
 # Installing ZVM
 
+# Linux, BSD, MacOS, *nix
+
 ```sh
 curl https://raw.githubusercontent.com/tristanisham/zvm/master/install.sh | bash
 ```
 
+As of `zvm v0.2.3` the project uses an updated installer. Users of an older
+version of ZVM are encouraged to upgrade via this installer, and move their ZVM
+installation to `~/.zvm/self/`. If you do this move and `zvm` is no longer on
+your path, please remove any existing `zvm` environment variables from
+`~/.profile` and run the following:
+
+```sh
+# Append the lines to $HOME/.profile
+    echo 'export ZVM_INSTALL="$HOME/.zvm/self"' >> $HOME/.profile
+    echo 'export PATH="$PATH:/home/tristan/.zvm/bin"' >> $HOME/.profile
+    echo 'export PATH="$ZVM_INSTALL/self:$PATH"' >> $HOME/.profile
+```
+
+# Windows
+
 If you're on Windows, please grab the
 [latest release](https://github.com/tristanisham/zvm/releases/latest).
+
+## Putting ZVM on your Path
+
+ZVM requires a few directories to be on your `$PATH`. If you don't know how to
+update your environment variables perminantly on Windows, you can follow
+[this guide](https://www.computerhope.com/issues/ch000549.htm). Once you're in
+the appropriate menu, add or append to the following environment variables:
+
+Add
+
+- ZVM_INSTALL: C:\Users\\`%YOUR_USERNAME_HERE%`\.zvm\bin\self
+
+Append
+
+- PATH: C:\Users\\`%YOUR_USERNAME_HERE%`\.zvm\bin
+- PATH: $ZVM_INSTALL/self
 
 ## Community Package
 
@@ -101,6 +134,19 @@ zvm rm 0.10.0
 ```
 
 Use `uninstall` or `rm` to remove an uninstalled version from your system.
+
+## Upgrade your ZVM installation
+
+As of `zvm v0.2.3` you can now upgrade your ZVM installation from, well, zvm.
+Just run:
+
+```sh
+zvm upgrade
+```
+
+The latest version of ZVM should install on your machine, regardless of where
+your binary lives (though if you have your binary in a privaledged folder, you
+may have to run this command with `sudo`).
 
 ## Clean up build artifacts
 

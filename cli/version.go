@@ -6,9 +6,9 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"zvm/cli/meta"
 )
 
-const VERSION = "v0.2.2"
 
 func (z *ZVM) fetchOfficialVersionMap() (zigVersionMap, error) {
 
@@ -17,7 +17,7 @@ func (z *ZVM) fetchOfficialVersionMap() (zigVersionMap, error) {
 		return nil, err
 	}
 
-	req.Header.Set("User-Agent", "zvm "+VERSION)
+	req.Header.Set("User-Agent", "zvm "+meta.VERSION)
 	client := http.DefaultClient
 	resp, err := client.Do(req)
 	if err != nil {

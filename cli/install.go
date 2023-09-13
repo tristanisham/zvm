@@ -14,6 +14,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
+	"zvm/cli/meta"
 
 	"github.com/charmbracelet/log"
 
@@ -47,7 +48,7 @@ func (z *ZVM) Install(version string) error {
 		return err
 	}
 
-	zigDownloadReq.Header.Set("User-Agent", "zvm "+VERSION)
+	zigDownloadReq.Header.Set("User-Agent", "zvm "+meta.VERSION)
 	zigDownloadReq.Header.Set("X-Client-Os", zigOS)
 	zigDownloadReq.Header.Set("X-Client-Arch", zigArch)
 

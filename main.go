@@ -7,6 +7,7 @@ import (
 	"os"
 	"strings"
 	"zvm/cli"
+	"zvm/cli/meta"
 
 	_ "embed"
 
@@ -85,19 +86,19 @@ func main() {
 			return
 
 		case "version", "--version", "-v":
-			fmt.Println(cli.VERSION)
+			fmt.Println(meta.VERSION)
 			return
 		case "help", "--help", "-h":
 			//zvm.Settings.UseColor
 			helpTmpl, err := template.New("help").Parse(helpTxt)
 			if err != nil {
-				fmt.Printf("Sorry! There was a rendering error (%q). The version is %s\n", err, cli.VERSION)
+				fmt.Printf("Sorry! There was a rendering error (%q). The version is %s\n", err, meta.VERSION)
 				fmt.Println(helpTxt)
 				return
 			}
 
-			if err := helpTmpl.Execute(os.Stdout, map[string]string{"Version": cli.VERSION}); err != nil {
-				fmt.Printf("Sorry! There was a rendering error (%q). The version is %s\n", err, cli.VERSION)
+			if err := helpTmpl.Execute(os.Stdout, map[string]string{"Version": meta.VERSION}); err != nil {
+				fmt.Printf("Sorry! There was a rendering error (%q). The version is %s\n", err, meta.VERSION)
 				fmt.Println(helpTxt)
 				return
 			}

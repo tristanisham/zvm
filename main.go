@@ -26,8 +26,11 @@ func main() {
 
 	if len(args) == 0 {
 		helpMsg()
+		alertIfUpgradable(zvm.Settings.UseColor)
 		os.Exit(0)
 	}
+
+	alertIfUpgradable(zvm.Settings.UseColor)
 
 	for i, arg := range args {
 		switch arg {
@@ -127,4 +130,25 @@ func helpMsg() {
 		fmt.Println(helpTxt)
 		return
 	}
+}
+
+// alertIfUpgradable checks to see if a new version of ZVM is out, and alerts the user via stdout.
+func alertIfUpgradable(colors bool) {
+
+	if _, noCheckUpgrade := os.LookupEnv("ZVM_NO_CHECK_UPDATE"); !noCheckUpgrade {
+		upgradable, tagName, err := cli.CanIUpgrade()
+		if err != nil {
+			log.Info("failed new zvm version check")
+		}
+
+		if upgradable {
+			coloredText := "zvm upgrade"
+			if colors {
+				coloredText = clr.Blue("zvm upgrade")
+			}
+
+			fmt.Printf("There's a new version of ZVM (%s).\n Run '%s' to install it!\n", tagName, coloredText)
+		}
+	}
+
 }

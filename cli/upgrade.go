@@ -26,7 +26,7 @@ import (
 // I wrote most of it before I remembered that GitHub has an API so expect major refactoring.
 func (z *ZVM) Upgrade() error {
 
-	upgradable, tagName, err := canIUpgrade()
+	upgradable, tagName, err := CanIUpgrade()
 	if err != nil {
 		return errors.Join(ErrFailedUpgrade, err)
 	}
@@ -217,7 +217,7 @@ func isSymlink(path string) (bool, error) {
 
 
 
-func canIUpgrade() (bool, string, error) {
+func CanIUpgrade() (bool, string, error) {
 	release, err := getLatestGitHubRelease("tristanisham", "zvm")
 	if err != nil {
 		return false, "", err

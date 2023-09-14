@@ -7,10 +7,10 @@ import (
 	"io"
 	"net/http"
 	"os"
-	"os/user"
+	// "os/user"
 	"path/filepath"
 	"runtime"
-	"syscall"
+	// "syscall"
 	"time"
 	"zvm/cli/meta"
 
@@ -112,7 +112,7 @@ func (z *ZVM) Upgrade() error {
 
 func (z ZVM) getInstallDir() (string, error) {
 	zvmInstallDirENV, ok := os.LookupEnv("ZVM_INSTALL")
-	if !ok {
+	if !ok  || zvmInstallDirENV == "0" {
 		this, err := os.Executable()
 		if err != nil {
 			return filepath.Join(z.zvmBaseDir, "self"), nil
@@ -214,37 +214,8 @@ func isSymlink(path string) (bool, error) {
 	return fileInfo.Mode()&os.ModeSymlink != 0, nil
 }
 
-func canModifyFile(path string) (bool, error) {
-	fileInfo, err := os.Stat(path)
-	if err != nil {
-		return false, err
-	}
 
-	// Get the file's permission mode
-	perm := fileInfo.Mode().Perm()
 
-	// Check if the file is writable by the current user
-	if perm&0200 != 0 {
-		return true, nil
-	}
-
-	// If the file isn't globally writable, check if it's writable by the file's group
-	if perm&0020 != 0 {
-		currentUser, err := user.Current()
-		if err != nil {
-			return false, err
-		}
-		fileGroup, err := user.LookupGroupId(fmt.Sprint(fileInfo.Sys().(*syscall.Stat_t).Gid))
-		if err != nil {
-			return false, err
-		}
-		if currentUser.Gid == fileGroup.Gid {
-			return true, nil
-		}
-	}
-
-	return false, nil
-}
 
 func canIUpgrade() (bool, string, error) {
 	release, err := getLatestGitHubRelease("tristanisham", "zvm")

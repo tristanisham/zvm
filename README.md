@@ -17,6 +17,9 @@ lead to headaches when you need multiple versions of a language installed to
 compile your projects, or a language gets updated frequently.
 
 # Installing ZVM
+ZVM lives entirely in `$HOME/.zvm` on all platforms it supports. Inside of the directory, ZVM will download new ZIG versions and symlink whichever version you specify with `zvm use` to `$HOME/.zvm/bin`. You should add this folder to your path. After ZVM 0.2.3, ZVMs installer will now add ZVM to `$HOME/.zvm/self`. You should also add this directory as the environment variable `ZVM_INSTALL`. The installer should handle this for you automatically if you're on *nix systems, but you'll have to manually do this on Windows. You can then add `ZVM_INSTALL to your path.`
+
+If you don't want to use ZVM_INSTALL (like you already have ZVM in a place you like, or can't set environment variables), then ZVM will update the exact executable you've called `upgrade` from. 
 
 # Linux, BSD, MacOS, *nix
 

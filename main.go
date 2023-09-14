@@ -25,7 +25,7 @@ func main() {
 	}
 
 	if len(args) == 0 {
-		fmt.Println(helpTxt)
+		helpMsg()
 		os.Exit(0)
 	}
 
@@ -95,18 +95,7 @@ func main() {
 			return
 		case "help", "--help", "-h":
 			//zvm.Settings.UseColor
-			helpTmpl, err := template.New("help").Parse(helpTxt)
-			if err != nil {
-				fmt.Printf("Sorry! There was a rendering error (%q). The version is %s\n", err, meta.VERSION)
-				fmt.Println(helpTxt)
-				return
-			}
-
-			if err := helpTmpl.Execute(os.Stdout, map[string]string{"Version": meta.VERSION}); err != nil {
-				fmt.Printf("Sorry! There was a rendering error (%q). The version is %s\n", err, meta.VERSION)
-				fmt.Println(helpTxt)
-				return
-			}
+			helpMsg()
 
 			return
 			// Settings
@@ -123,4 +112,19 @@ func main() {
 
 	}
 
+}
+
+func helpMsg() {
+	helpTmpl, err := template.New("help").Parse(helpTxt)
+	if err != nil {
+		fmt.Printf("Sorry! There was a rendering error (%q). The version is %s\n", err, meta.VERSION)
+		fmt.Println(helpTxt)
+		return
+	}
+
+	if err := helpTmpl.Execute(os.Stdout, map[string]string{"Version": meta.VERSION}); err != nil {
+		fmt.Printf("Sorry! There was a rendering error (%q). The version is %s\n", err, meta.VERSION)
+		fmt.Println(helpTxt)
+		return
+	}
 }

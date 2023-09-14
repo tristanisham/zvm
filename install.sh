@@ -87,7 +87,7 @@ if [[ "$TERM" == "xterm" || "$TERM" == "xterm-256color" || "$TERM" == "screen" |
     echo -e "${GREEN}echo${NC} ${RED}\"# ZVM\"${NC} ${GREEN}>>${NC} ${BLUE}\$HOME/.profile${NC}"
     echo -e "${GREEN}echo${NC} ${RED}'export ZVM_INSTALL=\"\$HOME/.zvm/self\"'${NC} ${GREEN}>>${NC} ${BLUE}\$HOME/.profile${NC}"
     echo -e "${GREEN}echo${NC} ${RED}'export PATH=\"\$PATH:/home/tristan/.zvm/bin\"'${NC} ${GREEN}>>${NC} ${BLUE}\$HOME/.profile${NC}"
-    echo -e "${GREEN}echo${NC} ${RED}'export PATH=\"\$PATH\:\$ZVM_INSTALL/\"'${NC} ${GREEN}>>${NC} ${BLUE}\$HOME/.profile${NC}"
+    echo -e "${GREEN}echo${NC} ${RED}'export PATH=\"\$PATH:\$ZVM_INSTALL/\"'${NC} ${GREEN}>>${NC} ${BLUE}\$HOME/.profile${NC}"
 
     echo -e "Run '${GREEN}source ~/.profile${NC}' to start using ZVM in this shell!"
 

@@ -64,7 +64,7 @@ Add
 Append
 
 - PATH: C:\Users\\`%YOUR_USERNAME_HERE%`\.zvm\bin
-- PATH: $ZVM_INSTALL/self
+- PATH: $ZVM_INSTALL/
 
 ## Community Package
 

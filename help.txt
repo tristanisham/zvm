@@ -1,4 +1,5 @@
 zvm (Zig Version Manager) {{.Version}}
+© 2023-present Tristan Isham
 --------------------------------
 
 install, i <version>

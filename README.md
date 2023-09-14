@@ -17,27 +17,32 @@ lead to headaches when you need multiple versions of a language installed to
 compile your projects, or a language gets updated frequently.
 
 # Installing ZVM
-ZVM lives entirely in `$HOME/.zvm` on all platforms it supports. Inside of the directory, ZVM will download new ZIG versions and symlink whichever version you specify with `zvm use` to `$HOME/.zvm/bin`. You should add this folder to your path. After ZVM 0.2.3, ZVMs installer will now add ZVM to `$HOME/.zvm/self`. You should also add this directory as the environment variable `ZVM_INSTALL`. The installer should handle this for you automatically if you're on *nix systems, but you'll have to manually do this on Windows. You can then add `ZVM_INSTALL to your path.`
 
-If you don't want to use ZVM_INSTALL (like you already have ZVM in a place you like, or can't set environment variables), then ZVM will update the exact executable you've called `upgrade` from. 
+ZVM lives entirely in `$HOME/.zvm` on all platforms it supports. Inside of the
+directory, ZVM will download new ZIG versions and symlink whichever version you
+specify with `zvm use` to `$HOME/.zvm/bin`. You should add this folder to your
+path. After ZVM 0.2.3, ZVMs installer will now add ZVM to `$HOME/.zvm/self`. You
+should also add this directory as the environment variable `ZVM_INSTALL`. The
+installer should handle this for you automatically if you're on *nix systems,
+but you'll have to manually do this on Windows. You can then add
+`ZVM_INSTALL to your path.`
+
+If you don't want to use ZVM_INSTALL (like you already have ZVM in a place you
+like), then ZVM will update the exact
+executable you've called `upgrade` from.
 
 # Linux, BSD, MacOS, *nix
 
 ```sh
 curl https://raw.githubusercontent.com/tristanisham/zvm/master/install.sh | bash
 ```
-
-As of `zvm v0.2.3` the project uses an updated installer. Users of an older
-version of ZVM are encouraged to upgrade via this installer, and move their ZVM
-installation to `~/.zvm/self/`. If you do this move and `zvm` is no longer on
-your path, please remove any existing `zvm` environment variables from
-`~/.profile` and run the following:
+Then add ZVM's directories to your `$PATH`
 
 ```sh
-# Append the lines to $HOME/.profile
-    echo 'export ZVM_INSTALL="$HOME/.zvm/self"' >> $HOME/.profile
-    echo 'export PATH="$PATH:/home/tristan/.zvm/bin"' >> $HOME/.profile
-    echo 'export PATH="$ZVM_INSTALL/self:$PATH"' >> $HOME/.profile
+  echo 'echo "# ZVM" >> $HOME/.profile'
+    echo 'echo '\''export ZVM_INSTALL="$HOME/.zvm/self"'\'' >> $HOME/.profile'
+    echo 'echo '\''export PATH="$PATH:/home/tristan/.zvm/bin"'\'' >> $HOME/.profile'
+    echo 'echo '\''export PATH="$PATH:$ZVM_INSTALL/"'\'' >> $HOME/.profile'
 ```
 
 # Windows

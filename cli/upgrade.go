@@ -112,7 +112,7 @@ func (z *ZVM) Upgrade() error {
 
 func (z ZVM) getInstallDir() (string, error) {
 	zvmInstallDirENV, ok := os.LookupEnv("ZVM_INSTALL")
-	if !ok  || zvmInstallDirENV == "0" {
+	if !ok {
 		this, err := os.Executable()
 		if err != nil {
 			return filepath.Join(z.zvmBaseDir, "self"), nil

@@ -59,12 +59,12 @@ the appropriate menu, add or append to the following environment variables:
 
 Add
 
-- ZVM_INSTALL: C:\Users\\`%YOUR_USERNAME_HERE%`\.zvm\bin\self
+- ZVM_INSTALL: `%USERPROFILE%\.zvm\self`
 
 Append
 
-- PATH: C:\Users\\`%YOUR_USERNAME_HERE%`\.zvm\bin
-- PATH: $ZVM_INSTALL/
+- PATH: `%USERPROFILE%\.zvm\bin`
+- PATH: `%ZVM_INSTALL%`
 
 ## Community Package
 

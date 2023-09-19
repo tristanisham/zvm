@@ -59,7 +59,7 @@ the appropriate menu, add or append to the following environment variables:
 
 Add
 
-- ZVM_INSTALL: C:\Users\\`%YOUR_USERNAME_HERE%`\.zvm\bin\self
+- ZVM_INSTALL: C:\Users\\`%YOUR_USERNAME_HERE%`\.zvm\self
 
 Append
 

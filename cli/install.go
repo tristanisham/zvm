@@ -193,6 +193,47 @@ func (z *ZVM) Install(version string) error {
 		}
 	}
 
+	z.createSymlink(version)
+
+	return nil
+}
+
+func (z *ZVM) InstallZls(version string) error {
+	// make sure dir exists
+	install_dir := filepath.Join(z.zvmBaseDir, version)
+	err := os.MkdirAll(install_dir, 0755)
+	if err != nil {
+		return err
+	}
+
+	arch, os_type := zigStyleSysInfo()
+
+	filename := "zls"
+	if os_type != "windows" {
+		filename += ".exe"
+	}
+
+	install_file := filepath.Join(install_dir, filename)
+	out, _ := os.Create(install_file)
+	defer out.Close()
+
+	// master does not need unzipping, zpm just serves full binary
+	if version == "master" {
+		zpm_base_url := "https://zig.pm/zls/downloads"
+		dl_url := fmt.Sprintf("%v/%v-%v/bin/%v", zpm_base_url, arch, os_type, filename)
+
+		resp, _ := http.Get(dl_url)
+		defer resp.Body.Close()
+		io.Copy(out, resp.Body)
+	} else {
+
+	}
+
+	fmt.Println("Copy complete")
+	return nil
+}
+
+func (z *ZVM) createSymlink(version string) {
 	if _, err := os.Lstat(filepath.Join(z.zvmBaseDir, "bin")); err == nil {
 		os.Remove(filepath.Join(z.zvmBaseDir, "bin"))
 	}
@@ -200,8 +241,6 @@ func (z *ZVM) Install(version string) error {
 	if err := os.Symlink(filepath.Join(z.zvmBaseDir, version), filepath.Join(z.zvmBaseDir, "bin")); err != nil {
 		log.Fatal(err)
 	}
-
-	return nil
 }
 
 func getTarPath(version string, data *map[string]map[string]any) (string, error) {

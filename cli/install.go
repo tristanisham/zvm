@@ -229,6 +229,8 @@ func (z *ZVM) InstallZls(version string) error {
 
 	}
 
+	z.createSymlink(version)
+
 	fmt.Println("Copy complete")
 	return nil
 }

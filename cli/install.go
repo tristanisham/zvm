@@ -200,38 +200,40 @@ func (z *ZVM) Install(version string) error {
 
 func (z *ZVM) InstallZls(version string) error {
 	// make sure dir exists
-	install_dir := filepath.Join(z.zvmBaseDir, version)
-	err := os.MkdirAll(install_dir, 0755)
+	installDir := filepath.Join(z.zvmBaseDir, version)
+	err := os.MkdirAll(installDir, 0755)
 	if err != nil {
 		return err
 	}
 
-	arch, os_type := zigStyleSysInfo()
+	arch, osType := zigStyleSysInfo()
 
 	filename := "zls"
-	if os_type != "windows" {
+	if osType == "windows" {
 		filename += ".exe"
 	}
 
-	install_file := filepath.Join(install_dir, filename)
-	out, _ := os.Create(install_file)
-	defer out.Close()
-
 	// master does not need unzipping, zpm just serves full binary
-	if version == "master" {
-		zpm_base_url := "https://zig.pm/zls/downloads"
-		dl_url := fmt.Sprintf("%v/%v-%v/bin/%v", zpm_base_url, arch, os_type, filename)
-
-		resp, _ := http.Get(dl_url)
-		defer resp.Body.Close()
-		io.Copy(out, resp.Body)
-	} else {
-
+	if version != "master" {
+		return fmt.Errorf("zls can only be installed for master")
 	}
 
-	z.createSymlink(version)
+	fmt.Println("Downloading zls")
 
-	fmt.Println("Copy complete")
+	installFile := filepath.Join(installDir, filename)
+	out, _ := os.Create(installFile)
+	defer out.Close()
+	os.Chmod(installFile, 0755)
+
+	zpmBaseUrl := "https://zig.pm/zls/downloads"
+	dlUrl := fmt.Sprintf("%v/%v-%v/bin/%v", zpmBaseUrl, arch, osType, filename)
+
+	resp, _ := http.Get(dlUrl)
+	defer resp.Body.Close()
+	io.Copy(out, resp.Body)
+
+	z.createSymlink(version)
+	fmt.Println("Done! 🎉")
 	return nil
 }
 
@@ -319,11 +321,12 @@ func ExtractBundle(bundle, out string) error {
 	if runtime.GOOS == "windows" {
 		return unzipSource(bundle, out)
 	}
+
 	return untarXZ(bundle, out)
 }
 
 func untarXZ(in, out string) error {
-	tar := exec.Command("tar", "-xmf", in, "-C", out)
+	tar := exec.Command("tar", "-xf", in, "-C", out)
 	tar.Stdout = os.Stdout
 	tar.Stderr = os.Stderr
 	if err := tar.Run(); err != nil {

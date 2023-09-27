@@ -264,7 +264,7 @@ func (z *ZVM) InstallZls(version string) error {
 		releaseBuffer.ReadFrom(resp.Body)
 
 		// some github releases use tar.gz, some tar.xz
-		expectedFileNameNoEnding := fmt.Sprintf("zls-%v-%v", arch, osType)
+		expectedArchOs := fmt.Sprintf("%v-%v", arch, osType)
 		zipName := ""
 		var taggedReleaseResponse githubTaggedReleaseResponse
 		// getting list of assets
@@ -275,7 +275,7 @@ func (z *ZVM) InstallZls(version string) error {
 		// getting platform information
 		downloadUrl := ""
 		for _, asset := range taggedReleaseResponse.Assets {
-			if strings.Contains(asset.Name, expectedFileNameNoEnding) {
+			if strings.Contains(asset.Name, expectedArchOs) {
 				downloadUrl = asset.Url
 				zipName = asset.Name
 				break
@@ -284,7 +284,7 @@ func (z *ZVM) InstallZls(version string) error {
 
 		// couldn't find the file
 		if downloadUrl == "" {
-			return fmt.Errorf("could not find %v", expectedFileNameNoEnding)
+			return fmt.Errorf("could not find zls-%v", expectedArchOs)
 		}
 
 		client := &http.Client{}
@@ -323,6 +323,9 @@ func (z *ZVM) InstallZls(version string) error {
 			log.Fatal(err)
 		}
 		if err := os.Rename(filepath.Join(versionPath, "bin", filename), filepath.Join(versionPath, filename)); err != nil {
+			return err
+		}
+		if err := os.Chmod(filepath.Join(versionPath, filename), 0755); err != nil {
 			return err
 		}
 	}

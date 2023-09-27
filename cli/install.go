@@ -2,8 +2,10 @@ package cli
 
 import (
 	"archive/zip"
+	"bytes"
 	"crypto/sha256"
 	"encoding/hex"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -198,6 +200,15 @@ func (z *ZVM) Install(version string) error {
 	return nil
 }
 
+type githubTaggedReleaseResponse struct {
+	Assets []gitHubAsset // json array of platform binaries
+}
+
+type gitHubAsset struct {
+	Url  string // download url for asset
+	Name string // contains platform information about binary
+}
+
 func (z *ZVM) InstallZls(version string) error {
 	// make sure dir exists
 	installDir := filepath.Join(z.zvmBaseDir, version)
@@ -214,23 +225,86 @@ func (z *ZVM) InstallZls(version string) error {
 	}
 
 	// master does not need unzipping, zpm just serves full binary
-	if version != "master" {
-		return fmt.Errorf("zls can only be installed for master")
+	if version == "master" {
+		fmt.Println("Downloading zls")
+
+		installFile := filepath.Join(installDir, filename)
+		out, _ := os.Create(installFile)
+		defer out.Close()
+		os.Chmod(installFile, 0755)
+
+		zpmBaseUrl := "https://zig.pm/zls/downloads"
+		dlUrl := fmt.Sprintf("%v/%v-%v/bin/%v", zpmBaseUrl, arch, osType, filename)
+
+		resp, _ := http.Get(dlUrl)
+		defer resp.Body.Close()
+		io.Copy(out, resp.Body)
+	} else {
+		//return fmt.Errorf("zls can only be installed for master")
+
+		// build url for tagged version
+		releaseUrl := fmt.Sprintf("https://api.github.com/repos/zigtools/zls/releases/tags/%v", version)
+
+		// get release information
+		resp, _ := http.Get(releaseUrl)
+		defer resp.Body.Close()
+
+		var releaseBuffer bytes.Buffer
+		releaseBuffer.ReadFrom(resp.Body)
+
+		// some github releases use tar.gz, some tar.xz
+		expectedFileNameNoEnding := fmt.Sprintf("zls-%v-%v", arch, osType)
+		zipName := ""
+		var taggedReleaseResponse githubTaggedReleaseResponse
+		// getting list of assets
+		json.Unmarshal(releaseBuffer.Bytes(), &taggedReleaseResponse)
+
+		// getting platform information
+		downloadUrl := ""
+		for _, asset := range taggedReleaseResponse.Assets {
+			if strings.Contains(asset.Name, expectedFileNameNoEnding) {
+				downloadUrl = asset.Url
+				zipName = asset.Name
+				break
+			}
+		}
+
+		// couldn't find the file
+		if downloadUrl == "" {
+			return fmt.Errorf("could not find %v", expectedFileNameNoEnding)
+		}
+
+		client := &http.Client{}
+
+		// download tarball to temp
+		req, _ := http.NewRequest("GET", downloadUrl, nil)
+		req.Header.Set("Accept", "application/octet-stream")
+		resp, _ = client.Do(req)
+		defer resp.Body.Close()
+
+		// creating file to place contents
+		_, pathEnding, _ := strings.Cut(zipName, ".")
+
+		tempDir, err := os.CreateTemp(z.zvmBaseDir, "*."+pathEnding)
+		if err != nil {
+			return err
+		}
+
+		fmt.Printf("Created temp dir %v\n", tempDir.Name())
+
+		defer tempDir.Close()
+		defer os.RemoveAll(tempDir.Name())
+
+		io.Copy(tempDir, resp.Body)
+		fmt.Printf("Copied contents to %v\n", tempDir.Name())
+
+		// untar to destination
+		versionPath := filepath.Join(z.zvmBaseDir, version)
+		if err := ExtractBundle(tempDir.Name(), filepath.Join(z.zvmBaseDir, version)); err != nil {
+			log.Fatal(err)
+		}
+		os.Rename(filepath.Join(versionPath, "bin", filename), filepath.Join(versionPath, filename))
 	}
-
-	fmt.Println("Downloading zls")
-
-	installFile := filepath.Join(installDir, filename)
-	out, _ := os.Create(installFile)
-	defer out.Close()
-	os.Chmod(installFile, 0755)
-
-	zpmBaseUrl := "https://zig.pm/zls/downloads"
-	dlUrl := fmt.Sprintf("%v/%v-%v/bin/%v", zpmBaseUrl, arch, osType, filename)
-
-	resp, _ := http.Get(dlUrl)
-	defer resp.Body.Close()
-	io.Copy(out, resp.Body)
 
 	z.createSymlink(version)
 	fmt.Println("Done! 🎉")
@@ -239,7 +313,11 @@ func (z *ZVM) InstallZls(version string) error {
 
 func (z *ZVM) createSymlink(version string) {
 	if _, err := os.Lstat(filepath.Join(z.zvmBaseDir, "bin")); err == nil {
-		os.Remove(filepath.Join(z.zvmBaseDir, "bin"))
+		fmt.Println("Removing old symlink")
+		if err := os.RemoveAll(filepath.Join(z.zvmBaseDir, "bin")); err != nil {
+			log.Fatal("could not remove bin", err)
+		}
+
 	}
 
 	if err := os.Symlink(filepath.Join(z.zvmBaseDir, version), filepath.Join(z.zvmBaseDir, "bin")); err != nil {

@@ -229,24 +229,35 @@ func (z *ZVM) InstallZls(version string) error {
 		fmt.Println("Downloading zls")
 
 		installFile := filepath.Join(installDir, filename)
-		out, _ := os.Create(installFile)
+		out, err := os.Create(installFile)
+		if err != nil {
+			return err
+		}
 		defer out.Close()
-		os.Chmod(installFile, 0755)
+		if err := os.Chmod(installFile, 0755); err != nil {
+			return err
+		}
 
 		zpmBaseUrl := "https://zig.pm/zls/downloads"
 		dlUrl := fmt.Sprintf("%v/%v-%v/bin/%v", zpmBaseUrl, arch, osType, filename)
 
-		resp, _ := http.Get(dlUrl)
+		resp, err := http.Get(dlUrl)
+		if err != nil {
+			return err
+		}
 		defer resp.Body.Close()
-		io.Copy(out, resp.Body)
+		if _, err := io.Copy(out, resp.Body); err != nil {
+			return err
+		}
 	} else {
-		//return fmt.Errorf("zls can only be installed for master")
-
 		// build url for tagged version
 		releaseUrl := fmt.Sprintf("https://api.github.com/repos/zigtools/zls/releases/tags/%v", version)
 
 		// get release information
-		resp, _ := http.Get(releaseUrl)
+		resp, err := http.Get(releaseUrl)
+		if err != nil {
+			return err
+		}
 		defer resp.Body.Close()
 
 		var releaseBuffer bytes.Buffer
@@ -257,7 +268,9 @@ func (z *ZVM) InstallZls(version string) error {
 		zipName := ""
 		var taggedReleaseResponse githubTaggedReleaseResponse
 		// getting list of assets
-		json.Unmarshal(releaseBuffer.Bytes(), &taggedReleaseResponse)
+		if err := json.Unmarshal(releaseBuffer.Bytes(), &taggedReleaseResponse); err != nil {
+			return err
+		}
 
 		// getting platform information
 		downloadUrl := ""
@@ -277,9 +290,15 @@ func (z *ZVM) InstallZls(version string) error {
 		client := &http.Client{}
 
 		// download tarball to temp
-		req, _ := http.NewRequest("GET", downloadUrl, nil)
+		req, err := http.NewRequest("GET", downloadUrl, nil)
+		if err != nil {
+			return err
+		}
 		req.Header.Set("Accept", "application/octet-stream")
-		resp, _ = client.Do(req)
+		resp, err = client.Do(req)
+		if err != nil {
+			return err
+		}
 		defer resp.Body.Close()
 
 		// creating file to place contents
@@ -290,20 +309,22 @@ func (z *ZVM) InstallZls(version string) error {
 			return err
 		}
 
-		fmt.Printf("Created temp dir %v\n", tempDir.Name())
-
 		defer tempDir.Close()
 		defer os.RemoveAll(tempDir.Name())
 
-		io.Copy(tempDir, resp.Body)
-		fmt.Printf("Copied contents to %v\n", tempDir.Name())
+		if _, err := io.Copy(tempDir, resp.Body); err != nil {
+			return err
+		}
 
 		// untar to destination
+		fmt.Println("Extracting zls")
 		versionPath := filepath.Join(z.zvmBaseDir, version)
 		if err := ExtractBundle(tempDir.Name(), filepath.Join(z.zvmBaseDir, version)); err != nil {
 			log.Fatal(err)
 		}
-		os.Rename(filepath.Join(versionPath, "bin", filename), filepath.Join(versionPath, filename))
+		if err := os.Rename(filepath.Join(versionPath, "bin", filename), filepath.Join(versionPath, filename)); err != nil {
+			return err
+		}
 	}
 
 	z.createSymlink(version)

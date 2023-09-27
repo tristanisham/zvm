@@ -99,13 +99,14 @@ like to suggest
 ## Install
 
 ```sh
-zvm install <version>
+zvm install <version> [--zls]
 # Or
-zvm i <version>
+zvm i <version> [-z]
 ```
 
 Use `install` or `i` to download a specific version of Zig. To install the
-latest version, use "master".
+latest version, use "master". Optionally, the `--zls` or `-z` flag can be added to 
+install Zig Language Server (ZLS) as well.
 
 ```sh
 # Example

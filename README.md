@@ -106,7 +106,9 @@ zvm i <version> [-z]
 
 Use `install` or `i` to download a specific version of Zig. To install the
 latest version, use "master". Optionally, the `--zls` or `-z` flag can be added to 
-install Zig Language Server (ZLS) as well.
+install Zig Language Server (ZLS) as well. If you intend to install a fixed
+release of ZLS, you may need to also install [zstd](https://github.com/facebook/zstd/releases),
+which is available through the package manager for your system or on GitHub.
 
 ```sh
 # Example

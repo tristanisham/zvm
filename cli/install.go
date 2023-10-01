@@ -420,11 +420,18 @@ func zigStyleSysInfo() (arch string, os string) {
 }
 
 func ExtractBundle(bundle, out string) error {
-	if runtime.GOOS == "windows" {
+	// get extension
+	replacedBundle := strings.ReplaceAll(bundle, "\\", "/")
+	splitPath := strings.Split(replacedBundle, "/")
+	_, extension, _ := strings.Cut(splitPath[len(splitPath)-1], ".")
+
+	if strings.Contains(extension, "tar") {
+		return untarXZ(bundle, out)
+	} else if strings.Contains(extension, "zip") {
 		return unzipSource(bundle, out)
 	}
 
-	return untarXZ(bundle, out)
+	return fmt.Errorf("unknown format %v", extension)
 }
 
 func untarXZ(in, out string) error {

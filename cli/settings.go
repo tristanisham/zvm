@@ -10,8 +10,9 @@ import (
 )
 
 type Settings struct {
-	basePath string
-	UseColor bool `json:"useColor"`
+	basePath            string
+	UseColor            bool `json:"useColor"`
+	StartupCheckUpgrade bool `json:"startupCheckUpgrade"`
 }
 
 func (s *Settings) ToggleColor() {

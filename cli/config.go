@@ -4,12 +4,18 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io/fs"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
 
 	"github.com/charmbracelet/log"
+	"github.com/tristanisham/clr"
+)
+
+var (
+	ErrNoSettings = errors.New("settings.json not found")
 )
 
 func Initialize() *ZVM {
@@ -18,7 +24,7 @@ func Initialize() *ZVM {
 		home = "~"
 	}
 	zvm_path := filepath.Join(home, ".zvm")
-	if _, err := os.Stat(zvm_path); os.IsNotExist(err) {
+	if _, err := os.Stat(zvm_path); errors.Is(err, fs.ErrNotExist) {
 		if err := os.MkdirAll(filepath.Join(zvm_path, "self"), 0775); err != nil {
 			log.Fatal(err)
 		}
@@ -29,9 +35,10 @@ func Initialize() *ZVM {
 	}
 
 	if err := zvm.loadSettings(); err != nil {
-		if err.Error() == "settings.json not found" {
+		if errors.Is(err, ErrNoSettings) {
 			zvm.Settings = Settings{
-				UseColor: true,
+				UseColor:            true,
+				StartupCheckUpgrade: true,
 			}
 
 			out_settings, err := json.MarshalIndent(&zvm.Settings, "", "    ")
@@ -113,7 +120,7 @@ func (z ZVM) getVersion(version string) error {
 func (z *ZVM) loadSettings() error {
 	set_path := filepath.Join(z.zvmBaseDir, "settings.json")
 	if _, err := os.Stat(set_path); errors.Is(err, os.ErrNotExist) {
-		return fmt.Errorf("settings.json not found")
+		return ErrNoSettings
 	}
 
 	data, err := os.ReadFile(filepath.Join(z.zvmBaseDir, "settings.json"))
@@ -122,4 +129,24 @@ func (z *ZVM) loadSettings() error {
 	}
 
 	return json.Unmarshal(data, &z.Settings)
+}
+
+func (z *ZVM) AlertIfUpgradable() {
+	if !z.Settings.StartupCheckUpgrade {
+		return
+	}
+	log.Debug("Checking for upgrade on startup is enabled")
+	upgradable, tagName, err := CanIUpgrade()
+	if err != nil {
+		log.Info("failed new zvm version check")
+	}
+
+	if upgradable {
+		coloredText := "zvm upgrade"
+		if z.Settings.UseColor {
+			coloredText = clr.Blue("zvm upgrade")
+		}
+
+		fmt.Printf("There's a new version of ZVM (%s).\n Run '%s' to install it!\n", tagName, coloredText)
+	}
 }

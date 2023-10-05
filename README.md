@@ -1,6 +1,7 @@
 <p align="center">
-  <img width="100px"  src ="https://user-images.githubusercontent.com/23124818/206966435-f5702a58-8b0e-4eb4-9dc4-b5e41ad27d8b.png"/>
+  <img width="100px"  src ="https://github.com/tristanisham/zvm/assets/23124818/be5c3713-8aaf-4419-a1ae-acb29da36eae"/>
 </p>
+
 
 ## Join our Community
 

@@ -3,10 +3,11 @@ module zvm
 go 1.21
 
 require (
-	github.com/charmbracelet/log v0.2.4
+	github.com/charmbracelet/log v0.2.5
+	github.com/google/uuid v1.3.1
 	github.com/schollz/progressbar/v3 v3.13.1
 	github.com/tristanisham/clr v0.0.0-20221004001624-00ee60046d85
-	golang.org/x/mod v0.12.0
+	golang.org/x/mod v0.13.0
 )
 
 require (
@@ -20,6 +21,6 @@ require (
 	github.com/muesli/reflow v0.3.0 // indirect
 	github.com/muesli/termenv v0.15.2 // indirect
 	github.com/rivo/uniseg v0.4.4 // indirect
-	golang.org/x/sys v0.12.0 // indirect
-	golang.org/x/term v0.12.0 // indirect
+	golang.org/x/sys v0.13.0 // indirect
+	golang.org/x/term v0.13.0 // indirect
 )

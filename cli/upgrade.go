@@ -7,9 +7,11 @@ import (
 	"io"
 	"net/http"
 	"os"
+
 	// "os/user"
 	"path/filepath"
 	"runtime"
+
 	// "syscall"
 	"time"
 	"zvm/cli/meta"
@@ -135,14 +137,14 @@ func (z ZVM) getInstallDir() (string, error) {
 
 		modifyable, err := canModifyFile(finalPath)
 		if err != nil {
-			return "", fmt.Errorf("%q, couldn't determine permissions to modify zvm install", ErrFailedUpgrade)
+			return "", fmt.Errorf("%w, couldn't determine permissions to modify zvm install", ErrFailedUpgrade)
 		}
 
 		if modifyable {
 			return filepath.Dir(this), nil
 		}
 
-		return "", fmt.Errorf("%q, didn't have permissions to modify zvm install", ErrFailedUpgrade)
+		return "", fmt.Errorf("%w, didn't have permissions to modify zvm install", ErrFailedUpgrade)
 	}
 
 	return zvmInstallDirENV, nil
@@ -213,9 +215,6 @@ func isSymlink(path string) (bool, error) {
 	}
 	return fileInfo.Mode()&os.ModeSymlink != 0, nil
 }
-
-
-
 
 func CanIUpgrade() (bool, string, error) {
 	release, err := getLatestGitHubRelease("tristanisham", "zvm")

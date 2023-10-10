@@ -2,12 +2,13 @@ package main
 
 import (
 	"fmt"
-	"github.com/charmbracelet/log"
 	"html/template"
 	"os"
 	"strings"
 	"zvm/cli"
 	"zvm/cli/meta"
+
+	"github.com/charmbracelet/log"
 
 	_ "embed"
 

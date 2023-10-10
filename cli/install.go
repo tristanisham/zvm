@@ -35,7 +35,12 @@ func (z *ZVM) Install(version string) error {
 	tarPath, err := getTarPath(version, &rawVersionStructure)
 	if err != nil {
 		if errors.Is(err, ErrUnsupportedVersion) {
-			log.Fatal(err)
+			//TODO setup third-party download
+			if tp, ok := z.doWeHaveIt(version); ok {
+				tarPath = tp
+			} else {
+				log.Fatal(err)
+			}
 		} else {
 			return err
 		}
@@ -56,6 +61,7 @@ func (z *ZVM) Install(version string) error {
 	if err != nil {
 		return err
 	}
+
 	defer tarResp.Body.Close()
 	// _ = os.MkdirAll(filepath.Join(z.zvmBaseDir, version), 0755)
 	// tarDownloadPath := filepath.Join(z.zvmBaseDir, version, fmt.Sprintf("%s.tar.xz", version))
@@ -354,3 +360,4 @@ func unzipFile(f *zip.File, destination string) error {
 	}
 	return nil
 }
+

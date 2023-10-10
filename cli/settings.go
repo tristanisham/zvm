@@ -13,6 +13,7 @@ type Settings struct {
 	basePath            string
 	UseColor            bool `json:"useColor"`
 	StartupCheckUpgrade bool `json:"startupCheckUpgrade"`
+	VersionRepo	string `json:"versionRepo"`
 }
 
 func (s *Settings) ToggleColor() {

@@ -18,6 +18,11 @@ var (
 	ErrNoSettings = errors.New("settings.json not found")
 )
 
+type ZVM struct {
+	zvmBaseDir string
+	Settings   Settings
+}
+
 func Initialize() *ZVM {
 	home, err := os.UserHomeDir()
 	if err != nil {
@@ -39,6 +44,7 @@ func Initialize() *ZVM {
 			zvm.Settings = Settings{
 				UseColor:            true,
 				StartupCheckUpgrade: true,
+				VersionRepo: "https://cdn.zvm.app",
 			}
 
 			out_settings, err := json.MarshalIndent(&zvm.Settings, "", "    ")
@@ -54,11 +60,6 @@ func Initialize() *ZVM {
 
 	zvm.Settings.basePath = filepath.Join(zvm_path, "settings.json")
 	return zvm
-}
-
-type ZVM struct {
-	zvmBaseDir string
-	Settings   Settings
 }
 
 // A representaiton of the offical json schema for Zig versions

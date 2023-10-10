@@ -1,6 +1,7 @@
 {
   "tasks": {
     "build": "deno run -A build.ts",
+    "archive": "deno run -A archive.ts",
     "clean": "rm -r build"
   }
 }

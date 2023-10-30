@@ -5,6 +5,7 @@ import (
 	"github.com/charmbracelet/log"
 	"html/template"
 	"os"
+	"slices"
 	"strings"
 	"zvm/cli"
 	"zvm/cli/meta"
@@ -35,9 +36,18 @@ func main() {
 	for i, arg := range args {
 		switch arg {
 		case "install", "i":
+			// signal to install zls after zig
+
 			if len(args) > i+1 {
+				install_zls := slices.Contains(args, "--zls") || slices.Contains(args, "-z")
 				version := strings.TrimPrefix(args[i+1], "v")
 				if err := zvm.Install(version); err != nil {
+					log.Fatal(err)
+				}
+				if !install_zls {
+					return
+				}
+				if err := zvm.InstallZls(version); err != nil {
 					log.Fatal(err)
 				}
 			}

@@ -39,7 +39,7 @@ for (const os of GOOS) {
         "build",
         "-o",
         `build/${zvm_str}/zvm${(os == "windows" ? ".exe" : "")}`,
-        "-ldflags=-w -s", "-buildmode=pie", "-trimpath",
+        "-ldflags=-w -s", "-trimpath",
       ],
     });
 

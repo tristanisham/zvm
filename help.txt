@@ -2,10 +2,10 @@ zvm (Zig Version Manager) {{.Version}}
 © 2023-present Tristan Isham
 --------------------------------
 
-install, i <version> [--zls]
+install, i [flags] <version>
   Use `install` or `i` to download a specific version of Zig.
   To install the latest version, use "master".
-  To install Zig Language server, add the flag --zls or -z
+  To install Zig Language server, add the flag `-D=zls`. 
 
 use <version>
   Use `use` to switch between versions of Zig.

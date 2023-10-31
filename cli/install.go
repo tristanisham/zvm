@@ -210,6 +210,11 @@ type gitHubAsset struct {
 }
 
 func (z *ZVM) InstallZls(version string) error {
+	if strings.Count(version, ".") != 2 {
+		return fmt.Errorf("%w: ZLS versions are SEMVER (MAJOR.MINOR.MINESCULE)", ErrUnsupportedVersion)
+	}
+	
+	fmt.Println("Finding ZLS executable...")
 	// make sure dir exists
 	installDir := filepath.Join(z.zvmBaseDir, version)
 	err := os.MkdirAll(installDir, 0755)
@@ -226,7 +231,6 @@ func (z *ZVM) InstallZls(version string) error {
 
 	// master does not need unzipping, zpm just serves full binary
 	if version == "master" {
-		fmt.Println("Downloading zls")
 
 		installFile := filepath.Join(installDir, filename)
 		out, err := os.Create(installFile)
@@ -246,7 +250,13 @@ func (z *ZVM) InstallZls(version string) error {
 			return err
 		}
 		defer resp.Body.Close()
-		if _, err := io.Copy(out, resp.Body); err != nil {
+
+		pbar := progressbar.DefaultBytes(
+			int64(resp.ContentLength),
+			"Downloading ZLS",
+		)
+
+		if _, err := io.Copy(io.MultiWriter(pbar, out), resp.Body); err != nil {
 			return err
 		}
 	} else {
@@ -262,6 +272,9 @@ func (z *ZVM) InstallZls(version string) error {
 
 		var releaseBuffer bytes.Buffer
 		releaseBuffer.ReadFrom(resp.Body)
+		if err != nil {
+			return err
+		}
 
 		// some github releases use tar.gz, some tar.xz
 		expectedArchOs := fmt.Sprintf("%v-%v", arch, osType)
@@ -312,12 +325,16 @@ func (z *ZVM) InstallZls(version string) error {
 		defer tempDir.Close()
 		defer os.RemoveAll(tempDir.Name())
 
-		if _, err := io.Copy(tempDir, resp.Body); err != nil {
+		pbar := progressbar.DefaultBytes(
+			int64(resp.ContentLength),
+			"Downloading ZLS",
+		)
+
+		if _, err := io.Copy(io.MultiWriter(pbar, tempDir), resp.Body); err != nil {
 			return err
 		}
-
 		// untar to destination
-		fmt.Println("Extracting zls")
+		fmt.Println("Extracting ZLS...")
 		versionPath := filepath.Join(z.zvmBaseDir, version)
 		if err := ExtractBundle(tempDir.Name(), filepath.Join(z.zvmBaseDir, version)); err != nil {
 			log.Fatal(err)
@@ -506,4 +523,33 @@ func unzipFile(f *zip.File, destination string) error {
 		return err
 	}
 	return nil
+}
+
+type InstallRequest struct {
+	Site, Package, Version string
+}
+
+func ExtractInstall(input string) InstallRequest {
+	var req InstallRequest
+	colonIdx := strings.Index(input, ":")
+	atIdx := strings.Index(input, "@")
+
+	if colonIdx != -1 {
+		req.Site = input[:colonIdx]
+		if atIdx != -1 {
+			req.Package = input[colonIdx+1 : atIdx]
+			req.Version = input[atIdx+1:]
+		} else {
+			req.Package = input[colonIdx+1:]
+		}
+	} else {
+		if atIdx != -1 {
+			req.Package = input[:atIdx]
+			req.Version = input[atIdx+1:]
+		} else {
+			req.Package = input
+		}
+	}
+
+	return req
 }

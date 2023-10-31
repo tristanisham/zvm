@@ -37,7 +37,7 @@ func (z *ZVM) Install(version string) error {
 	tarPath, err := getTarPath(version, &rawVersionStructure)
 	if err != nil {
 		if errors.Is(err, ErrUnsupportedVersion) {
-			log.Fatal(err)
+			log.Fatalf("%s: %q", err, version)
 		} else {
 			return err
 		}
@@ -211,7 +211,7 @@ type gitHubAsset struct {
 
 func (z *ZVM) InstallZls(version string) error {
 	if version != "master" && strings.Count(version, ".") != 2 {
-		return fmt.Errorf("%w: ZLS versions are SEMVER (MAJOR.MINOR.MINESCULE)", ErrUnsupportedVersion)
+		return fmt.Errorf("%w: versions are SEMVER (MAJOR.MINOR.MINUSCULE)", ErrUnsupportedVersion)
 	}
 
 	fmt.Println("Finding ZLS executable...")

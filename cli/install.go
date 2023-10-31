@@ -210,10 +210,10 @@ type gitHubAsset struct {
 }
 
 func (z *ZVM) InstallZls(version string) error {
-	if strings.Count(version, ".") != 2 {
+	if version != "master" && strings.Count(version, ".") != 2 {
 		return fmt.Errorf("%w: ZLS versions are SEMVER (MAJOR.MINOR.MINESCULE)", ErrUnsupportedVersion)
 	}
-	
+
 	fmt.Println("Finding ZLS executable...")
 	// make sure dir exists
 	installDir := filepath.Join(z.zvmBaseDir, version)

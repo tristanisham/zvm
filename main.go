@@ -1,13 +1,15 @@
 package main
 
 import (
+	"flag"
 	"fmt"
-	"github.com/charmbracelet/log"
 	"html/template"
 	"os"
 	"strings"
 	"zvm/cli"
 	"zvm/cli/meta"
+
+	"github.com/charmbracelet/log"
 
 	_ "embed"
 
@@ -32,15 +34,31 @@ func main() {
 
 	zvm.AlertIfUpgradable()
 
+	// Install flags
+	installFlagSet := flag.NewFlagSet("install", flag.ExitOnError)
+    installDeps := installFlagSet.String("D", "", "Specify additional dependencies to install with Zig")
+
 	for i, arg := range args {
 		switch arg {
 		case "install", "i":
-			if len(args) > i+1 {
-				version := strings.TrimPrefix(args[i+1], "v")
-				if err := zvm.Install(version); err != nil {
-					log.Fatal(err)
+			installFlagSet.Parse(args[i+1:])
+			// signal to install zls after zig
+
+			req := cli.ExtractInstall(args[len(args)-1])
+			req.Version = strings.TrimPrefix(req.Version, "v")
+			log.Debug(req, "deps", *installDeps)
+
+			if err := zvm.Install(req.Package); err != nil {
+				log.Fatal(err)
+			}
+
+			if *installDeps != "" {
+				switch *installDeps {
+				case "zls":
+					zvm.InstallZls(req.Package)
 				}
 			}
+
 			return
 		case "use":
 			if len(args) > i+1 {

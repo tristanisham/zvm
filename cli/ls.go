@@ -2,10 +2,12 @@ package cli
 
 import (
 	"fmt"
-	"github.com/charmbracelet/log"
 	"os"
 	"os/exec"
 	"strings"
+
+	"github.com/charmbracelet/log"
+	"golang.org/x/mod/semver"
 
 	"github.com/tristanisham/clr"
 )
@@ -50,27 +52,29 @@ func (z *ZVM) ListVersions() error {
 	return nil
 }
 
-// func (z ZVM) installVersions() (*map[string]string, error) {
-// 	dir, err := os.ReadDir(z.zvmBaseDir)
-// 	if err != nil {
-// 		return nil, err
-// 	}
+func (z ZVM) ListRemoteAvailable() error {
+	versions, err := z.fetchOfficialVersionMap()
+	if err != nil {
+		return err
+	}
 
-// 	if err := z.loadVersionCache(); err != nil {
-// 		return nil, err
-// 	}
+	options := make([]string, 0)
 
-// 	result := make(map[string]string)
+	for key := range versions {
+		if key == "master" {
+			// Removes master for sorting. Must add back in later.
+			continue
+		}
 
-// 	for _, entry := range dir {
-// 		if !entry.IsDir() {
-// 			continue
-// 		}
+		options = append(options, key)
+	}
 
-// 		if _, ok := z.zigVersions[entry.Name()]; ok {
-// 			result[entry.Name()] = filepath.Join(z.zvmBaseDir, entry.Name())
-// 		}
-// 	}
+	semver.Sort(options)
 
-// 	return &result, nil
-// }
+	finalList := []string{"master"}
+	finalList = append(finalList, options...)
+
+	fmt.Println(strings.Join(finalList, "\n"))
+
+	return nil
+}

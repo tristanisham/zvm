@@ -12,6 +12,7 @@ use <version>
 
 ls
   Use `ls` to list all installed version of Zig.
+  To list remote version of Zig available for download, add the flag `--all`
 
 uninstall, rm <version>
   Use `uninstall` or `rm` to remove an uninstalled version from your system.

@@ -141,6 +141,12 @@ zvm ls
 
 Use `ls` to list all installed version of Zig.
 
+### List all versions of Zig available
+```sh
+zvm ls --all
+```
+The `--all` flag will list the available verisons of Zig for download. Not the versions locally installed.
+
 ## Uninstall a Zig version
 
 ```sh

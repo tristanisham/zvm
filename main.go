@@ -38,6 +38,10 @@ func main() {
 	installFlagSet := flag.NewFlagSet("install", flag.ExitOnError)
     installDeps := installFlagSet.String("D", "", "Specify additional dependencies to install with Zig")
 
+	// LS flags
+	lsFlagSet := flag.NewFlagSet("ls", flag.ExitOnError)
+	lsRemote := lsFlagSet.Bool("all", false, "List all available versions of Zig to install")
+
 	for i, arg := range args {
 		switch arg {
 		case "install", "i":
@@ -70,9 +74,18 @@ func main() {
 			return
 
 		case "ls":
-			if err := zvm.ListVersions(); err != nil {
-				log.Fatal(err)
+			lsFlagSet.Parse(args[i+1:])
+			
+			if *lsRemote {
+				if err := zvm.ListRemoteAvailable(); err != nil {
+					log.Fatal(err)
+				}
+			} else {
+				if err := zvm.ListVersions(); err != nil {
+					log.Fatal(err)
+				}
 			}
+			
 			return
 		case "uninstall", "rm":
 			if len(args) > i+1 {

@@ -26,6 +26,13 @@ import (
 // I wrote most of it before I remembered that GitHub has an API so expect major refactoring.
 func (z *ZVM) Upgrade() error {
 
+	var programName string
+	if runtime.GOOS == "windows" {
+		programName = "zvm.exe"
+	} else {
+		programName = "zvm"
+	}
+
 	upgradable, tagName, err := CanIUpgrade()
 	if err != nil {
 		return errors.Join(ErrFailedUpgrade, err)
@@ -77,8 +84,8 @@ func (z *ZVM) Upgrade() error {
 		return err
 	}
 
-	zvmPath := filepath.Join(zvmInstallDirENV, "zvm")
-	if err := os.Remove(filepath.Join(zvmInstallDirENV, "zvm")); err != nil {
+	zvmPath := filepath.Join(zvmInstallDirENV, programName)
+	if err := os.Remove(filepath.Join(zvmInstallDirENV, programName)); err != nil {
 		if err, ok := err.(*os.PathError); ok {
 			if os.IsNotExist(err) {
 				log.Debug("Failed to remove file", "path", zvmPath)
@@ -94,14 +101,31 @@ func (z *ZVM) Upgrade() error {
 		return errors.Join(ErrFailedUpgrade, err)
 	}
 
-	if err := untar(tempDownload.Name(), newTemp); err != nil {
-		log.Error(err)
-		return err
+	if runtime.GOOS == "windows" {
+		if err := unzipSource(tempDownload.Name(), newTemp); err != nil {
+			log.Error(err)
+			return err
+		}
+
+	} else {
+		if err := untar(tempDownload.Name(), newTemp); err != nil {
+			log.Error(err)
+			return err
+		}
 	}
 
-	if err := os.Rename(filepath.Join(newTemp, "zvm"), zvmPath); err != nil {
-		return errors.Join(ErrFailedUpgrade, err)
+	if runtime.GOOS == "windows" {
+		
+		if err := os.Rename(filepath.Join(newTemp, fmt.Sprintf("zvm-%s-%s", runtime.GOOS, runtime.GOARCH), programName), zvmPath); err != nil {
+			return errors.Join(ErrFailedUpgrade, err)
+		}
+	} else {
+		if err := os.Rename(filepath.Join(newTemp, programName), zvmPath); err != nil {
+			return errors.Join(ErrFailedUpgrade, err)
+		}
 	}
+
+	
 
 	if err := os.Chmod(zvmPath, 0775); err != nil {
 		return errors.Join(ErrFailedUpgrade, err)
@@ -213,9 +237,6 @@ func isSymlink(path string) (bool, error) {
 	}
 	return fileInfo.Mode()&os.ModeSymlink != 0, nil
 }
-
-
-
 
 func CanIUpgrade() (bool, string, error) {
 	release, err := getLatestGitHubRelease("tristanisham", "zvm")

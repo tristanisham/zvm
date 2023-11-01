@@ -30,7 +30,7 @@ func (z *ZVM) ListVersions() error {
 
 	for _, key := range dir {
 		switch key.Name() {
-		case "settings.json", "bin", "versions.json":
+		case "settings.json", "bin", "versions.json", "self":
 			continue
 		default:
 			if key.Name() == strings.TrimSpace(version) {

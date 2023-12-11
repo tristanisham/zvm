@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"slices"
 	"strings"
 
 	"github.com/charmbracelet/log"
@@ -46,7 +47,6 @@ func (z *ZVM) ListVersions() error {
 				fmt.Println(key.Name())
 			}
 		}
-
 	}
 
 	return nil
@@ -66,13 +66,20 @@ func (z ZVM) ListRemoteAvailable() error {
 			continue
 		}
 
-		options = append(options, key)
+		options = append(options, "v"+key)
 	}
 
 	semver.Sort(options)
+	slices.Reverse(options)
+
+	// Remove "v" prefix to maintain consistency with zig versioning
+	newOptions := options[:0]
+	for _, version := range options {
+		newOptions = append(newOptions, version[1:])
+	}
 
 	finalList := []string{"master"}
-	finalList = append(finalList, options...)
+	finalList = append(finalList, newOptions...)
 
 	fmt.Println(strings.Join(finalList, "\n"))
 

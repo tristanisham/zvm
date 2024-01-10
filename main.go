@@ -28,11 +28,11 @@ func main() {
 
 	if len(args) == 0 {
 		helpMsg()
-		zvm.AlertIfUpgradable()
+		// zvm.AlertIfUpgradable()
 		os.Exit(0)
 	}
 
-	zvm.AlertIfUpgradable()
+	// zvm.AlertIfUpgradable()
 
 	// Install flags
 	installFlagSet := flag.NewFlagSet("install", flag.ExitOnError)

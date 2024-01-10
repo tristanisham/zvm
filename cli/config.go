@@ -11,7 +11,6 @@ import (
 	"strings"
 
 	"github.com/charmbracelet/log"
-	"github.com/tristanisham/clr"
 )
 
 var (
@@ -37,8 +36,7 @@ func Initialize() *ZVM {
 	if err := zvm.loadSettings(); err != nil {
 		if errors.Is(err, ErrNoSettings) {
 			zvm.Settings = Settings{
-				UseColor:            true,
-				StartupCheckUpgrade: true,
+				UseColor: true,
 			}
 
 			out_settings, err := json.MarshalIndent(&zvm.Settings, "", "    ")
@@ -131,22 +129,22 @@ func (z *ZVM) loadSettings() error {
 	return json.Unmarshal(data, &z.Settings)
 }
 
-func (z *ZVM) AlertIfUpgradable() {
-	if !z.Settings.StartupCheckUpgrade {
-		return
-	}
-	log.Debug("Checking for upgrade on startup is enabled")
-	upgradable, tagName, err := CanIUpgrade()
-	if err != nil {
-		log.Info("failed new zvm version check")
-	}
+// func (z *ZVM) AlertIfUpgradable() {
+// 	if !z.Settings.StartupCheckUpgrade {
+// 		return
+// 	}
+// 	log.Debug("Checking for upgrade on startup is enabled")
+// 	upgradable, tagName, err := CanIUpgrade()
+// 	if err != nil {
+// 		log.Info("failed new zvm version check")
+// 	}
 
-	if upgradable {
-		coloredText := "zvm upgrade"
-		if z.Settings.UseColor {
-			coloredText = clr.Blue("zvm upgrade")
-		}
+// 	if upgradable {
+// 		coloredText := "zvm upgrade"
+// 		if z.Settings.UseColor {
+// 			coloredText = clr.Blue("zvm upgrade")
+// 		}
 
-		fmt.Printf("There's a new version of ZVM (%s).\n Run '%s' to install it!\n", tagName, coloredText)
-	}
-}
+// 		fmt.Printf("There's a new version of ZVM (%s).\n Run '%s' to install it!\n", tagName, coloredText)
+// 	}
+// }

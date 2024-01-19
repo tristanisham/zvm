@@ -1,4 +1,4 @@
 package meta
 
-const VERSION = "v0.4.2"
+const VERSION = "v0.5.0"
 

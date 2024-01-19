@@ -246,7 +246,7 @@ func (z *ZVM) InstallZls(version string) error {
 	defer resp.Body.Close()
 
 	var releaseBuffer bytes.Buffer
-	releaseBuffer.ReadFrom(resp.Body)
+	_, err = releaseBuffer.ReadFrom(resp.Body)
 	if err != nil {
 		return err
 	}
@@ -275,6 +275,10 @@ func (z *ZVM) InstallZls(version string) error {
 		return fmt.Errorf("could not find zls-%v", expectedArchOs)
 	}
 
+	if version == "master" {
+		downloadUrl = fmt.Sprintf("https://zig.pm/zls/downloads/%v/bin/zls", expectedArchOs)
+	}
+
 	client := &http.Client{}
 
 	// download tarball to temp
@@ -290,9 +294,13 @@ func (z *ZVM) InstallZls(version string) error {
 	defer resp.Body.Close()
 
 	// creating file to place contents
-	_, pathEnding, _ := strings.Cut(zipName, ".")
+	tempName := filename
+	if version != "master" {
+		_, pathEnding, _ := strings.Cut(zipName, ".")
+		tempName = "*." + pathEnding
+	}
 
-	tempDir, err := os.CreateTemp(z.zvmBaseDir, "*."+pathEnding)
+	tempDir, err := os.CreateTemp(z.zvmBaseDir, tempName)
 	if err != nil {
 		return err
 	}
@@ -311,11 +319,17 @@ func (z *ZVM) InstallZls(version string) error {
 	// untar to destination
 	fmt.Println("Extracting ZLS...")
 	versionPath := filepath.Join(z.zvmBaseDir, version)
-	if err := ExtractBundle(tempDir.Name(), filepath.Join(z.zvmBaseDir, version)); err != nil {
-		log.Fatal(err)
-	}
-	if err := os.Rename(filepath.Join(versionPath, "bin", filename), filepath.Join(versionPath, filename)); err != nil {
-		return err
+	if version == "master" {
+		if err := os.Rename(tempDir.Name(), filepath.Join(versionPath, filename)); err != nil {
+			return err
+		}
+	} else {
+		if err := ExtractBundle(tempDir.Name(), filepath.Join(z.zvmBaseDir, version)); err != nil {
+			log.Fatal(err)
+		}
+		if err := os.Rename(filepath.Join(versionPath, "bin", filename), filepath.Join(versionPath, filename)); err != nil {
+			return err
+		}
 	}
 	if err := os.Chmod(filepath.Join(versionPath, filename), 0755); err != nil {
 		return err

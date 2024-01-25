@@ -210,12 +210,66 @@ type gitHubAsset struct {
 	Browser_download_url string // download url
 }
 
+func GetZlsDownloadUrl(version string, archDouble string) (string, error) {
+	if version == "master" {
+		var exeName = "zls"
+		if strings.Contains(archDouble, "windows") {
+			exeName = "zls.exe"
+		}
+		return fmt.Sprintf("https://zig.pm/zls/downloads/%v/bin/%v", archDouble, exeName), nil
+
+	} else {
+		var releaseUrl string
+		if version == "master" {
+			releaseUrl = "https://api.github.com/repos/zigtools/zls/releases/latest"
+		} else {
+			// build url for tagged version
+			releaseUrl = fmt.Sprintf("https://api.github.com/repos/zigtools/zls/releases/tags/%v", version)
+		}
+
+		// get release information
+		resp, err := http.Get(releaseUrl)
+		if err != nil {
+			return "", err
+		}
+		defer resp.Body.Close()
+
+		var releaseBuffer bytes.Buffer
+		_, err = releaseBuffer.ReadFrom(resp.Body)
+		if err != nil {
+			return "", err
+		}
+
+		// getting list of assets
+		var taggedReleaseResponse githubTaggedReleaseResponse
+		if err := json.Unmarshal(releaseBuffer.Bytes(), &taggedReleaseResponse); err != nil {
+			return "", err
+		}
+
+		// getting platform information
+		downloadUrl := ""
+		for _, asset := range taggedReleaseResponse.Assets {
+			if strings.Contains(asset.Name, archDouble) {
+				downloadUrl = asset.Browser_download_url
+				break
+			}
+		}
+
+		if downloadUrl == "" {
+			return "", errors.New("Could not find github release download url")
+		}
+
+		return downloadUrl, nil
+	}
+}
+
 func (z *ZVM) InstallZls(version string) error {
 	if version != "master" && strings.Count(version, ".") != 2 {
 		return fmt.Errorf("%w: versions are SEMVER (MAJOR.MINOR.MINUSCULE)", ErrUnsupportedVersion)
 	}
 
 	fmt.Println("Finding ZLS executable...")
+
 	// make sure dir exists
 	installDir := filepath.Join(z.zvmBaseDir, version)
 	err := os.MkdirAll(installDir, 0755)
@@ -224,6 +278,7 @@ func (z *ZVM) InstallZls(version string) error {
 	}
 
 	arch, osType := zigStyleSysInfo()
+	expectedArchOs := fmt.Sprintf("%v-%v", arch, osType)
 
 	filename := "zls"
 	if osType == "windows" {
@@ -231,96 +286,75 @@ func (z *ZVM) InstallZls(version string) error {
 	}
 
 	// master does not need unzipping, zpm just serves full binary
-	var releaseUrl string
+	var shouldUnzip = true
 	if version == "master" {
-		releaseUrl = "https://api.github.com/repos/zigtools/zls/releases/latest"
-	} else {
-		// build url for tagged version
-		releaseUrl = fmt.Sprintf("https://api.github.com/repos/zigtools/zls/releases/tags/%v", version)
+		shouldUnzip = false
 	}
 
-	// get release information
-	resp, err := http.Get(releaseUrl)
+	downloadUrl, err := GetZlsDownloadUrl(version, expectedArchOs)
 	if err != nil {
+		fmt.Println("what?")
 		return err
 	}
-	defer resp.Body.Close()
 
-	var releaseBuffer bytes.Buffer
-	_, err = releaseBuffer.ReadFrom(resp.Body)
+	request, err := http.NewRequest("GET", downloadUrl, nil)
 	if err != nil {
 		return err
 	}
 
-	// some github releases use tar.gz, some tar.xz
-	expectedArchOs := fmt.Sprintf("%v-%v", arch, osType)
+	request.Header.Set("User-Agent", "zvm "+meta.VERSION)
 
-	// getting list of assets
-	var taggedReleaseResponse githubTaggedReleaseResponse
-	if err := json.Unmarshal(releaseBuffer.Bytes(), &taggedReleaseResponse); err != nil {
-		return err
-	}
-
-	// getting platform information
-	downloadUrl := ""
-	for _, asset := range taggedReleaseResponse.Assets {
-		if strings.Contains(asset.Name, expectedArchOs) {
-			downloadUrl = asset.Browser_download_url
-			break
-		}
-	}
-
-	// couldn't find the file
-	if downloadUrl == "" {
-		return fmt.Errorf("could not find zls-%v", expectedArchOs)
-	}
-
-	zlsDownloadRequest, err := http.NewRequest("GET", downloadUrl, nil)
+	response, err := http.DefaultClient.Do(request)
 	if err != nil {
 		return err
 	}
-
-	zlsDownloadRequest.Header.Set("User-Agent", "zvm "+meta.VERSION)
-
-	archiveResponse, err := http.DefaultClient.Do(zlsDownloadRequest)
-	if err != nil {
-		return err
-	}
-	defer archiveResponse.Body.Close()
-
-	var pathEnding string
-	if runtime.GOOS == "windows" {
-		pathEnding = "*.zip"
-	} else {
-		pathEnding = "*.tar.xz"
-	}
-
-	tempDir, err := os.CreateTemp(z.zvmBaseDir, pathEnding)
-	if err != nil {
-		return err
-	}
-
-	defer tempDir.Close()
-	defer os.RemoveAll(tempDir.Name())
+	defer response.Body.Close()
 
 	pbar := progressbar.DefaultBytes(
-		int64(archiveResponse.ContentLength),
+		int64(response.ContentLength),
 		"Downloading ZLS",
 	)
 
-	if _, err := io.Copy(io.MultiWriter(pbar, tempDir), archiveResponse.Body); err != nil {
-		return err
-	}
-
-	// untar to destination
-	fmt.Println("Extracting ZLS...")
 	versionPath := filepath.Join(z.zvmBaseDir, version)
+	binaryLocation := filepath.Join(versionPath, filename)
 
-	if err := ExtractBundle(tempDir.Name(), filepath.Join(z.zvmBaseDir, version)); err != nil {
-		log.Fatal(err)
-	}
-	if err := os.Rename(filepath.Join(versionPath, "bin", filename), filepath.Join(versionPath, filename)); err != nil {
-		return err
+	if shouldUnzip == false {
+		file, err := os.Create(binaryLocation)
+
+		if err != nil {
+			return err
+		}
+
+		if _, err := io.Copy(io.MultiWriter(pbar, file), response.Body); err != nil {
+			return err
+		}
+	} else {
+		var pathEnding string
+		if runtime.GOOS == "windows" {
+			pathEnding = "*.zip"
+		} else {
+			pathEnding = "*.tar.xz"
+		}
+
+		tempDir, err := os.CreateTemp(z.zvmBaseDir, pathEnding)
+		if err != nil {
+			return err
+		}
+
+		defer tempDir.Close()
+		defer os.RemoveAll(tempDir.Name())
+
+		if _, err := io.Copy(io.MultiWriter(pbar, tempDir), response.Body); err != nil {
+			return err
+		}
+
+		fmt.Println("Extracting ZLS...")
+		if err := ExtractBundle(tempDir.Name(), filepath.Join(z.zvmBaseDir, version)); err != nil {
+			log.Fatal(err)
+		}
+		if err := os.Rename(filepath.Join(versionPath, "bin", filename), filepath.Join(versionPath, filename)); err != nil {
+			return err
+		}
 	}
 
 	if err := os.Chmod(filepath.Join(versionPath, filename), 0755); err != nil {

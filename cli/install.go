@@ -210,25 +210,48 @@ type gitHubAsset struct {
 	Browser_download_url string // download url
 }
 
+type zlsCIDownloadIndexResponse struct {
+	Latest       string // most recent ZLS version
+	LatestTagged string // most recent tagged ZLS version
+	Versions     map[string]zlsCIZLSVersion
+}
+
+type zlsCIZLSVersion struct {
+	ZLSVersion string
+	Targets    []string
+}
+
 func GetZlsDownloadUrl(version string, archDouble string) (string, error) {
 	if version == "master" {
+		resp, err := http.Get("https://zigtools-releases.nyc3.digitaloceanspaces.com/zls/index.json")
+		if err != nil {
+			return "", err
+		}
+		defer resp.Body.Close()
+
+		var releaseBuffer bytes.Buffer
+		_, err = releaseBuffer.ReadFrom(resp.Body)
+		if err != nil {
+			return "", err
+		}
+
+		var ciIndex zlsCIDownloadIndexResponse
+		if err := json.Unmarshal(releaseBuffer.Bytes(), &ciIndex); err != nil {
+			return "", err
+		}
+
 		var exeName = "zls"
 		if strings.Contains(archDouble, "windows") {
 			exeName = "zls.exe"
 		}
-		return fmt.Sprintf("https://zig.pm/zls/downloads/%v/bin/%v", archDouble, exeName), nil
 
+		format_url := "https://zigtools-releases.nyc3.digitaloceanspaces.com/zls/%v/%v/%v"
+		return fmt.Sprintf(format_url, ciIndex.Latest, archDouble, exeName), nil
 	} else {
-		var releaseUrl string
-		if version == "master" {
-			releaseUrl = "https://api.github.com/repos/zigtools/zls/releases/latest"
-		} else {
-			// build url for tagged version
-			releaseUrl = fmt.Sprintf("https://api.github.com/repos/zigtools/zls/releases/tags/%v", version)
-		}
+		url := fmt.Sprintf("https://api.github.com/repos/zigtools/zls/releases/tags/%v", version)
 
 		// get release information
-		resp, err := http.Get(releaseUrl)
+		resp, err := http.Get(url)
 		if err != nil {
 			return "", err
 		}

@@ -292,6 +292,7 @@ func (z *ZVM) InstallZls(version string) error {
 
 	fmt.Println("Finding ZLS executable...")
 
+
 	// make sure dir exists
 	installDir := filepath.Join(z.zvmBaseDir, version)
 	err := os.MkdirAll(installDir, 0755)
@@ -300,6 +301,7 @@ func (z *ZVM) InstallZls(version string) error {
 	}
 
 	arch, osType := zigStyleSysInfo()
+	expectedArchOs := fmt.Sprintf("%v-%v", arch, osType)
 	expectedArchOs := fmt.Sprintf("%v-%v", arch, osType)
 
 	filename := "zls"
@@ -315,6 +317,7 @@ func (z *ZVM) InstallZls(version string) error {
 
 	downloadUrl, err := getZLSDownloadUrl(version, expectedArchOs)
 	if err != nil {
+		fmt.Println("what?")
 		return err
 	}
 

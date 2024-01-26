@@ -36,4 +36,6 @@ help, --help, -h
 
 --yescolor, --yescolour | Turns on color.
 
+--versionmapurl | Changes the version map(version history) url
+
 Looking for more help? https://github.com/tristanisham/zvm

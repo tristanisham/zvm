@@ -42,7 +42,13 @@ func main() {
 	lsFlagSet := flag.NewFlagSet("ls", flag.ExitOnError)
 	lsRemote := lsFlagSet.Bool("all", false, "List all available versions of Zig to install")
 
+	plannedSkips := 0
+
 	for i, arg := range args {
+		if plannedSkips > 0 {
+			plannedSkips -= 1
+			continue
+		}
 		switch arg {
 		case "install", "i":
 			installFlagSet.Parse(args[i+1:])
@@ -135,6 +141,14 @@ func main() {
 			// Settings
 		case "--nocolor", "--nocolour":
 			zvm.Settings.NoColor()
+		case "--versionmapurl":
+			url := &args[i+1]
+			if url == nil {
+				fmt.Printf("ERROR: Next argument not provided for --versionmapurl. Please check out --help.\n")
+				os.Exit(1)
+			}
+			zvm.Settings.SetVersionMapUrl(*url)
+			plannedSkips = 1
 		case "--color", "--colour":
 			zvm.Settings.ToggleColor()
 		case "--yescolor", "--yescolour":

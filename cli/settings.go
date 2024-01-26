@@ -10,8 +10,9 @@ import (
 )
 
 type Settings struct {
-	basePath            string
-	UseColor            bool `json:"useColor"`
+	basePath      string
+	UseColor      bool   `json:"useColor"`
+	VersionMapUrl *string `json:"versionMapUrl,omitempty"`
 }
 
 func (s *Settings) ToggleColor() {
@@ -46,7 +47,13 @@ func (s *Settings) YesColor() {
 	fmt.Printf("Terminal color output: %s\n", clr.Green("ON"))
 
 }
-
+func (s *Settings) SetVersionMapUrl(versionMapUrl string) {
+	s.VersionMapUrl = &versionMapUrl
+	if err := s.save(); err != nil {
+		log.Fatal(err)
+	}
+	fmt.Printf("Version map url: %s\n", clr.Blue(versionMapUrl))
+}
 func (s Settings) save() error {
 	out_settings, err := json.MarshalIndent(&s, "", "    ")
 	if err != nil {

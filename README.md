@@ -208,4 +208,5 @@ zvm -h
 --nocolor, --nocolour   # Turns off ANSI color.
 --color, --colour       # Toggles ANSI color.
 --yescolor, --yescolour # Turns on ANSI color.
+--versionmapurl         # Changes the version map(version history) url
 ```

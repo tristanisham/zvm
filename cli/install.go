@@ -205,9 +205,9 @@ type githubTaggedReleaseResponse struct {
 }
 
 type gitHubAsset struct {
-	Url                  string // url for asset json object
-	Name                 string // contains platform information about binary
-	Browser_download_url string // download url
+	Url                string // url for asset json object
+	Name               string // contains platform information about binary
+	BrowserDownloadUrl string // download url
 }
 
 type zlsCIDownloadIndexResponse struct {
@@ -221,7 +221,7 @@ type zlsCIZLSVersion struct {
 	Targets    []string
 }
 
-func GetZlsDownloadUrl(version string, archDouble string) (string, error) {
+func getZLSDownloadUrl(version string, archDouble string) (string, error) {
 	if version == "master" {
 		resp, err := http.Get("https://zigtools-releases.nyc3.digitaloceanspaces.com/zls/index.json")
 		if err != nil {
@@ -240,7 +240,7 @@ func GetZlsDownloadUrl(version string, archDouble string) (string, error) {
 			return "", err
 		}
 
-		var exeName = "zls"
+		exeName := "zls"
 		if strings.Contains(archDouble, "windows") {
 			exeName = "zls.exe"
 		}
@@ -270,16 +270,16 @@ func GetZlsDownloadUrl(version string, archDouble string) (string, error) {
 		}
 
 		// getting platform information
-		downloadUrl := ""
+		var downloadUrl string
 		for _, asset := range taggedReleaseResponse.Assets {
 			if strings.Contains(asset.Name, archDouble) {
-				downloadUrl = asset.Browser_download_url
+				downloadUrl = asset.BrowserDownloadUrl
 				break
 			}
 		}
 
 		if downloadUrl == "" {
-			return "", errors.New("Could not find github release download url")
+			return "", errors.New("invalid release URl")
 		}
 
 		return downloadUrl, nil
@@ -309,14 +309,13 @@ func (z *ZVM) InstallZls(version string) error {
 	}
 
 	// master does not need unzipping, zpm just serves full binary
-	var shouldUnzip = true
+	shouldUnzip := true
 	if version == "master" {
 		shouldUnzip = false
 	}
 
-	downloadUrl, err := GetZlsDownloadUrl(version, expectedArchOs)
+	downloadUrl, err := getZLSDownloadUrl(version, expectedArchOs)
 	if err != nil {
-		fmt.Println("what?")
 		return err
 	}
 

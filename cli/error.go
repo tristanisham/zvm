@@ -10,4 +10,5 @@ var (
 	ErrUnsupportedVersion = errors.New("unsupported Zig version")
 	ErrMissingInstallPathEnv = errors.New("env 'ZVM_INSTALL' is not set")
 	ErrFailedUpgrade = errors.New("failed to self-upgrade zvm")
+	ErrInvalidVersionMap = errors.New("invalid version map format")
 )

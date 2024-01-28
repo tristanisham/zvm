@@ -23,10 +23,10 @@ clean
 upgrade 
   Use `upgrade` to update your ZVM install
 
-version, --version, -v
+version
   Prints the version of ZVM you have installed.
 
-help, --help, -h
+help
   Prints this message.
 
 ------------- Flags -----------------

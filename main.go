@@ -42,14 +42,23 @@ func main() {
 	lsFlagSet := flag.NewFlagSet("ls", flag.ExitOnError)
 	lsRemote := lsFlagSet.Bool("all", false, "List all available versions of Zig to install")
 
-	plannedSkips := 0
+	// Global config
+	sVersionMapUrl := flag.String("vmu", "https://ziglang.org/download/index.json", "Set ZVM's version map URL for custom Zig distribution servers")
+
+	flag.Parse()
+
+	if sVersionMapUrl != nil {
+		if err := zvm.Settings.SetVersionMapUrl(*sVersionMapUrl); err != nil {
+			log.Fatal(err)
+		}
+	}
+
+	args = flag.Args()
 
 	for i, arg := range args {
-		if plannedSkips > 0 {
-			plannedSkips -= 1
-			continue
-		}
+
 		switch arg {
+
 		case "install", "i":
 			installFlagSet.Parse(args[i+1:])
 			// signal to install zls after zig
@@ -130,10 +139,10 @@ func main() {
 				log.Fatal(err)
 			}
 
-		case "version", "--version", "-v":
+		case "version":
 			fmt.Println(meta.VERSION)
 			return
-		case "help", "--help", "-h":
+		case "help":
 			//zvm.Settings.UseColor
 			helpMsg()
 
@@ -141,21 +150,12 @@ func main() {
 			// Settings
 		case "--nocolor", "--nocolour":
 			zvm.Settings.NoColor()
-		case "--versionmapurl":
-			url := &args[i+1]
-			if url == nil {
-				fmt.Printf("ERROR: Next argument not provided for --versionmapurl. Please check out --help.\n")
-				os.Exit(1)
-			}
-			zvm.Settings.SetVersionMapUrl(*url)
-			plannedSkips = 1
 		case "--color", "--colour":
 			zvm.Settings.ToggleColor()
 		case "--yescolor", "--yescolour":
 			zvm.Settings.YesColor()
 		default:
-			fmt.Printf("ERROR: Invalid argument %s. Please check out --help.\n", arg)
-			os.Exit(1)
+			log.Fatalf("invalid argument %q. Please check out help.\n", arg)
 		}
 
 	}

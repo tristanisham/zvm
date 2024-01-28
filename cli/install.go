@@ -292,7 +292,6 @@ func (z *ZVM) InstallZls(version string) error {
 
 	fmt.Println("Finding ZLS executable...")
 
-
 	// make sure dir exists
 	installDir := filepath.Join(z.zvmBaseDir, version)
 	err := os.MkdirAll(installDir, 0755)
@@ -301,7 +300,6 @@ func (z *ZVM) InstallZls(version string) error {
 	}
 
 	arch, osType := zigStyleSysInfo()
-	expectedArchOs := fmt.Sprintf("%v-%v", arch, osType)
 	expectedArchOs := fmt.Sprintf("%v-%v", arch, osType)
 
 	filename := "zls"
@@ -317,7 +315,6 @@ func (z *ZVM) InstallZls(version string) error {
 
 	downloadUrl, err := getZLSDownloadUrl(version, expectedArchOs)
 	if err != nil {
-		fmt.Println("what?")
 		return err
 	}
 
@@ -334,10 +331,6 @@ func (z *ZVM) InstallZls(version string) error {
 	}
 	defer response.Body.Close()
 
-	// if resp.ContentLength == 0 {
-	// 	return fmt.Errorf("invalid ZLS content length (%d bytes)", resp.ContentLength)
-	// }
-
 	pbar := progressbar.DefaultBytes(
 		int64(response.ContentLength),
 		"Downloading ZLS",
@@ -348,10 +341,10 @@ func (z *ZVM) InstallZls(version string) error {
 
 	if shouldUnzip == false {
 		file, err := os.Create(binaryLocation)
-
 		if err != nil {
 			return err
 		}
+		defer file.Close()
 
 		if _, err := io.Copy(io.MultiWriter(pbar, file), response.Body); err != nil {
 			return err

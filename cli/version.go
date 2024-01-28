@@ -9,10 +9,15 @@ import (
 	"zvm/cli/meta"
 )
 
+func (z *ZVM) fetchVersionMap() (zigVersionMap, error) {
 
-func (z *ZVM) fetchOfficialVersionMap() (zigVersionMap, error) {
+	defaultVersionMapUrl := "https://ziglang.org/download/index.json"
+	versionMapUrl := z.Settings.VersionMapUrl
+	if len(versionMapUrl) == 0 {
+		versionMapUrl = defaultVersionMapUrl
+	}
 
-	req, err := http.NewRequest("GET", "https://ziglang.org/download/index.json", nil)
+	req, err := http.NewRequest("GET", versionMapUrl, nil)
 	if err != nil {
 		return nil, err
 	}

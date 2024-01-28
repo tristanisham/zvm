@@ -36,14 +36,40 @@ func main() {
 
 	// Install flags
 	installFlagSet := flag.NewFlagSet("install", flag.ExitOnError)
-    installDeps := installFlagSet.String("D", "", "Specify additional dependencies to install with Zig")
+	installDeps := installFlagSet.String("D", "", "Specify additional dependencies to install with Zig")
 
 	// LS flags
 	lsFlagSet := flag.NewFlagSet("ls", flag.ExitOnError)
 	lsRemote := lsFlagSet.Bool("all", false, "List all available versions of Zig to install")
 
+	// Global config
+	sVersionMapUrl := flag.String("vmu", "https://ziglang.org/download/index.json", "Set ZVM's version map URL for custom Zig distribution servers")
+	sColorToggle := flag.Bool("color", true, "Turn on or off ZVM's color output")
+	flag.Parse()
+
+	if sVersionMapUrl != nil {
+		if err := zvm.Settings.SetVersionMapUrl(*sVersionMapUrl); err != nil {
+			log.Fatal(err)
+		}
+	}
+
+	if sColorToggle != nil {
+		if *sColorToggle != zvm.Settings.UseColor {
+			if *sColorToggle {
+				zvm.Settings.YesColor()
+			} else {
+				zvm.Settings.NoColor()
+			}
+		}
+
+	}
+
+	args = flag.Args()
+
 	for i, arg := range args {
+
 		switch arg {
+
 		case "install", "i":
 			installFlagSet.Parse(args[i+1:])
 			// signal to install zls after zig
@@ -75,7 +101,7 @@ func main() {
 
 		case "ls":
 			lsFlagSet.Parse(args[i+1:])
-			
+
 			if *lsRemote {
 				if err := zvm.ListRemoteAvailable(); err != nil {
 					log.Fatal(err)
@@ -85,7 +111,7 @@ func main() {
 					log.Fatal(err)
 				}
 			}
-			
+
 			return
 		case "uninstall", "rm":
 			if len(args) > i+1 {
@@ -124,10 +150,10 @@ func main() {
 				log.Fatal(err)
 			}
 
-		case "version", "--version", "-v":
+		case "version":
 			fmt.Println(meta.VERSION)
 			return
-		case "help", "--help", "-h":
+		case "help":
 			//zvm.Settings.UseColor
 			helpMsg()
 
@@ -140,8 +166,7 @@ func main() {
 		case "--yescolor", "--yescolour":
 			zvm.Settings.YesColor()
 		default:
-			fmt.Printf("ERROR: Invalid argument %s. Please check out --help.\n", arg)
-			os.Exit(1)
+			log.Fatalf("invalid argument %q. Please run `zvm help`.\n", arg)
 		}
 
 	}

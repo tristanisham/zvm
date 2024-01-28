@@ -23,17 +23,19 @@ clean
 upgrade 
   Use `upgrade` to update your ZVM install
 
-version, --version, -v
+version
   Prints the version of ZVM you have installed.
 
-help, --help, -h
+help
   Prints this message.
 
 ------------- Flags -----------------
 
---nocolor, --nocolour | Turns off color.
---color, --colour     | Toggles color.
 
---yescolor, --yescolour | Turns on color.
+--color=<bool> | Turn color printing on or off for ZVM's output
+
+
+
+-vmu | Changes the version map url (Good if you host your own Zig distrobution server)
 
 Looking for more help? https://github.com/tristanisham/zvm

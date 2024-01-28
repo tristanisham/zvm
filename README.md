@@ -182,10 +182,6 @@ Use `clean` to remove build artifacts (Good if you're on Windows).
 
 ```sh
 zvm version
-# Or
-zvm --version
-# Or
-zvm -v
 ```
 
 Prints the version of ZVM you have installed.
@@ -194,10 +190,7 @@ Prints the version of ZVM you have installed.
 
 ```sh
 zvm help
-# Or
-zvm --help
-# Or
-zvm -h
+
 ```
 
 <hr>
@@ -208,4 +201,5 @@ zvm -h
 --nocolor, --nocolour   # Turns off ANSI color.
 --color, --colour       # Toggles ANSI color.
 --yescolor, --yescolour # Turns on ANSI color.
+--versionmapurl         # Changes the version map(version history) url
 ```

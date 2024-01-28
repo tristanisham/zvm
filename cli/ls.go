@@ -53,7 +53,7 @@ func (z *ZVM) ListVersions() error {
 }
 
 func (z ZVM) ListRemoteAvailable() error {
-	versions, err := z.fetchOfficialVersionMap()
+	versions, err := z.fetchVersionMap()
 	if err != nil {
 		return err
 	}

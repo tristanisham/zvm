@@ -27,8 +27,7 @@ import (
 func (z *ZVM) Install(version string) error {
 
 	os.Mkdir(z.zvmBaseDir, 0755)
-
-	rawVersionStructure, err := z.fetchOfficialVersionMap()
+	rawVersionStructure, err := z.fetchVersionMap()
 	if err != nil {
 		return err
 	}
@@ -127,13 +126,12 @@ func (z *ZVM) Install(version string) error {
 	}
 	var tarName string
 
+	resultUrl, err := url.Parse(tarPath)
+	if err != nil {
+		log.Error(err)
+		tarName = version
+	}
 	if wasZigOnl {
-		resultUrl, err := url.Parse(tarPath)
-		if err != nil {
-			log.Error(err)
-			tarName = version
-		}
-
 		if rel := resultUrl.Query().Get("release"); len(rel) > 0 {
 			tarName = strings.Replace(rel, " ", "+", 1)
 		} else {
@@ -141,8 +139,9 @@ func (z *ZVM) Install(version string) error {
 		}
 
 	} else {
-		tarName = strings.TrimPrefix(tarPath, "https://ziglang.org/builds/")
-		tarName = strings.TrimPrefix(tarName, fmt.Sprintf("https://ziglang.org/download/%s/", version))
+		// Maybe think of a better algorithm
+		urlPath := strings.Split(resultUrl.Path, "/")
+		tarName = urlPath[len(urlPath)-1]
 		tarName = strings.TrimSuffix(tarName, ".tar.xz")
 		tarName = strings.TrimSuffix(tarName, ".zip")
 	}
@@ -307,6 +306,10 @@ func (z *ZVM) InstallZls(version string) error {
 
 	defer tempDir.Close()
 	defer os.RemoveAll(tempDir.Name())
+
+	// if resp.ContentLength == 0 {
+	// 	return fmt.Errorf("invalid ZLS content length (%d bytes)", resp.ContentLength)
+	// }
 
 	pbar := progressbar.DefaultBytes(
 		int64(resp.ContentLength),

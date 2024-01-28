@@ -307,6 +307,10 @@ func (z *ZVM) InstallZls(version string) error {
 	defer tempDir.Close()
 	defer os.RemoveAll(tempDir.Name())
 
+	// if resp.ContentLength == 0 {
+	// 	return fmt.Errorf("invalid ZLS content length (%d bytes)", resp.ContentLength)
+	// }
+
 	pbar := progressbar.DefaultBytes(
 		int64(resp.ContentLength),
 		"Downloading ZLS",

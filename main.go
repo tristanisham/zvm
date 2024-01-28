@@ -44,13 +44,24 @@ func main() {
 
 	// Global config
 	sVersionMapUrl := flag.String("vmu", "https://ziglang.org/download/index.json", "Set ZVM's version map URL for custom Zig distribution servers")
-
+	sColorToggle := flag.Bool("color", true, "Turn on or off ZVM's color output")
 	flag.Parse()
 
 	if sVersionMapUrl != nil {
 		if err := zvm.Settings.SetVersionMapUrl(*sVersionMapUrl); err != nil {
 			log.Fatal(err)
 		}
+	}
+
+	if sColorToggle != nil {
+		if *sColorToggle != zvm.Settings.UseColor {
+			if *sColorToggle {
+				zvm.Settings.YesColor()
+			} else {
+				zvm.Settings.NoColor()
+			}
+		}
+
 	}
 
 	args = flag.Args()
@@ -155,7 +166,7 @@ func main() {
 		case "--yescolor", "--yescolour":
 			zvm.Settings.YesColor()
 		default:
-			log.Fatalf("invalid argument %q. Please check out help.\n", arg)
+			log.Fatalf("invalid argument %q. Please run `zvm help`.\n", arg)
 		}
 
 	}

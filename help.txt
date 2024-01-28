@@ -36,6 +36,6 @@ help
 
 --yescolor, --yescolour | Turns on color.
 
---versionmapurl | Changes the version map(version history) url
+-vmu | Changes the version map url (Good if you host your own Zig distrobution server)
 
 Looking for more help? https://github.com/tristanisham/zvm

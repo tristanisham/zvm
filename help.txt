@@ -31,10 +31,10 @@ help
 
 ------------- Flags -----------------
 
---nocolor, --nocolour | Turns off color.
---color, --colour     | Toggles color.
 
---yescolor, --yescolour | Turns on color.
+--color=<bool> | Turn color printing on or off for ZVM's output
+
+
 
 -vmu | Changes the version map url (Good if you host your own Zig distrobution server)
 

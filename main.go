@@ -43,12 +43,12 @@ func main() {
 	lsRemote := lsFlagSet.Bool("all", false, "List all available versions of Zig to install")
 
 	// Global config
-	sVersionMapUrl := flag.String("vmu", "https://ziglang.org/download/index.json", "Set ZVM's version map URL for custom Zig distribution servers")
+	sVersionMapUrl := flag.String("unstable-vmu", "https://ziglang.org/download/index.json", "Set ZVM's version map URL for custom Zig distribution servers")
 	sColorToggle := flag.Bool("color", true, "Turn on or off ZVM's color output")
 	flag.Parse()
 
 	if sVersionMapUrl != nil {
-		log.Warn("this is a beta flag, and may not behave as expected.")
+		log.Warn("this is a beta flag, and may not behave as expected.\nRun --unstable-vmu default to reset your version map.")
 		if *sVersionMapUrl == "default" {
 			if err := zvm.Settings.ResetVersionMap(); err != nil {
 				log.Fatal(err)

@@ -202,9 +202,9 @@ zvm help
 ```
 ### BETA FLAGS: (Might not work as expected)
 ```sh
--vmu   # Changes the version map url (good if you host your own Zig distrobution server).
+-unstable-vmu   # Changes the version map url (good if you host your own Zig distrobution server).
        # ZVM expects properly formatted URLs with the included protocol.
        # URLs that don't serve workable JSON files will break ZVM. If you ever want to reset
-       # your version map url, just run -vmu default.
+       # your version map url, just run -unstable-vmu default.
        # -vmu "https://my-cdn.local/zig.json"
 ```

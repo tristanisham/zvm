@@ -30,12 +30,12 @@ func (z *ZVM) Use(ver string) error {
 }
 
 func (z *ZVM) setBin(ver string) error {
-	version_path := filepath.Join(z.zvmBaseDir, ver)
-	if err := os.Remove(filepath.Join(z.zvmBaseDir, "bin")); err != nil {
+	version_path := filepath.Join(z.baseDir, ver)
+	if err := os.Remove(filepath.Join(z.baseDir, "bin")); err != nil {
 		log.Warn(err)
 	}
 
-	if err := os.Symlink(version_path, filepath.Join(z.zvmBaseDir, "bin")); err != nil {
+	if err := os.Symlink(version_path, filepath.Join(z.baseDir, "bin")); err != nil {
 		return err
 	}
 

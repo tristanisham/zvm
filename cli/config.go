@@ -30,13 +30,13 @@ func Initialize() *ZVM {
 	}
 
 	zvm := &ZVM{
-		zvmBaseDir: zvm_path,
+		baseDir: zvm_path,
 	}
 
 	if err := zvm.loadSettings(); err != nil {
 		if errors.Is(err, ErrNoSettings) {
 			zvm.Settings = Settings{
-				UseColor: true,
+				UseColor:      true,
 				VersionMapUrl: "https://ziglang.org/download/index.json",
 			}
 
@@ -56,8 +56,8 @@ func Initialize() *ZVM {
 }
 
 type ZVM struct {
-	zvmBaseDir string
-	Settings   Settings
+	baseDir  string
+	Settings Settings
 }
 
 // A representaiton of the offical json schema for Zig versions
@@ -89,10 +89,10 @@ type ZigOnlVersion = map[string][]map[string]string
 // }
 
 func (z ZVM) getVersion(version string) error {
-	if _, err := os.Stat(filepath.Join(z.zvmBaseDir, version)); err != nil {
+	if _, err := os.Stat(filepath.Join(z.baseDir, version)); err != nil {
 		return err
 	}
-	targetZig := strings.TrimSpace(filepath.Join(z.zvmBaseDir, version, "zig"))
+	targetZig := strings.TrimSpace(filepath.Join(z.baseDir, version, "zig"))
 	cmd := exec.Command(targetZig, "version")
 	var zigVersion strings.Builder
 	cmd.Stdout = &zigVersion

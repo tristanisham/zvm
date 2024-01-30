@@ -7,9 +7,11 @@ import (
 	"io"
 	"net/http"
 	"os"
+
 	// "os/user"
 	"path/filepath"
 	"runtime"
+
 	// "syscall"
 	"time"
 	"zvm/cli/meta"
@@ -60,11 +62,13 @@ func (z *ZVM) Upgrade() error {
 	}
 	defer resp.Body.Close()
 
-	tempDownload, err := os.CreateTemp("", fmt.Sprintf("*.%s", archive))
+	tempDownload, err := os.CreateTemp(z.baseDir, fmt.Sprintf("*.%s", archive))
 	if err != nil {
 		return err
 	}
 	defer tempDownload.Close()
+	// log.Debug("temp name", "path", tempDownload.Name())
+	defer os.Remove(tempDownload.Name())
 
 	log.Debug("tempDir", "name", tempDownload.Name())
 	pbar := progressbar.DefaultBytes(
@@ -89,10 +93,11 @@ func (z *ZVM) Upgrade() error {
 
 	log.Debug("zvmPath", "path", zvmPath)
 
-	newTemp, err := os.MkdirTemp("", "zvm-upgrade-*")
+	newTemp, err := os.MkdirTemp(z.baseDir, "zvm-upgrade-*")
 	if err != nil {
 		return errors.Join(ErrFailedUpgrade, err)
 	}
+	defer os.RemoveAll(newTemp)
 
 	if err := untar(tempDownload.Name(), newTemp); err != nil {
 		log.Error(err)
@@ -107,6 +112,10 @@ func (z *ZVM) Upgrade() error {
 		return errors.Join(ErrFailedUpgrade, err)
 	}
 
+	if err := z.Clean(); err != nil {
+		log.Warn("ZVM failed to clean up after itself.")
+	}
+
 	return nil
 }
 
@@ -115,19 +124,19 @@ func (z ZVM) getInstallDir() (string, error) {
 	if !ok {
 		this, err := os.Executable()
 		if err != nil {
-			return filepath.Join(z.zvmBaseDir, "self"), nil
+			return filepath.Join(z.baseDir, "self"), nil
 		}
 
 		itIsASymlink, err := isSymlink(this)
 		if err != nil {
-			return filepath.Join(z.zvmBaseDir, "self"), nil
+			return filepath.Join(z.baseDir, "self"), nil
 		}
 
 		var finalPath string
 		if !itIsASymlink {
 			finalPath, err = resolveSymlink(this)
 			if err != nil {
-				return filepath.Join(z.zvmBaseDir, "self"), nil
+				return filepath.Join(z.baseDir, "self"), nil
 			}
 		} else {
 			finalPath = this
@@ -213,9 +222,6 @@ func isSymlink(path string) (bool, error) {
 	}
 	return fileInfo.Mode()&os.ModeSymlink != 0, nil
 }
-
-
-
 
 func CanIUpgrade() (bool, string, error) {
 	release, err := getLatestGitHubRelease("tristanisham", "zvm")

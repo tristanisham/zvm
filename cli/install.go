@@ -343,7 +343,7 @@ func (z *ZVM) InstallZls(version string) error {
 	versionPath := filepath.Join(z.zvmBaseDir, version)
 	binaryLocation := filepath.Join(versionPath, filename)
 
-	if shouldUnzip == false {
+	if !shouldUnzip {
 		file, err := os.Create(binaryLocation)
 		if err != nil {
 			return err

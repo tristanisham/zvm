@@ -37,6 +37,7 @@ func Initialize() *ZVM {
 		if errors.Is(err, ErrNoSettings) {
 			zvm.Settings = Settings{
 				UseColor: true,
+				VersionMapUrl: "https://ziglang.org/download/index.json",
 			}
 
 			out_settings, err := json.MarshalIndent(&zvm.Settings, "", "    ")
@@ -116,12 +117,12 @@ func (z ZVM) getVersion(version string) error {
 }
 
 func (z *ZVM) loadSettings() error {
-	set_path := filepath.Join(z.zvmBaseDir, "settings.json")
+	set_path := z.Settings.basePath
 	if _, err := os.Stat(set_path); errors.Is(err, os.ErrNotExist) {
 		return ErrNoSettings
 	}
 
-	data, err := os.ReadFile(filepath.Join(z.zvmBaseDir, "settings.json"))
+	data, err := os.ReadFile(set_path)
 	if err != nil {
 		return err
 	}

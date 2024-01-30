@@ -198,8 +198,10 @@ zvm help
 ## Option flags
 
 ```sh
---nocolor, --nocolour   # Turns off ANSI color.
---color, --colour       # Toggles ANSI color.
---yescolor, --yescolour # Turns on ANSI color.
---versionmapurl         # Changes the version map(version history) url
+-color # Turn ANSI color printing on or off for ZVM's output, i.e. -color=true
+-vmu   # Changes the version map url (good if you host your own Zig distrobution server).
+       # ZVM expects properly formatted URLs with the included protocol.
+       # URLs that don't serve workable JSON files will break ZVM. If you ever want to reset
+       # your version map url, just run -vmu default.
+       # -vmu "https://my-cdn.local/zig.json"
 ```

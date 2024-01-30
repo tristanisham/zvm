@@ -2,19 +2,40 @@ package cli
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"os"
 	"path/filepath"
 	"zvm/cli/meta"
+
+	"github.com/charmbracelet/log"
+	"github.com/tristanisham/clr"
 )
 
 func (z *ZVM) fetchVersionMap() (zigVersionMap, error) {
 
+	log.Debug("inital VMU", "url", z.Settings.VersionMapUrl)
+
+	if err := z.loadSettings(); err != nil {
+		log.Warnf("could not read settings: %q", err)
+		log.Debug("vmu", z.Settings.VersionMapUrl)
+	}
+
 	defaultVersionMapUrl := "https://ziglang.org/download/index.json"
+
 	versionMapUrl := z.Settings.VersionMapUrl
+	
+	log.Debug("setting's VMU", "url", versionMapUrl)
+
 	if len(versionMapUrl) == 0 {
 		versionMapUrl = defaultVersionMapUrl
+	}
+
+	// Limited warning until I get to properly test this code.
+	if versionMapUrl != defaultVersionMapUrl {
+		fmt.Println("This command is currently in beta and may break your install.")
+		fmt.Printf("To reset your version map, run %s", clr.Green("zvm -vmu default"))
 	}
 
 	req, err := http.NewRequest("GET", versionMapUrl, nil)

@@ -48,9 +48,16 @@ func main() {
 	flag.Parse()
 
 	if sVersionMapUrl != nil {
-		if err := zvm.Settings.SetVersionMapUrl(*sVersionMapUrl); err != nil {
-			log.Fatal(err)
+		if *sVersionMapUrl == "default" {
+			if err := zvm.Settings.ResetVersionMap(); err != nil {
+				log.Fatal(err)
+			}
+		} else {
+			if err := zvm.Settings.SetVersionMapUrl(*sVersionMapUrl); err != nil {
+				log.Fatal(err)
+			}
 		}
+
 	}
 
 	if sColorToggle != nil {
@@ -76,7 +83,7 @@ func main() {
 
 			req := cli.ExtractInstall(args[len(args)-1])
 			req.Version = strings.TrimPrefix(req.Version, "v")
-			log.Debug(req, "deps", *installDeps)
+			// log.Debug(req, "deps", *installDeps)
 
 			if err := zvm.Install(req.Package); err != nil {
 				log.Fatal(err)
@@ -159,12 +166,6 @@ func main() {
 
 			return
 			// Settings
-		case "--nocolor", "--nocolour":
-			zvm.Settings.NoColor()
-		case "--color", "--colour":
-			zvm.Settings.ToggleColor()
-		case "--yescolor", "--yescolour":
-			zvm.Settings.YesColor()
 		default:
 			log.Fatalf("invalid argument %q. Please run `zvm help`.\n", arg)
 		}

@@ -3,9 +3,10 @@ package cli
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 	"net/url"
 	"os"
+
+	"github.com/charmbracelet/log"
 
 	"github.com/tristanisham/clr"
 )
@@ -31,8 +32,13 @@ func (s *Settings) ToggleColor() {
 
 }
 
-func (s *Settings) ResetVersionMap() {
+func (s *Settings) ResetVersionMap() error {
 	s.VersionMapUrl = "https://ziglang.org/download/index.json"
+	if err := s.save(); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (s *Settings) NoColor() {
@@ -70,6 +76,8 @@ func (s *Settings) SetVersionMapUrl(versionMapUrl string) error {
 	if err := s.save(); err != nil {
 		return err
 	}
+
+	log.Debug("set version map url", "url", s.VersionMapUrl)
 
 	return nil
 }

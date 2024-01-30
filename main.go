@@ -48,6 +48,7 @@ func main() {
 	flag.Parse()
 
 	if sVersionMapUrl != nil {
+		log.Warn("this is a beta flag, and may not behave as expected.")
 		if *sVersionMapUrl == "default" {
 			if err := zvm.Settings.ResetVersionMap(); err != nil {
 				log.Fatal(err)

@@ -32,10 +32,5 @@ help
 ------------- Flags -----------------
 -color=<bool> | Turn color printing on or off for ZVM's output
 
-BETA FLAGS: (Might not work as expected)
-
--unstable-vmu | Changes the version map url (Good if you host your own Zig distrobution server)
-       URLs that don't serve workable JSON files will break ZVM. If you ever want to reset
-       your version map url, just run -unstable-vmu default.
 
 Looking for more help? https://github.com/tristanisham/zvm

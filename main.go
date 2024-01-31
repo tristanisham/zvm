@@ -43,24 +43,24 @@ func main() {
 	lsRemote := lsFlagSet.Bool("all", false, "List all available versions of Zig to install")
 
 	// Global config
-	sVersionMapUrl := flag.String("unstable-vmu", "default", "Set ZVM's version map URL for custom Zig distribution servers")
+	// sVersionMapUrl := flag.String("unstable-vmu", "default", "Set ZVM's version map URL for custom Zig distribution servers")
 	sColorToggle := flag.Bool("color", true, "Turn on or off ZVM's color output")
 	flag.Parse()
 
-	if sVersionMapUrl != nil {
-		if *sVersionMapUrl == "default" {
-			if err := zvm.Settings.ResetVersionMap(); err != nil {
-				log.Fatal(err)
-			}
-		} else {
-			log.Warn("this is a beta flag, and may not behave as expected.\nRun --unstable-vmu default to reset your version map.")
+	// if sVersionMapUrl != nil {
+	// 	if *sVersionMapUrl == "default" {
+	// 		if err := zvm.Settings.ResetVersionMap(); err != nil {
+	// 			log.Fatal(err)
+	// 		}
+	// 	} else {
+	// 		log.Warn("this is a beta flag, and may not behave as expected.\nRun --unstable-vmu default to reset your version map.")
 
-			if err := zvm.Settings.SetVersionMapUrl(*sVersionMapUrl); err != nil {
-				log.Fatal(err)
-			}
-		}
+	// 		if err := zvm.Settings.SetVersionMapUrl(*sVersionMapUrl); err != nil {
+	// 			log.Fatal(err)
+	// 		}
+	// 	}
 
-	}
+	// }
 
 	if sColorToggle != nil {
 		if *sColorToggle != zvm.Settings.UseColor {

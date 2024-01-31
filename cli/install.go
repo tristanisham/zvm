@@ -26,7 +26,7 @@ import (
 
 func (z *ZVM) Install(version string) error {
 
-	os.Mkdir(z.zvmBaseDir, 0755)
+	os.Mkdir(z.baseDir, 0755)
 	rawVersionStructure, err := z.fetchVersionMap()
 	if err != nil {
 		return err
@@ -68,7 +68,7 @@ func (z *ZVM) Install(version string) error {
 		pathEnding = "*.tar.xz"
 	}
 
-	tempDir, err := os.CreateTemp(z.zvmBaseDir, pathEnding)
+	tempDir, err := os.CreateTemp(z.baseDir, pathEnding)
 	if err != nil {
 		return err
 	}
@@ -121,7 +121,7 @@ func (z *ZVM) Install(version string) error {
 	// installedVersionPath := filepath.Join(z.zvmBaseDir, version)
 	fmt.Println("Extracting bundle...")
 
-	if err := ExtractBundle(tempDir.Name(), z.zvmBaseDir); err != nil {
+	if err := ExtractBundle(tempDir.Name(), z.baseDir); err != nil {
 		log.Fatal(err)
 	}
 	var tarName string
@@ -148,8 +148,8 @@ func (z *ZVM) Install(version string) error {
 
 	if wasZigOnl {
 
-		untarredPath := filepath.Join(z.zvmBaseDir, fmt.Sprintf("zig-%s-%s-%s", zigOS, zigArch, version))
-		newPath := filepath.Join(z.zvmBaseDir, tarName)
+		untarredPath := filepath.Join(z.baseDir, fmt.Sprintf("zig-%s-%s-%s", zigOS, zigArch, version))
+		newPath := filepath.Join(z.baseDir, tarName)
 
 		if _, err := os.Stat(untarredPath); err == nil {
 			if os.Stat(newPath); err == nil {
@@ -167,15 +167,15 @@ func (z *ZVM) Install(version string) error {
 
 		}
 	} else {
-		if err := os.Rename(filepath.Join(z.zvmBaseDir, tarName), filepath.Join(z.zvmBaseDir, version)); err != nil {
-			if _, err := os.Stat(filepath.Join(z.zvmBaseDir, version)); err == nil {
+		if err := os.Rename(filepath.Join(z.baseDir, tarName), filepath.Join(z.baseDir, version)); err != nil {
+			if _, err := os.Stat(filepath.Join(z.baseDir, version)); err == nil {
 				// Room here to make the backup file.
-				log.Debug("removing", "path", filepath.Join(z.zvmBaseDir, version))
-				if err := os.RemoveAll(filepath.Join(z.zvmBaseDir, version)); err != nil {
+				log.Debug("removing", "path", filepath.Join(z.baseDir, version))
+				if err := os.RemoveAll(filepath.Join(z.baseDir, version)); err != nil {
 					log.Fatal(err)
 				} else {
-					oldName := filepath.Join(z.zvmBaseDir, tarName)
-					newName := filepath.Join(z.zvmBaseDir, version)
+					oldName := filepath.Join(z.baseDir, tarName)
+					newName := filepath.Join(z.baseDir, version)
 					log.Debug("renaming", "old", oldName, "new", newName, "identical", oldName == newName)
 					if oldName != newName {
 						if err := os.Rename(oldName, newName); err != nil {
@@ -189,7 +189,7 @@ func (z *ZVM) Install(version string) error {
 		}
 
 		// This removes the extra download
-		if err := os.RemoveAll(filepath.Join(z.zvmBaseDir, tarName)); err != nil {
+		if err := os.RemoveAll(filepath.Join(z.baseDir, tarName)); err != nil {
 			log.Warn(err)
 		}
 	}
@@ -293,7 +293,7 @@ func (z *ZVM) InstallZls(version string) error {
 	fmt.Println("Finding ZLS executable...")
 
 	// make sure dir exists
-	installDir := filepath.Join(z.zvmBaseDir, version)
+	installDir := filepath.Join(z.baseDir, version)
 	err := os.MkdirAll(installDir, 0755)
 	if err != nil {
 		return err
@@ -340,7 +340,7 @@ func (z *ZVM) InstallZls(version string) error {
 		"Downloading ZLS",
 	)
 
-	versionPath := filepath.Join(z.zvmBaseDir, version)
+	versionPath := filepath.Join(z.baseDir, version)
 	binaryLocation := filepath.Join(versionPath, filename)
 
 	if !shouldUnzip {
@@ -361,7 +361,7 @@ func (z *ZVM) InstallZls(version string) error {
 			pathEnding = "*.tar.xz"
 		}
 
-		tempDir, err := os.CreateTemp(z.zvmBaseDir, pathEnding)
+		tempDir, err := os.CreateTemp(z.baseDir, pathEnding)
 		if err != nil {
 			return err
 		}
@@ -374,7 +374,7 @@ func (z *ZVM) InstallZls(version string) error {
 		}
 
 		fmt.Println("Extracting ZLS...")
-		if err := ExtractBundle(tempDir.Name(), filepath.Join(z.zvmBaseDir, version)); err != nil {
+		if err := ExtractBundle(tempDir.Name(), filepath.Join(z.baseDir, version)); err != nil {
 			log.Fatal(err)
 		}
 		if err := os.Rename(filepath.Join(versionPath, "bin", filename), filepath.Join(versionPath, filename)); err != nil {
@@ -392,15 +392,15 @@ func (z *ZVM) InstallZls(version string) error {
 }
 
 func (z *ZVM) createSymlink(version string) {
-	if _, err := os.Lstat(filepath.Join(z.zvmBaseDir, "bin")); err == nil {
+	if _, err := os.Lstat(filepath.Join(z.baseDir, "bin")); err == nil {
 		fmt.Println("Removing old symlink")
-		if err := os.RemoveAll(filepath.Join(z.zvmBaseDir, "bin")); err != nil {
+		if err := os.RemoveAll(filepath.Join(z.baseDir, "bin")); err != nil {
 			log.Fatal("could not remove bin", err)
 		}
 
 	}
 
-	if err := os.Symlink(filepath.Join(z.zvmBaseDir, version), filepath.Join(z.zvmBaseDir, "bin")); err != nil {
+	if err := os.Symlink(filepath.Join(z.baseDir, version), filepath.Join(z.baseDir, "bin")); err != nil {
 		log.Fatal(err)
 	}
 }

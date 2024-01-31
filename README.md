@@ -200,11 +200,4 @@ zvm help
 ```sh
 -color # Turn ANSI color printing on or off for ZVM's output, i.e. -color=true
 ```
-### BETA FLAGS: (Might not work as expected)
-```sh
--vmu   # Changes the version map url (good if you host your own Zig distrobution server).
-       # ZVM expects properly formatted URLs with the included protocol.
-       # URLs that don't serve workable JSON files will break ZVM. If you ever want to reset
-       # your version map url, just run -vmu default.
-       # -vmu "https://my-cdn.local/zig.json"
-```
+

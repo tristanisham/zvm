@@ -26,7 +26,7 @@ func (z *ZVM) ListVersions() error {
 	}
 
 	version := zigVersion.String()
-	dir, err := os.ReadDir(z.zvmBaseDir)
+	dir, err := os.ReadDir(z.baseDir)
 	if err != nil {
 		return err
 	}

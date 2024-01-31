@@ -2,7 +2,7 @@ package cli
 
 import (
 	"encoding/json"
-	"fmt"
+	// "fmt"
 	"io"
 	"net/http"
 	"os"
@@ -10,7 +10,7 @@ import (
 	"zvm/cli/meta"
 
 	"github.com/charmbracelet/log"
-	"github.com/tristanisham/clr"
+	// "github.com/tristanisham/clr"
 )
 
 func (z *ZVM) fetchVersionMap() (zigVersionMap, error) {
@@ -25,18 +25,18 @@ func (z *ZVM) fetchVersionMap() (zigVersionMap, error) {
 	defaultVersionMapUrl := "https://ziglang.org/download/index.json"
 
 	versionMapUrl := z.Settings.VersionMapUrl
-	
+
 	log.Debug("setting's VMU", "url", versionMapUrl)
 
 	if len(versionMapUrl) == 0 {
 		versionMapUrl = defaultVersionMapUrl
 	}
 
-	// Limited warning until I get to properly test this code.
-	if versionMapUrl != defaultVersionMapUrl {
-		fmt.Println("This command is currently in beta and may break your install.")
-		fmt.Printf("To reset your version map, run %s", clr.Green("zvm -vmu default"))
-	}
+	// // Limited warning until I get to properly test this code.
+	// if versionMapUrl != defaultVersionMapUrl {
+	// 	fmt.Println("This command is currently in beta and may break your install.")
+	// 	fmt.Printf("To reset your version map, run %s", clr.Green("zvm -unstable-vmu default"))
+	// }
 
 	req, err := http.NewRequest("GET", versionMapUrl, nil)
 	if err != nil {
@@ -56,7 +56,7 @@ func (z *ZVM) fetchVersionMap() (zigVersionMap, error) {
 		return nil, err
 	}
 
-	if err := os.WriteFile(filepath.Join(z.zvmBaseDir, "versions.json"), versions, 0755); err != nil {
+	if err := os.WriteFile(filepath.Join(z.baseDir, "versions.json"), versions, 0755); err != nil {
 		return nil, err
 	}
 

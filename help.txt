@@ -31,6 +31,6 @@ help
 
 ------------- Flags -----------------
 -color=<bool> | Turn color printing on or off for ZVM's output
-
+-vmu="https://validurl.local/vmu.json" | Change the source ZVM pulls Zig release information from. Good for self-hosted Zig CDNs.
 
 Looking for more help? https://github.com/tristanisham/zvm

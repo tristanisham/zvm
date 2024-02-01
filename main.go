@@ -49,12 +49,17 @@ func main() {
 
 	if sVersionMapUrl != nil && len(*sVersionMapUrl) != 0 {
 		log.Debug("user passed vmu", "url", *sVersionMapUrl)
-		if *sVersionMapUrl == "default" {
+		switch *sVersionMapUrl {
+		case "default":
 			if err := zvm.Settings.ResetVersionMap(); err != nil {
 				log.Fatal(err)
 			}
-		} else {
-			log.Warn("this is a beta flag, and may not behave as expected.\nRun `-vmu default` to reset your version map.")
+		case "mach":
+			if err := zvm.Settings.SetVersionMapUrl("https://machengine.org/zig/index.json"); err != nil {
+				log.Fatal(err)
+			}
+
+		default:
 
 			if err := zvm.Settings.SetVersionMapUrl(*sVersionMapUrl); err != nil {
 				log.Fatal(err)

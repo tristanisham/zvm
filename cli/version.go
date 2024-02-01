@@ -32,12 +32,6 @@ func (z *ZVM) fetchVersionMap() (zigVersionMap, error) {
 		versionMapUrl = defaultVersionMapUrl
 	}
 
-	// // Limited warning until I get to properly test this code.
-	// if versionMapUrl != defaultVersionMapUrl {
-	// 	fmt.Println("This command is currently in beta and may break your install.")
-	// 	fmt.Printf("To reset your version map, run %s", clr.Green("zvm -unstable-vmu default"))
-	// }
-
 	req, err := http.NewRequest("GET", versionMapUrl, nil)
 	if err != nil {
 		return nil, err

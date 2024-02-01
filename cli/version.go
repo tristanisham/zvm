@@ -2,6 +2,9 @@ package cli
 
 import (
 	"encoding/json"
+	"errors"
+	"fmt"
+
 	// "fmt"
 	"io"
 	"net/http"
@@ -50,12 +53,17 @@ func (z *ZVM) fetchVersionMap() (zigVersionMap, error) {
 		return nil, err
 	}
 
-	if err := os.WriteFile(filepath.Join(z.baseDir, "versions.json"), versions, 0755); err != nil {
+	rawVersionStructure := make(zigVersionMap)
+	if err := json.Unmarshal(versions, &rawVersionStructure); err != nil {
+		var syntaxErr *json.SyntaxError
+		if errors.As(err, &syntaxErr) {
+			return nil, fmt.Errorf("%w: %w", ErrInvalidVersionMap, err)
+		}
+
 		return nil, err
 	}
 
-	rawVersionStructure := make(zigVersionMap)
-	if err := json.Unmarshal(versions, &rawVersionStructure); err != nil {
+	if err := os.WriteFile(filepath.Join(z.baseDir, "versions.json"), versions, 0755); err != nil {
 		return nil, err
 	}
 

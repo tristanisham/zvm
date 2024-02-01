@@ -33,6 +33,8 @@ func Initialize() *ZVM {
 		baseDir: zvm_path,
 	}
 
+	zvm.Settings.basePath = filepath.Join(zvm_path, "settings.json")
+	
 	if err := zvm.loadSettings(); err != nil {
 		if errors.Is(err, ErrNoSettings) {
 			zvm.Settings = Settings{
@@ -51,7 +53,6 @@ func Initialize() *ZVM {
 		}
 	}
 
-	zvm.Settings.basePath = filepath.Join(zvm_path, "settings.json")
 	return zvm
 }
 

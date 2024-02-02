@@ -5,7 +5,6 @@
 
 ## Join our Community
 
-- [Discord](https://discord.gg/NhaNhCMYX8)
 - [Twitch](https://twitch.tv/atalocke)
 
 <hr>

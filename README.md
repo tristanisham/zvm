@@ -6,6 +6,7 @@
 ## Join our Community
 
 - [Twitch](https://twitch.tv/atalocke)
+- [Twitter|X](https://twitter.com/atalocke)
 
 <hr>
 

@@ -206,7 +206,7 @@ type githubTaggedReleaseResponse struct {
 type gitHubAsset struct {
 	Url                string // url for asset json object
 	Name               string // contains platform information about binary
-	BrowserDownloadUrl string // download url
+	BrowserDownloadUrl string `json:"browser_download_url"` // download url
 }
 
 type zlsCIDownloadIndexResponse struct {

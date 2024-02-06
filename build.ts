@@ -32,18 +32,18 @@ for (const os of GOOS) {
     Deno.env.set("GOARCH", ar);
     const zvm_str = `zvm-${os}-${ar}`;
     console.time(`Build zvm: ${zvm_str}`);
-    // deno-lint-ignore no-deprecated-deno-api
-    const build_cmd = Deno.run({
-      cmd: [
-        "go",
+
+    const build_cmd = new Deno.Command("go", {
+      args: [
         "build",
         "-o",
-        `build/${zvm_str}/zvm${(os == "windows" ? ".exe" : "")}`,
-        "-ldflags=-w -s", "-trimpath",
+        `build/${zvm_str}/zvm${os === "windows" ? ".exe" : ""}`,
+        "-ldflags=-w -s",
+        "-trimpath",
       ],
     });
 
-    const { code } = await build_cmd.status();
+    const { code } = await build_cmd.output();
     if (code !== 0) {
       console.error("Something went wrong");
       Deno.exit(1);

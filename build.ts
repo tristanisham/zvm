@@ -61,19 +61,21 @@ for (const os of GOOS) {
     }
     const zvm_str = `zvm-${os}-${ar}`;
 
-    if (os == "windows") {
-      console.time(`Compress zvm: ${zvm_str}`);
+    if (os === "windows") {
+      console.time(`Compress zvm (zip): ${zvm_str}`);
       const zip = new Deno.Command(`zip`, {
         args: [`${zvm_str}.zip`, `${zvm_str}/zvm.exe`],
         stdin: "piped",
         stdout: "piped",
       });
+
       zip.spawn();
-      console.timeEnd(`Compress zvm: ${zvm_str}`);
+      
+      console.timeEnd(`Compress zvm (zip): ${zvm_str}`);
       continue;
     }
     const tar = new Tar();
-    console.time(`Compress zvm: ${zvm_str}`);
+    console.time(`Compress zvm (tar): ${zvm_str}`);
     await tar.append("zvm", {
       filePath: `${zvm_str}/zvm`,
     });
@@ -83,7 +85,7 @@ for (const os of GOOS) {
     });
     await copy(tar.getReader(), writer);
     writer.close();
-    console.timeEnd(`Compress zvm: ${zvm_str}`);
+    console.timeEnd(`Compress zvm (tar): ${zvm_str}`);
   }
 }
 

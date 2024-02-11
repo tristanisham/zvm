@@ -2,17 +2,35 @@ package cli
 
 import (
 	"encoding/json"
+	"errors"
+	"fmt"
+
+	// "fmt"
 	"io"
 	"net/http"
 	"os"
 	"path/filepath"
 	"zvm/cli/meta"
+
+	"github.com/charmbracelet/log"
+	// "github.com/tristanisham/clr"
 )
 
 func (z *ZVM) fetchVersionMap() (zigVersionMap, error) {
 
+	log.Debug("inital VMU", "url", z.Settings.VersionMapUrl)
+
+	if err := z.loadSettings(); err != nil {
+		log.Warnf("could not read settings: %q", err)
+		log.Debug("vmu", z.Settings.VersionMapUrl)
+	}
+
 	defaultVersionMapUrl := "https://ziglang.org/download/index.json"
+
 	versionMapUrl := z.Settings.VersionMapUrl
+
+	log.Debug("setting's VMU", "url", versionMapUrl)
+
 	if len(versionMapUrl) == 0 {
 		versionMapUrl = defaultVersionMapUrl
 	}
@@ -35,12 +53,17 @@ func (z *ZVM) fetchVersionMap() (zigVersionMap, error) {
 		return nil, err
 	}
 
-	if err := os.WriteFile(filepath.Join(z.zvmBaseDir, "versions.json"), versions, 0755); err != nil {
+	rawVersionStructure := make(zigVersionMap)
+	if err := json.Unmarshal(versions, &rawVersionStructure); err != nil {
+		var syntaxErr *json.SyntaxError
+		if errors.As(err, &syntaxErr) {
+			return nil, fmt.Errorf("%w: %w", ErrInvalidVersionMap, err)
+		}
+
 		return nil, err
 	}
 
-	rawVersionStructure := make(zigVersionMap)
-	if err := json.Unmarshal(versions, &rawVersionStructure); err != nil {
+	if err := os.WriteFile(filepath.Join(z.baseDir, "versions.json"), versions, 0755); err != nil {
 		return nil, err
 	}
 

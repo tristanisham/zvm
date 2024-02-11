@@ -1,5 +1,5 @@
 zvm (Zig Version Manager) {{.Version}}
-© 2023-present Tristan Isham
+© 2022-present Tristan Isham
 --------------------------------
 
 install, i [flags] <version>
@@ -30,12 +30,10 @@ help
   Prints this message.
 
 ------------- Flags -----------------
-
-
---color=<bool> | Turn color printing on or off for ZVM's output
-
-
-
--vmu | Changes the version map url (Good if you host your own Zig distrobution server)
-
+-color=<bool> | Turn color printing on or off for ZVM's output
+-vmu="https://validurl.local/vmu.json" | Change the source ZVM pulls Zig release information from. Good for self-hosted Zig CDNs.
+                                       | Run `-vmu=default` to reset your version map.
+                                       
+  -vmu default                         | Resets back to default Zig releases.
+  -vmu mach                            | Sets ZVM to pull from Mach nominated Zig.
 Looking for more help? https://github.com/tristanisham/zvm

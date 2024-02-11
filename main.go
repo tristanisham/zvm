@@ -43,14 +43,29 @@ func main() {
 	lsRemote := lsFlagSet.Bool("all", false, "List all available versions of Zig to install")
 
 	// Global config
-	sVersionMapUrl := flag.String("vmu", "https://ziglang.org/download/index.json", "Set ZVM's version map URL for custom Zig distribution servers")
+	sVersionMapUrl := flag.String("vmu", "", "Set ZVM's version map URL for custom Zig distribution servers")
 	sColorToggle := flag.Bool("color", true, "Turn on or off ZVM's color output")
 	flag.Parse()
 
-	if sVersionMapUrl != nil {
-		if err := zvm.Settings.SetVersionMapUrl(*sVersionMapUrl); err != nil {
-			log.Fatal(err)
+	if sVersionMapUrl != nil && len(*sVersionMapUrl) != 0 {
+		log.Debug("user passed vmu", "url", *sVersionMapUrl)
+		switch *sVersionMapUrl {
+		case "default":
+			if err := zvm.Settings.ResetVersionMap(); err != nil {
+				log.Fatal(err)
+			}
+		case "mach":
+			if err := zvm.Settings.SetVersionMapUrl("https://machengine.org/zig/index.json"); err != nil {
+				log.Fatal(err)
+			}
+
+		default:
+
+			if err := zvm.Settings.SetVersionMapUrl(*sVersionMapUrl); err != nil {
+				log.Fatal(err)
+			}
 		}
+
 	}
 
 	if sColorToggle != nil {
@@ -76,7 +91,7 @@ func main() {
 
 			req := cli.ExtractInstall(args[len(args)-1])
 			req.Version = strings.TrimPrefix(req.Version, "v")
-			log.Debug(req, "deps", *installDeps)
+			// log.Debug(req, "deps", *installDeps)
 
 			if err := zvm.Install(req.Package); err != nil {
 				log.Fatal(err)
@@ -159,12 +174,6 @@ func main() {
 
 			return
 			// Settings
-		case "--nocolor", "--nocolour":
-			zvm.Settings.NoColor()
-		case "--color", "--colour":
-			zvm.Settings.ToggleColor()
-		case "--yescolor", "--yescolour":
-			zvm.Settings.YesColor()
 		default:
 			log.Fatalf("invalid argument %q. Please run `zvm help`.\n", arg)
 		}

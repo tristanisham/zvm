@@ -5,8 +5,8 @@
 
 ## Join our Community
 
-- [Discord](https://discord.gg/NhaNhCMYX8)
 - [Twitch](https://twitch.tv/atalocke)
+- [Twitter|X](https://twitter.com/atalocke)
 
 <hr>
 
@@ -197,9 +197,19 @@ zvm help
 
 ## Option flags
 
+### Color Toggle
 ```sh
---nocolor, --nocolour   # Turns off ANSI color.
---color, --colour       # Toggles ANSI color.
---yescolor, --yescolour # Turns on ANSI color.
---versionmapurl         # Changes the version map(version history) url
+-color # Turn ANSI color printing on or off for ZVM's output, i.e. -color=true
+
 ```
+
+### Version Map Source
+```sh
+-vmu="https://validurl.local/vmu.json" # Change the source ZVM pulls Zig release information from. Good for self-hosted Zig CDNs.
+                                       # ZVM only supports schemas that match the offical version map schema. 
+                                       # Run `-vmu=default` to reset your version map.
+
+-vmu default # Resets back to default Zig releases.
+-vmu mach # Sets ZVM to pull from Mach nominated Zig.
+```
+

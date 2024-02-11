@@ -32,18 +32,18 @@ for (const os of GOOS) {
     Deno.env.set("GOARCH", ar);
     const zvm_str = `zvm-${os}-${ar}`;
     console.time(`Build zvm: ${zvm_str}`);
-    // deno-lint-ignore no-deprecated-deno-api
-    const build_cmd = Deno.run({
-      cmd: [
-        "go",
+
+    const build_cmd = new Deno.Command("go", {
+      args: [
         "build",
         "-o",
-        `build/${zvm_str}/zvm${(os == "windows" ? ".exe" : "")}`,
-        "-ldflags=-w -s", "-trimpath",
+        `build/${zvm_str}/zvm${os === "windows" ? ".exe" : ""}`,
+        "-ldflags=-w -s",
+        "-trimpath",
       ],
     });
 
-    const { code } = await build_cmd.status();
+    const { code } = await build_cmd.output();
     if (code !== 0) {
       console.error("Something went wrong");
       Deno.exit(1);
@@ -61,19 +61,21 @@ for (const os of GOOS) {
     }
     const zvm_str = `zvm-${os}-${ar}`;
 
-    if (os == "windows") {
-      console.time(`Compress zvm: ${zvm_str}`);
+    if (os === "windows") {
+      console.time(`Compress zvm (zip): ${zvm_str}`);
       const zip = new Deno.Command(`zip`, {
         args: [`${zvm_str}.zip`, `${zvm_str}/zvm.exe`],
         stdin: "piped",
         stdout: "piped",
       });
+
       zip.spawn();
-      console.timeEnd(`Compress zvm: ${zvm_str}`);
+      
+      console.timeEnd(`Compress zvm (zip): ${zvm_str}`);
       continue;
     }
     const tar = new Tar();
-    console.time(`Compress zvm: ${zvm_str}`);
+    console.time(`Compress zvm (tar): ${zvm_str}`);
     await tar.append("zvm", {
       filePath: `${zvm_str}/zvm`,
     });
@@ -83,7 +85,7 @@ for (const os of GOOS) {
     });
     await copy(tar.getReader(), writer);
     writer.close();
-    console.timeEnd(`Compress zvm: ${zvm_str}`);
+    console.timeEnd(`Compress zvm (tar): ${zvm_str}`);
   }
 }
 

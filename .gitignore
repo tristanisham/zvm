@@ -1,7 +1,8 @@
-/zig-cache
-/zig-out
-/build
-/dist
-/demo
+zig-cache/
+zig-out/
+build/
+dist/
+demo/
 zvm
-testdata
+testdata/
+.env*

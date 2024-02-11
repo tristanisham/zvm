@@ -8,6 +8,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/schollz/progressbar/v3"
+	"github.com/tristanisham/zvm/cli/meta"
 	"io"
 	"net/http"
 	"net/url"
@@ -16,11 +18,9 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
-	"zvm/cli/meta"
 
 	"github.com/charmbracelet/log"
 
-	"github.com/schollz/progressbar/v3"
 	"github.com/tristanisham/clr"
 )
 

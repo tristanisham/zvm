@@ -6,11 +6,11 @@ import (
 	"fmt"
 
 	// "fmt"
+	"github.com/tristanisham/zvm/cli/meta"
 	"io"
 	"net/http"
 	"os"
 	"path/filepath"
-	"zvm/cli/meta"
 
 	"github.com/charmbracelet/log"
 	// "github.com/tristanisham/clr"

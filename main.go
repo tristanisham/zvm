@@ -3,11 +3,11 @@ package main
 import (
 	"flag"
 	"fmt"
+	"github.com/tristanisham/zvm/cli"
+	"github.com/tristanisham/zvm/cli/meta"
 	"html/template"
 	"os"
 	"strings"
-	"zvm/cli"
-	"zvm/cli/meta"
 
 	"github.com/charmbracelet/log"
 

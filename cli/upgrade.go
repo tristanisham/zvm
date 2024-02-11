@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/schollz/progressbar/v3"
 	"io"
 	"net/http"
 	"os"
@@ -13,13 +14,12 @@ import (
 	"runtime"
 
 	// "syscall"
+	"github.com/tristanisham/zvm/cli/meta"
 	"time"
-	"zvm/cli/meta"
 
 	"archive/tar"
 
 	"github.com/charmbracelet/log"
-	"github.com/schollz/progressbar/v3"
 	"github.com/tristanisham/clr"
 	"golang.org/x/mod/semver"
 )

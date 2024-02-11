@@ -1,4 +1,4 @@
-module zvm
+module github.com/tristanisham/zvm
 
 go 1.22
 

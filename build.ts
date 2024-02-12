@@ -1,4 +1,9 @@
 #!/usr/bin/env -S deno run -A
+
+// Copyright 2022 Tristan Isham. All rights reserved.
+// Use of this source code is governed by the MIT
+// license that can be found in the LICENSE file.
+
 import { Tar } from "https://deno.land/std@0.184.0/archive/mod.ts";
 import { copy } from "https://deno.land/std@0.184.0/streams/copy.ts";
 

@@ -1,14 +1,6 @@
 <p align="center">
-  <img width="100px"  src ="https://github.com/tristanisham/zvm/assets/23124818/be5c3713-8aaf-4419-a1ae-acb29da36eae"/>
+  <img width="400px"  src ="https://github.com/tristanisham/zvm/assets/23124818/be5c3713-8aaf-4419-a1ae-acb29da36eae"/>
 </p>
-
-
-## Join our Community
-
-- [Twitch](https://twitch.tv/atalocke)
-- [Twitter|X](https://twitter.com/atalocke)
-
-<hr>
 
 Zig Version Manager (zvm) is a tool for managing your Zig installs. With std
 under heavy development and a large feature roadmap, Zig is bound to continue
@@ -16,6 +8,11 @@ changing. Breaking existing builds, updating valid sytax, and introducing new
 features like a package manager. While this is great for developers, it also can
 lead to headaches when you need multiple versions of a language installed to
 compile your projects, or a language gets updated frequently.
+
+## Join our Community
+
+- [Twitch](https://twitch.tv/atalocke)
+- [Twitter|X](https://twitter.com/atalocke)
 
 # Installing ZVM
 
@@ -213,3 +210,12 @@ zvm help
 -vmu mach # Sets ZVM to pull from Mach nominated Zig.
 ```
 
+## Remember to Star the Repo
+
+<a href="https://star-history.com/#tristanisham/zvm&Timeline">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=tristanisham/zvm&type=Timeline&theme=dark" />
+    <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/svg?repos=tristanisham/zvm&type=Timeline" />
+    <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=tristanisham/zvm&type=Timeline" />
+  </picture>
+</a>

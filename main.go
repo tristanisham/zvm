@@ -165,7 +165,7 @@ func main() {
 
 		case "upgrade":
 			if err := zvm.Upgrade(); err != nil {
-				log.Error("this is a new command, and may have some issues. Consider reporting your problem on Github :)", "github", "https://github.com/tristanisham/zvm/issues")
+				log.Error("this is a new command, and may have some issues.\nConsider reporting your problem on Github :)", "github", "https://github.com/tristanisham/zvm/issues")
 				log.Fatal(err)
 			}
 

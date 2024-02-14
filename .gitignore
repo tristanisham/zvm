@@ -3,6 +3,6 @@ zig-out/
 build/
 dist/
 demo/
-zvm
+zvm*
 testdata/
 .env*

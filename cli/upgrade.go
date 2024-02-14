@@ -32,6 +32,12 @@ import (
 // I wrote most of it before I remembered that GitHub has an API so expect major refactoring.
 func (z *ZVM) Upgrade() error {
 
+	defer func() {
+		if err := z.Clean(); err != nil {
+			log.Warn("ZVM failed to clean up after itself.")
+		}
+	}()
+
 	upgradable, tagName, err := CanIUpgrade()
 	if err != nil {
 		return errors.Join(ErrFailedUpgrade, err)
@@ -50,10 +56,11 @@ func (z *ZVM) Upgrade() error {
 	}
 
 	log.Debug("exe dir", "path", zvmInstallDirENV)
-
+	zvmBinaryName := "zvm"
 	archive := "tar"
 	if runtime.GOOS == "windows" {
 		archive = "zip"
+		zvmBinaryName = "zvm.exe"
 	}
 
 	download := fmt.Sprintf("zvm-%s-%s.%s", runtime.GOOS, runtime.GOARCH, archive)
@@ -85,8 +92,8 @@ func (z *ZVM) Upgrade() error {
 		return err
 	}
 
-	zvmPath := filepath.Join(zvmInstallDirENV, "zvm")
-	if err := os.Remove(filepath.Join(zvmInstallDirENV, "zvm")); err != nil {
+	zvmPath := filepath.Join(zvmInstallDirENV, zvmBinaryName)
+	if err := os.Remove(filepath.Join(zvmInstallDirENV, zvmBinaryName)); err != nil {
 		if err, ok := err.(*os.PathError); ok {
 			if os.IsNotExist(err) {
 				log.Debug("Failed to remove file", "path", zvmPath)
@@ -99,25 +106,32 @@ func (z *ZVM) Upgrade() error {
 
 	newTemp, err := os.MkdirTemp(z.baseDir, "zvm-upgrade-*")
 	if err != nil {
+		log.Debugf("Failed to create temp direcory: %s", newTemp)
 		return errors.Join(ErrFailedUpgrade, err)
 	}
 	defer os.RemoveAll(newTemp)
-
-	if err := untar(tempDownload.Name(), newTemp); err != nil {
-		log.Error(err)
-		return err
+	
+	if runtime.GOOS == "windows" {
+		log.Debug("unzip", "from", tempDownload.Name(), "to", newTemp)
+		if err := unzipSource(tempDownload.Name(), newTemp); err != nil {
+			log.Error(err)
+			return err
+		}
+	} else {
+		if err := untar(tempDownload.Name(), newTemp); err != nil {
+			log.Error(err)
+			return err
+		}
 	}
 
-	if err := os.Rename(filepath.Join(newTemp, "zvm"), zvmPath); err != nil {
+	if err := os.Rename(filepath.Join(newTemp, zvmBinaryName), zvmPath); err != nil {
+		log.Debugf("Failed to rename %s to %s", filepath.Join(newTemp, zvmBinaryName), zvmPath)
 		return errors.Join(ErrFailedUpgrade, err)
 	}
 
 	if err := os.Chmod(zvmPath, 0775); err != nil {
+		log.Debugf("Failed to update permissions for %s", zvmPath)
 		return errors.Join(ErrFailedUpgrade, err)
-	}
-
-	if err := z.Clean(); err != nil {
-		log.Warn("ZVM failed to clean up after itself.")
 	}
 
 	return nil

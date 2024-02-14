@@ -32,7 +32,7 @@ import (
 // I wrote most of it before I remembered that GitHub has an API so expect major refactoring.
 func (z *ZVM) Upgrade() error {
 
-	defer func() {
+	defer func ()  {
 		if err := z.Clean(); err != nil {
 			log.Warn("ZVM failed to clean up after itself.")
 		}
@@ -109,24 +109,39 @@ func (z *ZVM) Upgrade() error {
 		log.Debugf("Failed to create temp direcory: %s", newTemp)
 		return errors.Join(ErrFailedUpgrade, err)
 	}
+
 	defer os.RemoveAll(newTemp)
-	
+
 	if runtime.GOOS == "windows" {
 		log.Debug("unzip", "from", tempDownload.Name(), "to", newTemp)
 		if err := unzipSource(tempDownload.Name(), newTemp); err != nil {
 			log.Error(err)
 			return err
 		}
+
+		secondaryZVM := fmt.Sprintf("%s2", zvmPath)
+		log.Debug("SecondaryZVM", "path", secondaryZVM)
+
+		if err := os.Rename(filepath.Join(newTemp, fmt.Sprintf("zvm-%s-%s", runtime.GOOS, runtime.GOARCH), zvmBinaryName), secondaryZVM); err != nil {
+			log.Debugf("Failed to rename %s to %s", filepath.Join(newTemp, fmt.Sprintf("zvm-%s-%s", runtime.GOOS, runtime.GOARCH), zvmBinaryName), secondaryZVM)
+			return errors.Join(ErrFailedUpgrade, err)
+		}
+
+		fmt.Println("Run the following to complete your upgrade on Windows.")
+		fmt.Printf("- Command Prompt:\n\tmove /Y %s %s\n", secondaryZVM, zvmPath)
+		fmt.Printf("- Powershell:\n\tMove-Item -Path %s -Destination %s -Force\n", secondaryZVM, zvmPath)
+
+
 	} else {
 		if err := untar(tempDownload.Name(), newTemp); err != nil {
 			log.Error(err)
 			return err
 		}
-	}
 
-	if err := os.Rename(filepath.Join(newTemp, zvmBinaryName), zvmPath); err != nil {
-		log.Debugf("Failed to rename %s to %s", filepath.Join(newTemp, zvmBinaryName), zvmPath)
-		return errors.Join(ErrFailedUpgrade, err)
+		if err := os.Rename(filepath.Join(newTemp, zvmBinaryName), zvmPath); err != nil {
+			log.Debugf("Failed to rename %s to %s", filepath.Join(newTemp, zvmBinaryName), zvmPath)
+			return errors.Join(ErrFailedUpgrade, err)
+		}
 	}
 
 	if err := os.Chmod(zvmPath, 0775); err != nil {
@@ -134,6 +149,7 @@ func (z *ZVM) Upgrade() error {
 		return errors.Join(ErrFailedUpgrade, err)
 	}
 
+	
 	return nil
 }
 

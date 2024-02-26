@@ -55,7 +55,7 @@ powershell -c "irm https://raw.githubusercontent.com/tristanisham/zvm/master/ins
 ```
 ## Manually
 
-If you're on Windows, please grab the
+Please grab the
 [latest release](https://github.com/tristanisham/zvm/releases/latest).
 
 ## Putting ZVM on your Path

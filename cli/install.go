@@ -12,8 +12,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/schollz/progressbar/v3"
-	"github.com/tristanisham/zvm/cli/meta"
 	"io"
 	"net/http"
 	"net/url"
@@ -22,6 +20,9 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
+
+	"github.com/schollz/progressbar/v3"
+	"github.com/tristanisham/zvm/cli/meta"
 
 	"github.com/charmbracelet/log"
 
@@ -404,9 +405,14 @@ func (z *ZVM) createSymlink(version string) {
 
 	}
 
-	if err := os.Symlink(filepath.Join(z.baseDir, version), filepath.Join(z.baseDir, "bin")); err != nil {
-		log.Fatal(err)
+	if runtime.GOOS == "windows" {
+		elevatedRun("mklink", "/D", filepath.Join(z.baseDir, "bin"), filepath.Join(z.baseDir, version))
+	} else {
+		if err := os.Symlink(filepath.Join(z.baseDir, version), filepath.Join(z.baseDir, "bin")); err != nil {
+			log.Fatal(err)
+		}
 	}
+
 }
 
 func getTarPath(version string, data *map[string]map[string]any) (string, error) {

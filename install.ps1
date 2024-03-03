@@ -12,6 +12,8 @@ function Install-ZVM {
     $ZipPath = "${ZVMSelf}\$Target"
 
     $null = mkdir -Force $ZVMSelf
+    curl.exe "-#SfLo" "$ZVMSelf/elevate.cmd" "https://raw.githubusercontent.com/tristanisham/zvm/master/bin/elevate.cmd" -s
+    curl.exe "-#SfLo" "$ZVMSelf/elevate.vbs" "https://raw.githubusercontent.com/tristanisham/zvm/master/bin/elevate.vbs" -s
     Remove-Item -Force $ZipPath -ErrorAction SilentlyContinue
     curl.exe "-#SfLo" "$ZipPath" "$URL" 
     if ($LASTEXITCODE -ne 0) {
@@ -65,6 +67,14 @@ function Install-ZVM {
 
     $User = [System.EnvironmentVariableTarget]::User
     $Path = [System.Environment]::GetEnvironmentVariable('Path', $User) -split ';'
+    $ZVMInstall = 'ZVM_INSTALL'
+
+    $ZVMInstallValue = [System.Environment]::GetEnvironmentVariable($ZVMInstall, [System.EnvironmentVariableTarget]::User)
+
+    if ($null -eq $ZVMInstallValue) {
+        [System.Environment]::SetEnvironmentVariable($ZVMInstall, $ZVMSelf, [System.EnvironmentVariableTarget]::User)
+    }
+
     if ($Path -notcontains $ZVMSelf) {
         $Path += $ZVMSelf
         [System.Environment]::SetEnvironmentVariable('Path', $Path -join ';', $User)
@@ -80,6 +90,7 @@ function Install-ZVM {
     if ($env:PATH -notcontains ";${ZVMBin}") {
         $env:PATH = "${env:Path};${ZVMBin}"
     }
+
     Write-Output "To get started, restart your terminal/editor, then type `"zvm`"`n"
 }
 

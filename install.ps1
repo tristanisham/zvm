@@ -5,12 +5,13 @@ function Install-ZVM {
     );
 
     $ZVMRoot = "${Home}\.zvm"
+    $ZVMSelf = mkdir -Force "${ZVMRoot}\self"
     $ZVMBin = mkdir -Force "${ZVMRoot}\bin"
     $Target = $urlSuffix
     $URL = "https://github.com/tristanisham/zvm/releases/latest/download/$urlSuffix"
-    $ZipPath = "${ZVMBin}\$Target"
+    $ZipPath = "${ZVMSelf}\$Target"
 
-    $null = mkdir -Force $ZVMBin
+    $null = mkdir -Force $ZVMSelf
     Remove-Item -Force $ZipPath -ErrorAction SilentlyContinue
     curl.exe "-#SfLo" "$ZipPath" "$URL" 
     if ($LASTEXITCODE -ne 0) {
@@ -27,10 +28,10 @@ function Install-ZVM {
     try {
         $lastProgressPreference = $global:ProgressPreference
         $global:ProgressPreference = 'SilentlyContinue';
-        Expand-Archive "$ZipPath" "$ZVMBin" -Force
+        Expand-Archive "$ZipPath" "$ZVMSelf" -Force
         $global:ProgressPreference = $lastProgressPreference
-        if (!(Test-Path "${ZVMBin}\$UnzippedPath\zvm.exe")) {
-            throw "The file '${ZVMBin}\$UnzippedPath\zvm.exe' does not exist. Download is corrupt / Antivirus intercepted?`n"
+        if (!(Test-Path "${ZVMSelf}\$UnzippedPath\zvm.exe")) {
+            throw "The file '${ZVMSelf}\$UnzippedPath\zvm.exe' does not exist. Download is corrupt / Antivirus intercepted?`n"
         }
     }
     catch {
@@ -38,13 +39,13 @@ function Install-ZVM {
         Write-Error $_
         exit 1
     }
-    Remove-Item "${ZVMBin}\zvm.exe" -ErrorAction SilentlyContinue
-    Move-Item "${ZVMBin}\$UnzippedPath\zvm.exe" "${ZVMBin}\zvm.exe" -Force
+    Remove-Item "${ZVMSelf}\zvm.exe" -ErrorAction SilentlyContinue
+    Move-Item "${ZVMSelf}\$UnzippedPath\zvm.exe" "${ZVMSelf}\zvm.exe" -Force
 
-    Remove-Item "${ZVMBin}\$Target" -Recurse -Force
-    Remove-Item ${ZVMBin}\$UnzippedPath -Force
+    Remove-Item "${ZVMSelf}\$Target" -Recurse -Force
+    Remove-Item ${ZVMSelf}\$UnzippedPath -Force
 
-    $null = "$(& "${ZVMBin}\zvm.exe")"
+    $null = "$(& "${ZVMSelf}\zvm.exe")"
     if ($LASTEXITCODE -eq 1073741795) {
         # STATUS_ILLEGAL_INSTRUCTION
         Write-Output "Install Failed - zvm.exe is not compatible with your CPU.`n"
@@ -52,7 +53,7 @@ function Install-ZVM {
     }
     if ($LASTEXITCODE -ne 0) {
         Write-Output "Install Failed - could not verify zvm.exe"
-        Write-Output "The command '${ZVMBin}\zvm.exe' exited with code ${LASTEXITCODE}`n"
+        Write-Output "The command '${ZVMSelf}\zvm.exe' exited with code ${LASTEXITCODE}`n"
         exit 1
     }
 
@@ -60,10 +61,18 @@ function Install-ZVM {
     $C_GREEN = [char]27 + "[1;32m"
 
     Write-Output "${C_GREEN}ZVM${DisplayVersion} was installed successfully!${C_RESET}"
-    Write-Output "The binary is located at ${ZVMBin}\zvm.exe`n"
+    Write-Output "The binary is located at ${ZVMSelf}\zvm.exe`n"
 
     $User = [System.EnvironmentVariableTarget]::User
     $Path = [System.Environment]::GetEnvironmentVariable('Path', $User) -split ';'
+    if ($Path -notcontains $ZVMSelf) {
+        $Path += $ZVMSelf
+        [System.Environment]::SetEnvironmentVariable('Path', $Path -join ';', $User)
+    } 
+    if ($env:PATH -notcontains ";${ZVMSelf}") {
+        $env:PATH = "${env:Path};${ZVMSelf}"
+    }
+
     if ($Path -notcontains $ZVMBin) {
         $Path += $ZVMBin
         [System.Environment]::SetEnvironmentVariable('Path', $Path -join ';', $User)

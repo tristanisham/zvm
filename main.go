@@ -122,7 +122,7 @@ func main() {
 
 		case "ls":
 			lsFlagSet.Parse(args[i+1:])
-			log.Debug("Version Map", "url", zvm.Settings.VersionMapUrl);
+			log.Debug("Version Map", "url", zvm.Settings.VersionMapUrl)
 			if *lsRemote {
 				if err := zvm.ListRemoteAvailable(); err != nil {
 					log.Fatal(err)

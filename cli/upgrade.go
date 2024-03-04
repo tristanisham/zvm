@@ -32,7 +32,7 @@ import (
 // I wrote most of it before I remembered that GitHub has an API so expect major refactoring.
 func (z *ZVM) Upgrade() error {
 
-	defer func ()  {
+	defer func() {
 		if err := z.Clean(); err != nil {
 			log.Warn("ZVM failed to clean up after itself.")
 		}
@@ -131,7 +131,6 @@ func (z *ZVM) Upgrade() error {
 		fmt.Printf("- Command Prompt:\n\tmove /Y %s %s\n", secondaryZVM, zvmPath)
 		fmt.Printf("- Powershell:\n\tMove-Item -Path %s -Destination %s -Force\n", secondaryZVM, zvmPath)
 
-
 	} else {
 		if err := untar(tempDownload.Name(), newTemp); err != nil {
 			log.Error(err)
@@ -149,7 +148,6 @@ func (z *ZVM) Upgrade() error {
 		return errors.Join(ErrFailedUpgrade, err)
 	}
 
-	
 	return nil
 }
 

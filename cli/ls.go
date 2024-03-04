@@ -69,7 +69,6 @@ func (z ZVM) ListRemoteAvailable() error {
 		options = append(options, "v"+key)
 	}
 
-
 	semver.Sort(options)
 	slices.Reverse(options)
 

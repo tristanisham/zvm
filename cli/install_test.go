@@ -24,7 +24,6 @@ func TestExtract(t *testing.T) {
 	}
 }
 
-
 func TestSitePkg(t *testing.T) {
 	copy := "zpm:zl:s"
 	result := ExtractInstall(copy)

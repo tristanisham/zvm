@@ -71,7 +71,6 @@ func (s *Settings) SetColor(answer bool) {
 }
 
 func (s *Settings) SetVersionMapUrl(versionMapUrl string) error {
-	log.Info("Run `-vmu default` to reset your version map.")
 
 	if err := isValidWebURL(versionMapUrl); err != nil {
 		return fmt.Errorf("%w: %w", ErrInvalidVersionMap, err)

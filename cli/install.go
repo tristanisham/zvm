@@ -157,9 +157,9 @@ func (z *ZVM) Install(version string) error {
 		newPath := filepath.Join(z.baseDir, tarName)
 
 		if _, err := os.Stat(untarredPath); err == nil {
-			if os.Stat(newPath); err == nil {
-				if err := os.RemoveAll(newPath); err == nil {
-					if err := os.Rename(untarredPath, newPath); err != nil {
+			if _, err = os.Stat(newPath); err == nil {
+				if err = os.RemoveAll(newPath); err == nil {
+					if err = os.Rename(untarredPath, newPath); err != nil {
 						log.Debug("rename err", "untarrPath", untarredPath, "newPath", newPath, "err", err)
 						return fmt.Errorf("renaming error: rename %q to %q", untarredPath, newPath)
 					}

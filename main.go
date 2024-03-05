@@ -60,12 +60,14 @@ func main() {
 			}
 		case "mach":
 			if err := zvm.Settings.SetVersionMapUrl("https://machengine.org/zig/index.json"); err != nil {
+				log.Info("Run `-vmu default` to reset your version map.")
 				log.Fatal(err)
 			}
 
 		default:
 
 			if err := zvm.Settings.SetVersionMapUrl(*sVersionMapUrl); err != nil {
+				log.Info("Run `-vmu default` to reset your version map.")
 				log.Fatal(err)
 			}
 		}
@@ -120,7 +122,7 @@ func main() {
 
 		case "ls":
 			lsFlagSet.Parse(args[i+1:])
-
+			log.Debug("Version Map", "url", zvm.Settings.VersionMapUrl)
 			if *lsRemote {
 				if err := zvm.ListRemoteAvailable(); err != nil {
 					log.Fatal(err)

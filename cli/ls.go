@@ -65,10 +65,6 @@ func (z ZVM) ListRemoteAvailable() error {
 	options := make([]string, 0)
 
 	for key := range versions {
-		if key == "master" {
-			// Removes master for sorting. Must add back in later.
-			continue
-		}
 
 		options = append(options, "v"+key)
 	}
@@ -82,7 +78,8 @@ func (z ZVM) ListRemoteAvailable() error {
 		newOptions = append(newOptions, version[1:])
 	}
 
-	finalList := []string{"master"}
+	finalList := make([]string, 0)
+
 	finalList = append(finalList, newOptions...)
 
 	fmt.Println(strings.Join(finalList, "\n"))

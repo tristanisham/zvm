@@ -38,7 +38,7 @@ func Initialize() *ZVM {
 	}
 
 	zvm.Settings.basePath = filepath.Join(zvm_path, "settings.json")
-	
+
 	if err := zvm.loadSettings(); err != nil {
 		if errors.Is(err, ErrNoSettings) {
 			zvm.Settings = Settings{
@@ -97,6 +97,7 @@ func (z ZVM) getVersion(version string) error {
 	if _, err := os.Stat(filepath.Join(z.baseDir, version)); err != nil {
 		return err
 	}
+
 	targetZig := strings.TrimSpace(filepath.Join(z.baseDir, version, "zig"))
 	cmd := exec.Command(targetZig, "version")
 	var zigVersion strings.Builder
@@ -113,7 +114,7 @@ func (z ZVM) getVersion(version string) error {
 	if version == outputVersion {
 		return nil
 	} else {
-		if version == "master" {
+		if _, statErr := os.Stat(targetZig); statErr == nil || version == "master" {
 			return nil
 		}
 		return fmt.Errorf("version %s is not a released version", version)

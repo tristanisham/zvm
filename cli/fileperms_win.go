@@ -6,9 +6,7 @@
 
 package cli
 
-import (
-	"os"
-)
+import "os"
 
 func canModifyFile(path string) (bool, error) {
 	fileInfo, err := os.Stat(path)

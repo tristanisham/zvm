@@ -7,17 +7,18 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github.com/tristanisham/zvm/cli"
-	"github.com/tristanisham/zvm/cli/meta"
 	"html/template"
 	"os"
+	"runtime"
 	"strings"
+
+	"github.com/tristanisham/zvm/cli"
+	"github.com/tristanisham/zvm/cli/meta"
 
 	"github.com/charmbracelet/log"
 
 	_ "embed"
 
-	"github.com/tristanisham/clr"
 )
 
 //go:embed help.txt
@@ -56,19 +57,19 @@ func main() {
 		switch *sVersionMapUrl {
 		case "default":
 			if err := zvm.Settings.ResetVersionMap(); err != nil {
-				log.Fatal(err)
+				meta.CtaFatal(err)
 			}
 		case "mach":
 			if err := zvm.Settings.SetVersionMapUrl("https://machengine.org/zig/index.json"); err != nil {
 				log.Info("Run `-vmu default` to reset your version map.")
-				log.Fatal(err)
+				meta.CtaFatal(err)
 			}
 
 		default:
 
 			if err := zvm.Settings.SetVersionMapUrl(*sVersionMapUrl); err != nil {
 				log.Info("Run `-vmu default` to reset your version map.")
-				log.Fatal(err)
+				meta.CtaFatal(err)
 			}
 		}
 
@@ -100,7 +101,7 @@ func main() {
 			// log.Debug(req, "deps", *installDeps)
 
 			if err := zvm.Install(req.Package); err != nil {
-				log.Fatal(err)
+				meta.CtaFatal(err)
 			}
 
 			if *installDeps != "" {
@@ -115,7 +116,7 @@ func main() {
 			if len(args) > i+1 {
 				version := strings.TrimPrefix(args[i+1], "v")
 				if err := zvm.Use(version); err != nil {
-					log.Fatal(err)
+					meta.CtaFatal(err)
 				}
 			}
 			return
@@ -125,11 +126,11 @@ func main() {
 			log.Debug("Version Map", "url", zvm.Settings.VersionMapUrl)
 			if *lsRemote {
 				if err := zvm.ListRemoteAvailable(); err != nil {
-					log.Fatal(err)
+					meta.CtaFatal(err)
 				}
 			} else {
 				if err := zvm.ListVersions(); err != nil {
-					log.Fatal(err)
+					meta.CtaFatal(err)
 				}
 			}
 
@@ -138,14 +139,14 @@ func main() {
 			if len(args) > i+1 {
 				version := strings.TrimPrefix(args[i+1], "v")
 				if err := zvm.Uninstall(version); err != nil {
-					log.Fatal(err)
+					meta.CtaFatal(err)
 				}
 			}
 			return
 
 		case "sync":
 			if err := zvm.Sync(); err != nil {
-				log.Fatal(err)
+				meta.CtaFatal(err)
 			}
 
 		case "clean":
@@ -158,9 +159,9 @@ func main() {
 
 			if err := zvm.Clean(); err != nil {
 				if zvm.Settings.UseColor {
-					log.Fatal(clr.Red(err))
+					meta.CtaFatal(err)
 				} else {
-					log.Fatal(err)
+					meta.CtaFatal(err)
 				}
 			}
 			return
@@ -168,11 +169,11 @@ func main() {
 		case "upgrade":
 			if err := zvm.Upgrade(); err != nil {
 				log.Error("this is a new command, and may have some issues.\nConsider reporting your problem on Github :)", "github", "https://github.com/tristanisham/zvm/issues")
-				log.Fatal(err)
+				meta.CtaFatal(err)
 			}
 
 		case "version":
-			fmt.Println(meta.VERSION)
+			fmt.Printf("zvm %s build %s/%s",meta.VERSION, runtime.GOOS, runtime.GOARCH)
 			return
 		case "help":
 			//zvm.Settings.UseColor

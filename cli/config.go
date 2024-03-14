@@ -37,7 +37,7 @@ func Initialize() *ZVM {
 		baseDir: zvm_path,
 	}
 
-	zvm.Settings.basePath = filepath.Join(zvm_path, "settings.json")
+	zvm.Settings.path = filepath.Join(zvm_path, "settings.json")
 
 	if err := zvm.loadSettings(); err != nil {
 		if errors.Is(err, ErrNoSettings) {
@@ -123,7 +123,7 @@ func (z ZVM) getVersion(version string) error {
 }
 
 func (z *ZVM) loadSettings() error {
-	set_path := z.Settings.basePath
+	set_path := z.Settings.path
 	if _, err := os.Stat(set_path); errors.Is(err, os.ErrNotExist) {
 		return ErrNoSettings
 	}

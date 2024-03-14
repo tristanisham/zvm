@@ -3,5 +3,5 @@
 // license that can be found in the LICENSE file.
 package meta
 
-const VERSION = "v0.5.6"
+const VERSION = "v0.5.7"
 

@@ -41,7 +41,7 @@ func (z *ZVM) setBin(ver string) error {
 	}
 
 	if runtime.GOOS == "windows" {
-		elevatedRun("mklink", "/D", filepath.Join(z.baseDir, "bin"), filepath.Join(z.baseDir, ver))
+		winElevatedRun("mklink", "/D", filepath.Join(z.baseDir, "bin"), filepath.Join(z.baseDir, ver))
 	} else {
 		if err := os.Symlink(filepath.Join(z.baseDir, ver), filepath.Join(z.baseDir, "bin")); err != nil {
 			log.Fatal(err)
@@ -49,7 +49,7 @@ func (z *ZVM) setBin(ver string) error {
 	}
 
 	if runtime.GOOS == "windows" {
-		elevatedRun("mklink", "/D", filepath.Join(z.baseDir, "bin"), version_path)
+		winElevatedRun("mklink", "/D", filepath.Join(z.baseDir, "bin"), version_path)
 	} else {
 		if err := os.Symlink(version_path, filepath.Join(z.baseDir, "bin")); err != nil {
 			return err

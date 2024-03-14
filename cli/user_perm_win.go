@@ -5,7 +5,7 @@ import (
 	"os/exec"
 )
 
-func elevatedRun(name string, arg ...string) (bool, error) {
+func winElevatedRun(name string, arg ...string) (bool, error) {
 	ok, err := run("cmd", nil, append([]string{"/C", name}, arg...)...)
 	if err != nil {
 		ok, err = run("elevate.cmd", nil, append([]string{"cmd", "/C", name}, arg...)...)

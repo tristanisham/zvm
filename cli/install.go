@@ -406,7 +406,7 @@ func (z *ZVM) createSymlink(version string) {
 	}
 
 	if runtime.GOOS == "windows" {
-		elevatedRun("mklink", "/D", filepath.Join(z.baseDir, "bin"), filepath.Join(z.baseDir, version))
+		winElevatedRun("mklink", "/D", filepath.Join(z.baseDir, "bin"), filepath.Join(z.baseDir, version))
 	} else {
 		if err := os.Symlink(filepath.Join(z.baseDir, version), filepath.Join(z.baseDir, "bin")); err != nil {
 			log.Fatal(err)

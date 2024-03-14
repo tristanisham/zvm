@@ -6,6 +6,7 @@ cmd = ProcEnv("CMD")
 app = ProcEnv("APP")
 args= Right(cmd,(Len(cmd)-Len(app)))
 
+' This doesn't feel particularly safe.
 If (WScript.Arguments.Count >= 1) Then
   Shell.ShellExecute app, args, "", "runas", 0
 Else

@@ -58,7 +58,7 @@ for (const os of GOOS) {
     }
 
     if (os == "windows") {
-      await Deno.mkdir(zvm_str);
+      await Deno.mkdir(zvm_str, {recursive: true});
       await Deno.copyFile(path.join(Deno.cwd(), "bin/elevate.cmd"), `${zvm_str}/elevate.cmd`)
       await Deno.copyFile(path.join(Deno.cwd(), "bin/elevate.vbs"), `${zvm_str}/elevate.vbs`)
     }

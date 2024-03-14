@@ -41,7 +41,7 @@ func (z *ZVM) Install(version string) error {
 	tarPath, err := getTarPath(version, &rawVersionStructure)
 	if err != nil {
 		if errors.Is(err, ErrUnsupportedVersion) {
-			log.Fatalf("%s: %q", err, version)
+			return fmt.Errorf("%s: %q", err, version)
 		} else {
 			return err
 		}

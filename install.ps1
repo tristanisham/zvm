@@ -12,8 +12,8 @@ function Install-ZVM {
     $ZipPath = "${ZVMSelf}\$Target"
 
     $null = mkdir -Force $ZVMSelf
-    curl.exe "-#SfLo" "$ZVMSelf/elevate.cmd" "https://raw.githubusercontent.com/tristanisham/zvm/master/bin/elevate.cmd" -s
-    curl.exe "-#SfLo" "$ZVMSelf/elevate.vbs" "https://raw.githubusercontent.com/tristanisham/zvm/master/bin/elevate.vbs" -s
+    # curl.exe "-#SfLo" "$ZVMSelf/elevate.cmd" "https://raw.githubusercontent.com/tristanisham/zvm/master/bin/elevate.cmd" -s
+    #curl.exe "-#SfLo" "$ZVMSelf/elevate.vbs" "https://raw.githubusercontent.com/tristanisham/zvm/master/bin/elevate.vbs" -s
     Remove-Item -Force $ZipPath -ErrorAction SilentlyContinue
     curl.exe "-#SfLo" "$ZipPath" "$URL" 
     if ($LASTEXITCODE -ne 0) {

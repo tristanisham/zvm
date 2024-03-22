@@ -10,7 +10,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"runtime"
 	"strings"
 
 	"github.com/charmbracelet/log"
@@ -19,12 +18,8 @@ import (
 func (z *ZVM) Use(ver string) error {
 	err := z.getVersion(ver)
 	if errors.Is(err, os.ErrNotExist) {
-		fmt.Printf("It looks like %s isn't installed. Would you like to install it? [y/n]\n", ver)
-		if getConfirmation() {
-			err = z.Install(ver)
-		} else {
-			return fmt.Errorf("version %s is not installed", ver)
-		}
+		fmt.Printf("Try running 'zvm i %s\n", ver)
+		return fmt.Errorf("version %s is not installed", ver)
 	}
 
 	if err != nil {
@@ -40,20 +35,12 @@ func (z *ZVM) setBin(ver string) error {
 		log.Warn(err)
 	}
 
-	if runtime.GOOS == "windows" {
-		winElevatedRun("mklink", "/D", filepath.Join(z.baseDir, "bin"), filepath.Join(z.baseDir, ver))
-	} else {
-		if err := os.Symlink(filepath.Join(z.baseDir, ver), filepath.Join(z.baseDir, "bin")); err != nil {
-			log.Fatal(err)
-		}
+	if err := os.Symlink(filepath.Join(z.baseDir, ver), filepath.Join(z.baseDir, "bin")); err != nil {
+		log.Fatal(err)
 	}
 
-	if runtime.GOOS == "windows" {
-		winElevatedRun("mklink", "/D", filepath.Join(z.baseDir, "bin"), version_path)
-	} else {
-		if err := os.Symlink(version_path, filepath.Join(z.baseDir, "bin")); err != nil {
-			return err
-		}
+	if err := os.Symlink(version_path, filepath.Join(z.baseDir, "bin")); err != nil {
+		return err
 	}
 
 	return nil

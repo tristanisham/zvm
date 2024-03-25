@@ -74,6 +74,10 @@ Append
 - PATH: `%USERPROFILE%\.zvm\bin`
 - PATH: `%ZVM_INSTALL%`
 
+## Configure ZVM path
+
+It is possible to overwrite the default behavior of ZVM to adhere to XDG specification on Linux. There's an environment variable `ZVM_PATH`. Setting it to `$XDG_DATA_HOME/zvm` will do the trick.
+
 ## Community Package
 
 ### AUR

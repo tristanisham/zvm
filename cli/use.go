@@ -54,3 +54,4 @@ func getConfirmation() bool {
 	return answer == "y" || answer == "ye" || answer == "yes"
 
 }
+

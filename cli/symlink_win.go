@@ -1,42 +1,45 @@
 package cli
 
 import (
-	"bytes"
+	// "bytes"
+	"errors"
 	"os"
-	"os/exec"
+	"runtime"
+
+	// "os/exec"
 	"strings"
 
 	"syscall"
 
-	"github.com/charmbracelet/log"
+	// "github.com/charmbracelet/log"
 	"golang.org/x/sys/windows"
 )
 
-// winElevatedRun elevates a process to run as an administrator on Windows.
-func winElevatedRun(name string, arg ...string) (bool, error) {
-	log.Debugf("Elevated process: %q", name)
-	ok, err := run("cmd", nil, append([]string{"/C", name}, arg...)...)
-	if err != nil {
-		ok, err = run("elevate.cmd", nil, append([]string{"cmd", "/C", name}, arg...)...)
-	}
-	return ok, err
-}
+// // winElevatedRun elevates a process to run as an administrator on Windows.
+// func winElevatedRun(name string, arg ...string) (bool, error) {
+// 	log.Debugf("Elevated process: %q", name)
+// 	ok, err := run("cmd", nil, append([]string{"/C", name}, arg...)...)
+// 	if err != nil {
+// 		ok, err = run("elevate.cmd", nil, append([]string{"cmd", "/C", name}, arg...)...)
+// 	}
+// 	return ok, err
+// }
 
-// run actually constructs the command to be ran from ZVM
-func run(name string, dir *string, arg ...string) (bool, error) {
-	c := exec.Command(name, arg...)
-	if dir != nil {
-		c.Dir = *dir
-	}
-	var stderr bytes.Buffer
-	c.Stderr = &stderr
-	err := c.Run()
-	if err != nil {
-		return false, err
-	}
+// // run actually constructs the command to be ran from ZVM
+// func run(name string, dir *string, arg ...string) (bool, error) {
+// 	c := exec.Command(name, arg...)
+// 	if dir != nil {
+// 		c.Dir = *dir
+// 	}
+// 	var stderr bytes.Buffer
+// 	c.Stderr = &stderr
+// 	err := c.Run()
+// 	if err != nil {
+// 		return false, err
+// 	}
 
-	return true, nil
-}
+// 	return true, nil
+// }
 
 func becomeAdmin() error {
 	verb := "runas"
@@ -55,12 +58,37 @@ func becomeAdmin() error {
 	if err != nil {
 		return err
 	}
-	
+
 	return nil
 }
 
-func checkAdmin() bool {
+func isAdmin() bool {
 	_, err := os.Open("\\\\.\\PHYSICALDRIVE0")
 
 	return err == nil
+}
+
+// newSymlink is a wrapper around Go's os.Symlink,
+// but with automatic privilege escalation on windows
+// for systems that do not support non-admin symlinks.
+func newSymlink(oldname, newname string) error {
+	if err := os.Symlink(oldname, newname); err != nil {
+
+		if errors.Is(err, &os.LinkError{}) {
+			if runtime.GOOS == "windows" {
+				if !isAdmin() {
+					if err := becomeAdmin(); err != nil {
+						if err := os.Symlink(oldname, newname); err != nil {
+							return err
+						}
+					} else {
+						return err
+					}
+				}
+			}
+		}
+
+	}
+
+	return nil
 }

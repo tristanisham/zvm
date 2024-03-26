@@ -10,7 +10,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"runtime"
 	"strings"
 
 	"github.com/charmbracelet/log"
@@ -40,20 +39,12 @@ func (z *ZVM) setBin(ver string) error {
 		log.Warn(err)
 	}
 
-	if runtime.GOOS == "windows" {
-		winElevatedRun("mklink", "/D", filepath.Join(z.baseDir, "bin"), filepath.Join(z.baseDir, ver))
-	} else {
-		if err := os.Symlink(filepath.Join(z.baseDir, ver), filepath.Join(z.baseDir, "bin")); err != nil {
-			log.Fatal(err)
-		}
+	if err := newSymlink(filepath.Join(z.baseDir, ver), filepath.Join(z.baseDir, "bin")); err != nil {
+		return err
 	}
 
-	if runtime.GOOS == "windows" {
-		winElevatedRun("mklink", "/D", filepath.Join(z.baseDir, "bin"), version_path)
-	} else {
-		if err := os.Symlink(version_path, filepath.Join(z.baseDir, "bin")); err != nil {
-			return err
-		}
+	if err := newSymlink(version_path, filepath.Join(z.baseDir, "bin")); err != nil {
+		return err
 	}
 
 	return nil

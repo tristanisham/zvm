@@ -5,12 +5,12 @@
 package cli
 
 import (
-	"bufio"
+	// "bufio"
 	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
-	"strings"
+	// "strings"
 
 	"github.com/charmbracelet/log"
 )
@@ -46,12 +46,12 @@ func (z *ZVM) setBin(ver string) error {
 	return nil
 }
 
-func getConfirmation() bool {
-	reader := bufio.NewReader(os.Stdin)
-	text, _ := reader.ReadString('\n')
+// func getConfirmation() bool {
+// 	reader := bufio.NewReader(os.Stdin)
+// 	text, _ := reader.ReadString('\n')
 
-	answer := strings.TrimSpace(strings.ToLower(text))
-	return answer == "y" || answer == "ye" || answer == "yes"
+// 	answer := strings.TrimSpace(strings.ToLower(text))
+// 	return answer == "y" || answer == "ye" || answer == "yes"
 
-}
+// }
 

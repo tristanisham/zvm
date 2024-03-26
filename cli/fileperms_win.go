@@ -44,3 +44,4 @@ func canModifyFile(path string) (bool, error) {
 
 	return false, nil
 }
+

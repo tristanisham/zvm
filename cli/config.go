@@ -12,6 +12,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strings"
 
 	"github.com/charmbracelet/log"
@@ -155,3 +156,18 @@ func (z *ZVM) loadSettings() error {
 // 		fmt.Printf("There's a new version of ZVM (%s).\n Run '%s' to install it!\n", tagName, coloredText)
 // 	}
 // }
+
+func MakeSymlink(oldpath, newpath string) error {
+
+	if runtime.GOOS == "windows" {
+		
+	} else {
+		if err := os.Symlink(oldpath, newpath); err != nil {
+			return err
+		}
+	}
+
+	
+
+	return nil
+}

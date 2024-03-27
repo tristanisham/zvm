@@ -1,5 +1,3 @@
-#!/usr/bin/env -S deno run -A
-
 // Copyright 2022 Tristan Isham. All rights reserved.
 // Use of this source code is governed by the MIT
 // license that can be found in the LICENSE file.
@@ -50,10 +48,15 @@ for (const os of GOOS) {
       ],
     });
 
-    const { code } = await build_cmd.output();
+    const { code, stderr } = await build_cmd.output();
     if (code !== 0) {
-      console.error("Something went wrong");
+      console.error(new TextDecoder().decode(stderr));
       Deno.exit(1);
+    }
+
+    if (os == "windows") {
+      await Deno.mkdir(zvm_str, { recursive: true });
+
     }
 
     console.timeEnd(`Build zvm: ${zvm_str}`);
@@ -81,7 +84,7 @@ for (const os of GOOS) {
       });
 
       zip.spawn();
-      
+
       console.timeEnd(`Compress zvm (zip): ${zvm_str}`);
       continue;
     }

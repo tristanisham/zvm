@@ -6,7 +6,6 @@
 
 import { Tar } from "https://deno.land/std@0.184.0/archive/mod.ts";
 import { copy } from "https://deno.land/std@0.184.0/streams/copy.ts";
-import * as path from "@std/path";
 
 
 const GOARCH = [
@@ -55,12 +54,6 @@ for (const os of GOOS) {
     if (code !== 0) {
       console.error("Something went wrong");
       Deno.exit(1);
-    }
-
-    if (os == "windows") {
-      await Deno.mkdir(zvm_str, {recursive: true});
-      await Deno.copyFile(path.join(Deno.cwd(), "bin/elevate.cmd"), `${zvm_str}/elevate.cmd`)
-      await Deno.copyFile(path.join(Deno.cwd(), "bin/elevate.vbs"), `${zvm_str}/elevate.vbs`)
     }
 
     console.timeEnd(`Build zvm: ${zvm_str}`);

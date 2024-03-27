@@ -13,6 +13,7 @@ import (
 	"strings"
 
 	"github.com/charmbracelet/log"
+	"github.com/tristanisham/zvm/cli/meta"
 )
 
 func (z *ZVM) Use(ver string) error {
@@ -39,11 +40,11 @@ func (z *ZVM) setBin(ver string) error {
 		log.Warn(err)
 	}
 
-	if err := newSymlink(filepath.Join(z.baseDir, ver), filepath.Join(z.baseDir, "bin")); err != nil {
+	if err := meta.Symlink(filepath.Join(z.baseDir, ver), filepath.Join(z.baseDir, "bin")); err != nil {
 		return err
 	}
 
-	if err := newSymlink(version_path, filepath.Join(z.baseDir, "bin")); err != nil {
+	if err := meta.Symlink(version_path, filepath.Join(z.baseDir, "bin")); err != nil {
 		return err
 	}
 

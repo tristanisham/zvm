@@ -3,6 +3,8 @@ zig-out/
 build/
 dist/
 demo/
-zvm*
+zvm
+zvm.exe
 testdata/
 .env*
+*.syso

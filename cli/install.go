@@ -407,7 +407,7 @@ func (z *ZVM) createSymlink(version string) {
 
 	}
 
-	if err := newSymlink(filepath.Join(z.baseDir, version), filepath.Join(z.baseDir, "bin")); err != nil {
+	if err := meta.Symlink(filepath.Join(z.baseDir, version), filepath.Join(z.baseDir, "bin")); err != nil {
 		log.Fatal(err)
 	}
 

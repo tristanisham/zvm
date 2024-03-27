@@ -1,5 +1,5 @@
 //go:build windows
-package cli
+package meta
 
 import (
 	// "bytes"
@@ -72,7 +72,7 @@ func isAdmin() bool {
 // newSymlink is a wrapper around Go's os.Symlink,
 // but with automatic privilege escalation on windows
 // for systems that do not support non-admin symlinks.
-func newSymlink(oldname, newname string) error {
+func Symlink(oldname, newname string) error {
 	if err := os.Symlink(oldname, newname); err != nil {
 
 		if errors.Is(err, &os.LinkError{}) {

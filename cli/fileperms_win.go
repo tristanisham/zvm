@@ -1,4 +1,4 @@
-//go:build windows
+//go:build !linux
 
 // Copyright 2022 Tristan Isham. All rights reserved.
 // Use of this source code is governed by the MIT

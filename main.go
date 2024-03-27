@@ -9,7 +9,6 @@ import (
 	"fmt"
 	"html/template"
 	"os"
-	"runtime"
 	"strings"
 
 	"github.com/tristanisham/zvm/cli"
@@ -18,7 +17,6 @@ import (
 	"github.com/charmbracelet/log"
 
 	_ "embed"
-
 )
 
 //go:embed help.txt
@@ -38,7 +36,7 @@ func main() {
 	}
 
 	// zvm.AlertIfUpgradable()
-
+	versionFlag := flag.Bool("version", false, "Print ZVM version information")
 	// Install flags
 	installFlagSet := flag.NewFlagSet("install", flag.ExitOnError)
 	installDeps := installFlagSet.String("D", "", "Specify additional dependencies to install with Zig")
@@ -51,6 +49,11 @@ func main() {
 	sVersionMapUrl := flag.String("vmu", "", "Set ZVM's version map URL for custom Zig distribution servers")
 	sColorToggle := flag.Bool("color", true, "Turn on or off ZVM's color output")
 	flag.Parse()
+
+	if *versionFlag {
+		fmt.Println(meta.VerCopy)
+		os.Exit(0)
+	}
 
 	if sVersionMapUrl != nil && len(*sVersionMapUrl) != 0 {
 		log.Debug("user passed vmu", "url", *sVersionMapUrl)
@@ -173,7 +176,7 @@ func main() {
 			}
 
 		case "version":
-			fmt.Printf("zvm %s build %s/%s",meta.VERSION, runtime.GOOS, runtime.GOARCH)
+			fmt.Println(meta.VerCopy)
 			return
 		case "help":
 			//zvm.Settings.UseColor

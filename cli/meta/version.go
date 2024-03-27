@@ -3,5 +3,17 @@
 // license that can be found in the LICENSE file.
 package meta
 
-const VERSION = "v0.6.0"
+import (
+	"fmt"
+	"runtime"
+)
+
+const (
+	VERSION = "v0.6.0"
+)
+
+
+var (
+	VerCopy = fmt.Sprintf("zvm %s %s/%s", VERSION, runtime.GOOS, runtime.GOARCH)
+)
 

@@ -1,4 +1,5 @@
 //go:build windows
+
 package meta
 
 import (
@@ -80,10 +81,10 @@ func Symlink(oldname, newname string) error {
 				if !isAdmin() {
 					if err := becomeAdmin(); err != nil {
 						if err := os.Symlink(oldname, newname); err != nil {
-							return err
+							return errors.Join(ErrEscalatedSymlink, err)
 						}
 					} else {
-						return err
+						return errors.Join(ErrWinEscToAdmin, err)
 					}
 				}
 			}

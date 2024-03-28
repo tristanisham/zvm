@@ -48,7 +48,7 @@ func isAdmin() bool {
 	return err == nil
 }
 
-// newSymlink is a wrapper around Go's os.Symlink,
+// Symlink is a wrapper around Go's os.Symlink,
 // but with automatic privilege escalation on windows
 // for systems that do not support non-admin symlinks.
 func Symlink(oldname, newname string) error {

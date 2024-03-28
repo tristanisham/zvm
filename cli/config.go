@@ -92,6 +92,10 @@ type ZigOnlVersion = map[string][]map[string]string
 // 	}
 // 	return nil
 // }
+// TODO switch to error so we can handle common typos. Make it return an (error, bool)
+func validVmuAlis(version string) bool {
+	return version == "default" || version == "mach"
+}
 
 func (z ZVM) getVersion(version string) error {
 	if _, err := os.Stat(filepath.Join(z.baseDir, version)); err != nil {

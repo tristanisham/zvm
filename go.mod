@@ -8,7 +8,6 @@ require (
 	github.com/schollz/progressbar/v3 v3.14.2
 	github.com/tristanisham/clr v0.0.0-20221004001624-00ee60046d85
 	golang.org/x/mod v0.16.0
-	golang.org/x/sys v0.18.0
 )
 
 require (
@@ -22,5 +21,6 @@ require (
 	github.com/muesli/termenv v0.15.2 // indirect
 	github.com/rivo/uniseg v0.4.7 // indirect
 	golang.org/x/exp v0.0.0-20240325151524-a685a6edb6d8 // indirect
+	golang.org/x/sys v0.18.0 // indirect
 	golang.org/x/term v0.18.0 // indirect
 )

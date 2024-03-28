@@ -17,36 +17,18 @@ import (
 )
 
 func (z *ZVM) Use(ver string) error {
-	err := z.getVersion(ver)
-	if errors.Is(err, os.ErrNotExist) {
+	if err := z.getVersion(ver); err != nil {
+		if errors.Is(err, os.ErrNotExist) {
 
-		// We might want to add an option in settings to toggle these in case some
-		// version map uses "default" as a version name.
-		switch ver {
-		case "default":
-			if err = z.Settings.ResetVersionMap(); err != nil {
-				return err
-			}
-		case "mach":
-			if err := z.Settings.SetVersionMapUrl("https://machengine.org/zig/index.json"); err != nil {
-				log.Info("Run `-vmu default` to reset your version map.")
-			}
-		default:
 			fmt.Printf("It looks like %s isn't installed. Would you like to install it? [y/n]\n", ver)
 			if getConfirmation() {
-				err = z.Install(ver)
+				if err = z.Install(ver); err != nil {
+					return err
+				}
 			} else {
 				return fmt.Errorf("version %s is not installed", ver)
 			}
 		}
-
-	} else if errors.Is(err, ErrUnsupportedVersion) {
-		log.Debug("User entered VMU alias")
-
-	}
-
-	if err != nil {
-		return err
 	}
 
 	return z.setBin(ver)

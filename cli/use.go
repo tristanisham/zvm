@@ -12,7 +12,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/charmbracelet/log"
+	// "github.com/charmbracelet/log"
 	"github.com/tristanisham/zvm/cli/meta"
 )
 
@@ -30,23 +30,21 @@ func (z *ZVM) Use(ver string) error {
 			}
 		}
 	}
-
+	
 	return z.setBin(ver)
 }
 
 func (z *ZVM) setBin(ver string) error {
+	// .zvm/master
 	version_path := filepath.Join(z.baseDir, ver)
 	if err := os.Remove(filepath.Join(z.baseDir, "bin")); err != nil {
-		log.Warn(err)
-	}
-
-	if err := meta.Symlink(filepath.Join(z.baseDir, ver), filepath.Join(z.baseDir, "bin")); err != nil {
 		return err
 	}
 
 	if err := meta.Symlink(version_path, filepath.Join(z.baseDir, "bin")); err != nil {
 		return err
 	}
+
 
 	return nil
 }

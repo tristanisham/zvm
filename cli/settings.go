@@ -16,7 +16,7 @@ import (
 )
 
 type Settings struct {
-	basePath      string
+	path          string
 	UseColor      bool   `json:"useColor"`
 	VersionMapUrl string `json:"versionMapUrl,omitempty"`
 }
@@ -114,7 +114,7 @@ func (s Settings) save() error {
 		return fmt.Errorf("unable to generate settings.json file %v", err)
 	}
 
-	if err := os.WriteFile(s.basePath, out_settings, 0755); err != nil {
+	if err := os.WriteFile(s.path, out_settings, 0755); err != nil {
 		return fmt.Errorf("unable to create settings.json file %v", err)
 	}
 

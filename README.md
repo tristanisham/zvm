@@ -14,26 +14,28 @@ compile your projects, or a language gets updated frequently.
 - [Twitch](https://twitch.tv/atalocke)
 - [Twitter|X](https://twitter.com/atalocke)
 
+<a href="https://polar.sh/tristanisham"><picture><source media="(prefers-color-scheme: dark)" srcset="https://polar.sh/embed/subscribe.svg?org=tristanisham&label=Subscribe&darkmode"><img alt="Subscribe on Polar" src="https://polar.sh/embed/subscribe.svg?org=tristanisham&label=Subscribe"></picture></a>
+
 # Installing ZVM
 
 ZVM lives entirely in `$HOME/.zvm` on all platforms it supports. Inside of the
 directory, ZVM will download new ZIG versions and symlink whichever version you
 specify with `zvm use` to `$HOME/.zvm/bin`. You should add this folder to your
-path. After ZVM 0.2.3, ZVM's installer will now add ZVM to `$HOME/.zvm/self`. You
-should also add this directory as the environment variable `ZVM_INSTALL`. The
-installer should handle this for you automatically if you're on *nix systems,
-but you'll have to manually do this on Windows. You can then add
+path. After ZVM 0.2.3, ZVM's installer will now add ZVM to `$HOME/.zvm/self`.
+You should also add this directory as the environment variable `ZVM_INSTALL`.
+The installer should handle this for you automatically if you're on *nix
+systems, but you'll have to manually do this on Windows. You can then add
 `ZVM_INSTALL to your path.`
 
 If you don't want to use ZVM_INSTALL (like you already have ZVM in a place you
-like), then ZVM will update the exact
-executable you've called `upgrade` from.
+like), then ZVM will update the exact executable you've called `upgrade` from.
 
 # Linux, BSD, MacOS, *nix
 
 ```sh
 curl https://raw.githubusercontent.com/tristanisham/zvm/master/install.sh | bash
 ```
+
 Then add ZVM's directories to your `$PATH`
 
 ```sh
@@ -46,13 +48,17 @@ echo export PATH="$PATH:$ZVM_INSTALL/" >> $HOME/.profile
 # Windows
 
 ## PowerShell
- ```ps1
- irm https://raw.githubusercontent.com/tristanisham/zvm/master/install.ps1 | iex
- ```
+
+```ps1
+irm https://raw.githubusercontent.com/tristanisham/zvm/master/install.ps1 | iex
+```
+
 ## Command Prompt
+
 ```cmd
 powershell -c "irm https://raw.githubusercontent.com/tristanisham/zvm/master/install.ps1 | iex"
 ```
+
 ## Manually
 
 Please grab the
@@ -73,6 +79,10 @@ Append
 
 - PATH: `%USERPROFILE%\.zvm\bin`
 - PATH: `%ZVM_INSTALL%`
+
+## Configure ZVM path
+
+It is possible to overwrite the default behavior of ZVM to adhere to XDG specification on Linux. There's an environment variable `ZVM_PATH`. Setting it to `$XDG_DATA_HOME/zvm` will do the trick.
 
 ## Community Package
 
@@ -113,7 +123,7 @@ zvm i <version>
 ```
 
 Use `install` or `i` to download a specific version of Zig. To install the
-latest version, use "master". 
+latest version, use "master".
 
 ```sh
 # Example
@@ -121,7 +131,10 @@ zvm i master
 ```
 
 ### Install ZLS with ZVM
- You can now install ZLS with your Zig download! To install ZLS with ZVM, simply pass the `-D=zls` flag with `zvm i`. For example:
+
+You can now install ZLS with your Zig download! To install ZLS with ZVM, simply
+pass the `-D=zls` flag with `zvm i`. For example:
+
 ```sh
 zvm i -D=zls master
 ```
@@ -149,10 +162,13 @@ zvm ls
 Use `ls` to list all installed version of Zig.
 
 ### List all versions of Zig available
+
 ```sh
 zvm ls --all
 ```
-The `--all` flag will list the available verisons of Zig for download. Not the versions locally installed.
+
+The `--all` flag will list the available verisons of Zig for download. Not the
+versions locally installed.
 
 ## Uninstall a Zig version
 
@@ -189,6 +205,7 @@ Use `clean` to remove build artifacts (Good if you're on Windows).
 
 ```sh
 zvm version
+zvm --version
 ```
 
 Prints the version of ZVM you have installed.
@@ -197,7 +214,6 @@ Prints the version of ZVM you have installed.
 
 ```sh
 zvm help
-
 ```
 
 <hr>
@@ -205,12 +221,13 @@ zvm help
 ## Option flags
 
 ### Color Toggle
+
 ```sh
 -color # Turn ANSI color printing on or off for ZVM's output, i.e. -color=true
-
 ```
 
 ### Version Map Source
+
 ```sh
 -vmu="https://validurl.local/vmu.json" # Change the source ZVM pulls Zig release information from. Good for self-hosted Zig CDNs.
                                        # ZVM only supports schemas that match the offical version map schema. 

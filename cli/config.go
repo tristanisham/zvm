@@ -26,7 +26,11 @@ func Initialize() *ZVM {
 	if err != nil {
 		home = "~"
 	}
-	zvm_path := filepath.Join(home, ".zvm")
+	zvm_path := os.Getenv("ZVM_PATH")
+	if zvm_path == "" {
+		zvm_path = filepath.Join(home, ".zvm")
+	}
+
 	if _, err := os.Stat(zvm_path); errors.Is(err, fs.ErrNotExist) {
 		if err := os.MkdirAll(filepath.Join(zvm_path, "self"), 0775); err != nil {
 			log.Fatal(err)
@@ -37,7 +41,7 @@ func Initialize() *ZVM {
 		baseDir: zvm_path,
 	}
 
-	zvm.Settings.basePath = filepath.Join(zvm_path, "settings.json")
+	zvm.Settings.path = filepath.Join(zvm_path, "settings.json")
 
 	if err := zvm.loadSettings(); err != nil {
 		if errors.Is(err, ErrNoSettings) {
@@ -92,6 +96,10 @@ type ZigOnlVersion = map[string][]map[string]string
 // 	}
 // 	return nil
 // }
+// TODO switch to error so we can handle common typos. Make it return an (error, bool)
+func validVmuAlis(version string) bool {
+	return version == "default" || version == "mach"
+}
 
 func (z ZVM) getVersion(version string) error {
 	if _, err := os.Stat(filepath.Join(z.baseDir, version)); err != nil {
@@ -123,7 +131,7 @@ func (z ZVM) getVersion(version string) error {
 }
 
 func (z *ZVM) loadSettings() error {
-	set_path := z.Settings.basePath
+	set_path := z.Settings.path
 	if _, err := os.Stat(set_path); errors.Is(err, os.ErrNotExist) {
 		return ErrNoSettings
 	}

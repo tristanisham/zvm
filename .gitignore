@@ -1,1 +1,14 @@
+<<<<<<< HEAD
 zig-*
+=======
+zig-cache/
+zig-out/
+build/
+dist/
+demo/
+zvm
+zvm.exe
+testdata/
+.env*
+*.syso
+>>>>>>> 4ce651e60e45883d88bb7fe38fced935fedf568b

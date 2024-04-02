@@ -1,5 +1,22 @@
 {
-  "version": "2",
+  "version": "3",
+  "packages": {
+    "specifiers": {
+      "jsr:@std/assert@^0.219.1": "jsr:@std/assert@0.219.1",
+      "jsr:@std/path@^0.219.1": "jsr:@std/path@0.219.1"
+    },
+    "jsr": {
+      "@std/assert@0.219.1": {
+        "integrity": "e76c2a1799a78f0f4db7de04bdc9b908a7a4b821bb65eda0285885297d4fb8af"
+      },
+      "@std/path@0.219.1": {
+        "integrity": "e5c0ffef3a8ef2b48e9e3d88a1489320e8fb2cc7be767b17c91a1424ffb4c8ed",
+        "dependencies": [
+          "jsr:@std/assert@^0.219.1"
+        ]
+      }
+    }
+  },
   "remote": {
     "https://deno.land/std@0.133.0/_deno_unstable.ts": "23a1a36928f1b6d3b0170aaa67de09af12aa998525f608ff7331b9fb364cbde6",
     "https://deno.land/std@0.133.0/_util/assert.ts": "e94f2eb37cebd7f199952e242c77654e43333c1ac4c5c700e929ea3aa5489f74",
@@ -82,5 +99,10 @@
     "https://deno.land/x/zipjs@v2.7.6/lib/core/zip-writer.js": "34809b421f5deb497ce8cabec730af858c12dde54a6205c78b5591460785dc1e",
     "https://deno.land/x/zipjs@v2.7.6/lib/z-worker-inline.js": "31f2a0971f87accd020df37fb54526a7ae0de3f2415cb541d79878af33f66c78",
     "https://deno.land/x/zipjs@v2.7.6/lib/zip-fs.js": "a733360302f5fbec9cc01543cb9fcfe7bae3f35a50d0006626ce42fe8183b63f"
+  },
+  "workspace": {
+    "dependencies": [
+      "jsr:@std/path@^0.219.1"
+    ]
   }
 }

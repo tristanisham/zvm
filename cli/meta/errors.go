@@ -3,17 +3,9 @@
 // license that can be found in the LICENSE file.
 package meta
 
-import (
-	"fmt"
-	"runtime"
-)
-
-const (
-	VERSION = "v0.6.1"
-)
-
+import "errors"
 
 var (
-	VerCopy = fmt.Sprintf("zvm %s %s/%s", VERSION, runtime.GOOS, runtime.GOARCH)
+	ErrWinEscToAdmin = errors.New("unable to rerun as Windows Administrator")
+	ErrEscalatedSymlink = errors.New("unable to symlink as Administrator")
 )
-

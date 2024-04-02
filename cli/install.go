@@ -12,8 +12,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/schollz/progressbar/v3"
-	"github.com/tristanisham/zvm/cli/meta"
 	"io"
 	"net/http"
 	"net/url"
@@ -22,6 +20,9 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
+
+	"github.com/schollz/progressbar/v3"
+	"github.com/tristanisham/zvm/cli/meta"
 
 	"github.com/charmbracelet/log"
 
@@ -199,6 +200,8 @@ func (z *ZVM) Install(version string) error {
 	}
 
 	z.createSymlink(version)
+
+	fmt.Println("Succsessfully installed Zig!")
 
 	return nil
 }
@@ -404,9 +407,10 @@ func (z *ZVM) createSymlink(version string) {
 
 	}
 
-	if err := os.Symlink(filepath.Join(z.baseDir, version), filepath.Join(z.baseDir, "bin")); err != nil {
+	if err := meta.Symlink(filepath.Join(z.baseDir, version), filepath.Join(z.baseDir, "bin")); err != nil {
 		log.Fatal(err)
 	}
+
 }
 
 func getTarPath(version string, data *map[string]map[string]any) (string, error) {

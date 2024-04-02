@@ -15,22 +15,18 @@ pub const ZVM = struct {
         defer client.deinit();
         try self.loadSettings();
         std.debug.print("vmu: {?s}\n", .{self.settings.?.versionMapUrl});
-        if (self.settings) |settings| {
-            const vmu = settings.versionMapUrl orelse "https://ziglang.org/download/index.json";
+        if (self.settings != null) {
+            const vmu: []const u8 = self.settings.?.versionMapUrl orelse "https://ziglang.org/download/index.json";
             var buff = std.ArrayList(u8).init(self.alloc);
             defer buff.deinit();
-
-            std.debug.print("version map: {s}\n", .{vmu});
             const resp = try client.fetch(.{
-                .location = .{
-                    .url = vmu,
-                },
+                .location = .{ .url = vmu },
                 .headers = .{ .content_type = .{ .override = "application/json" }, .user_agent = .{ .override = "zvm v0.7.0" } },
                 .response_storage = .{ .dynamic = &buff },
             });
 
             if (resp.status.class() != .success) {
-                std.debug.print("Error fetching {s}: {d} {?s}\n{s}", .{vmu, @intFromEnum(resp.status), resp.status.phrase(), buff.items });
+                std.debug.print("Error fetching: {d} {?s}\n{s}", .{ @intFromEnum(resp.status), resp.status.phrase(), buff.items });
                 std.process.exit(1);
             }
 
@@ -141,6 +137,7 @@ pub const ZVM = struct {
 
         if (parsed.value.versionMapUrl) |vurl| {
             const dupe = try fba.allocator().dupe(u8, vurl);
+            std.debug.print("DUPE: {s}\n", .{dupe});
             self.settings = .{
                 .useColor = parsed.value.useColor,
                 .versionMapUrl = dupe,
@@ -172,9 +169,10 @@ pub fn streql(a: []const u8, b: []const u8) bool {
 
 pub const Settings = struct {
     useColor: bool = true,
-    versionMapUrl: ?[]u8,
+    versionMapUrl: ?[]const u8,
 };
 
 pub const SettingsError = error{
     MissingSettingsFile,
 };
+

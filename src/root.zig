@@ -93,10 +93,6 @@ pub const ZVM = struct {
             zvm.base_dir = try std.fs.openDirAbsolute(paths, .{});
         }
 
-        if (zvm.settings == null) {
-            try zvm.loadSettings();
-        }
-
         return zvm;
     }
 

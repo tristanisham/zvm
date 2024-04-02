@@ -13,14 +13,6 @@ pub const ZVM = struct {
         std.debug.print("version: {s}\n", .{version});
         var client = std.http.Client{ .allocator = self.alloc };
         defer client.deinit();
-
-        // if (self.settings.?.versionMapUrl) |url| {
-        //     _ = std.Uri.parse(url) catch |err| {
-        //         std.debug.print("{s}: {any}", .{ @errorName(err), self.settings.?.versionMapUrl });
-        //         std.process.exit(1);
-        //     };
-        // }
-
         try self.loadSettings();
         std.debug.print("vmu: {?s}\n", .{self.settings.?.versionMapUrl});
         if (self.settings) |settings| {
@@ -28,19 +20,19 @@ pub const ZVM = struct {
             var buff = std.ArrayList(u8).init(self.alloc);
             defer buff.deinit();
 
-            // std.debug.print("version map: {s}", .{vm});
+            std.debug.print("version map: {s}\n", .{vmu});
             const resp = try client.fetch(.{
                 .location = .{
                     .url = vmu,
                 },
-                .headers = .{
-                    .accept_encoding = "application/json"
-                },
+                .headers = .{ 
+                    .content_type = .{ .override = "application/json" },
+                    .user_agent = .{.override = "zvm v0.7.0"} },
                 .response_storage = .{ .dynamic = &buff },
             });
 
             if (resp.status.class() != .success) {
-                std.debug.print("Error fetching vmu: {?s}\n", .{resp.status.phrase()});
+                std.debug.print("Error fetching vmu: {d} {?s}\n{s}", .{ @intFromEnum(resp.status), resp.status.phrase(), buff.items });
                 std.process.exit(1);
             }
 

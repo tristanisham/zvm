@@ -29,9 +29,21 @@ Deno.env.set("CGO_ENABLED", "0");
 
 // Compile step
 for (const os of GOOS) {
+<<<<<<< HEAD
   for (const ar of GOARCH) {
     if (os == "solaris" && ar == "arm64" || os == "plan9" && ar == "arm64") {
       continue;
+=======
+    for (const ar of GOARCH) {
+        if (os == "solaris" && ar == "arm64" || os == "plan9" && ar == "arm64") continue;
+        Deno.env.set("GOOS", os)
+        Deno.env.set("GOARCH", ar)
+        Deno.env.set("CGO_ENABLED", "0")
+        const zvm_str = `zvm-${os}-${ar}`
+        console.time(`Build zvm: ${zvm_str}`)
+        await exec(`go build -o build/${zvm_str}/zvm`)
+        console.timeEnd(`Build zvm: ${zvm_str}`)
+>>>>>>> 0249915d34a86b35dba0f100ec81eb2b1dd6ee70
     }
     Deno.env.set("GOOS", os);
     Deno.env.set("GOARCH", ar);

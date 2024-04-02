@@ -139,6 +139,7 @@ pub const ZVM = struct {
                 .useColor = parsed.value.useColor,
                 .versionMapUrl = dupe,
             };
+            
         } else {
             self.settings = .{
                 .useColor = parsed.value.useColor,

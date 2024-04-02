@@ -132,11 +132,8 @@ pub const ZVM = struct {
         const parsed = try std.json.parseFromSlice(Settings, self.alloc, data, .{});
         defer parsed.deinit();
 
-        var v_url_buff: [std.fs.MAX_PATH_BYTES]u8 = undefined;
-        var fba = std.heap.FixedBufferAllocator.init(&v_url_buff);
-
         if (parsed.value.versionMapUrl) |vurl| {
-            const dupe = try fba.allocator().dupe(u8, vurl);
+            const dupe = try self.alloc.dupe(u8, vurl);
             std.debug.print("DUPE: {s}\n", .{dupe});
             self.settings = .{
                 .useColor = parsed.value.useColor,
@@ -152,6 +149,11 @@ pub const ZVM = struct {
 
     pub fn deinit(self: *@This()) void {
         self.base_dir.?.close();
+        if (self.settings) |set| {
+            if (set.versionMapUrl) |vmu| {
+                self.alloc.free(vmu);
+            }
+        }
     }
 
     pub fn saveSettings(self: *@This()) !void {
@@ -175,4 +177,3 @@ pub const Settings = struct {
 pub const SettingsError = error{
     MissingSettingsFile,
 };
-

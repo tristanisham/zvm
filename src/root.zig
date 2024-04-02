@@ -25,14 +25,12 @@ pub const ZVM = struct {
                 .location = .{
                     .url = vmu,
                 },
-                .headers = .{ 
-                    .content_type = .{ .override = "application/json" },
-                    .user_agent = .{.override = "zvm v0.7.0"} },
+                .headers = .{ .content_type = .{ .override = "application/json" }, .user_agent = .{ .override = "zvm v0.7.0" } },
                 .response_storage = .{ .dynamic = &buff },
             });
 
             if (resp.status.class() != .success) {
-                std.debug.print("Error fetching vmu: {d} {?s}\n{s}", .{ @intFromEnum(resp.status), resp.status.phrase(), buff.items });
+                std.debug.print("Error fetching {s}: {d} {?s}\n{s}", .{vmu, @intFromEnum(resp.status), resp.status.phrase(), buff.items });
                 std.process.exit(1);
             }
 

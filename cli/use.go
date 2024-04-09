@@ -37,14 +37,20 @@ func (z *ZVM) Use(ver string) error {
 func (z *ZVM) setBin(ver string) error {
 	// .zvm/master
 	version_path := filepath.Join(z.baseDir, ver)
-	if err := os.Remove(filepath.Join(z.baseDir, "bin")); err != nil {
-		return err
+	bin_dir := filepath.Join(z.baseDir, "bin")
+
+	// Remove "bin" dir only if it already exists
+	_, err := os.Stat(bin_dir)
+	if !os.IsNotExist(err) {
+		fmt.Printf("Removing old %s", bin_dir)
+		if err := os.Remove(bin_dir); err != nil {
+			return err
+		}
 	}
 
-	if err := meta.Symlink(version_path, filepath.Join(z.baseDir, "bin")); err != nil {
+	if err := meta.Symlink(version_path, bin_dir); err != nil {
 		return err
 	}
-
 
 	return nil
 }

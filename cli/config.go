@@ -163,3 +163,16 @@ func (z *ZVM) loadSettings() error {
 // 		fmt.Printf("There's a new version of ZVM (%s).\n Run '%s' to install it!\n", tagName, coloredText)
 // 	}
 // }
+
+// func (z *ZVM) ConflictCheck(file string) (string, error) {
+// 	zls, err := exec.LookPath("zls")
+// 	if err != nil {
+// 		return "", err
+// 	}
+
+// 	linuxPath := filepath.Join(z.baseDir,"bin/zls")
+// 	if _, err := os.Stat(linuxPath); err == nil {
+
+// 	}
+// 	return zls, nil
+// }

@@ -151,6 +151,7 @@ func (z *ZVM) Upgrade() error {
 	return nil
 }
 
+// getInstallDir finds the directory this executabile is in.
 func (z ZVM) getInstallDir() (string, error) {
 	zvmInstallDirENV, ok := os.LookupEnv("ZVM_INSTALL")
 	if !ok {

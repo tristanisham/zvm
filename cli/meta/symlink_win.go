@@ -52,22 +52,22 @@ func isAdmin() bool {
 // but with automatic privilege escalation on windows
 // for systems that do not support non-admin symlinks.
 func Symlink(oldname, newname string) error {
-	if err := os.Symlink(oldname, newname); err != nil {
 
-		if errors.Is(err, &os.LinkError{}) {
-			if runtime.GOOS == "windows" {
-				if !isAdmin() {
-					if err := becomeAdmin(); err != nil {
-						if err := os.Symlink(oldname, newname); err != nil {
-							return errors.Join(ErrEscalatedSymlink, err)
-						}
-					} else {
-						return errors.Join(ErrWinEscToAdmin, err)
-					}
-				}
+	// Check if already admin first
+	if runtime.GOOS == "windows" && isAdmin() {
+		if err := os.Symlink(oldname, newname); err != nil {
+			return errors.Join(ErrEscalatedSymlink, err)
+		}
+		return nil
+	}
+
+	// If not already admin, try to become admin
+	if runtime.GOOS == "windows" && !isAdmin() {
+		if err := becomeAdmin(); err != nil {
+			if err := os.Symlink(oldname, newname); err != nil {
+				return errors.Join(ErrEscalatedSymlink, err)
 			}
 		}
-
 	}
 
 	return nil

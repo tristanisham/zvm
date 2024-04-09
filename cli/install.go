@@ -201,7 +201,7 @@ func (z *ZVM) Install(version string) error {
 
 	z.createSymlink(version)
 
-	fmt.Println("Succsessfully installed Zig!")
+	fmt.Println("Successfully installed Zig!")
 
 	return nil
 }

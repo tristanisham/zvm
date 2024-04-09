@@ -93,7 +93,7 @@ if [[ "$TERM" == "xterm" || "$TERM" == "xterm-256color" || "$TERM" == "screen" |
     echo -e "${GREEN}echo${NC} ${RED}'export PATH=\"\$PATH:\$ZVM_INSTALL/\"'${NC} ${GREEN}>>${NC} ${BLUE}\$HOME/.profile${NC}"
 
     echo -e "Run '${GREEN}source ~/.profile${NC}' to start using ZVM in this shell!"
-
+    echo "Run 'zvm i master' to install Zig"
 else
     echo 'echo "# ZVM" >> $HOME/.profile'
     echo 'echo '\''export ZVM_INSTALL="$HOME/.zvm/self"'\'' >> $HOME/.profile'
@@ -101,7 +101,7 @@ else
     echo 'echo '\''export PATH="$PATH:$ZVM_INSTALL/"'\'' >> $HOME/.profile'
 
     echo "Run 'source ~/.profile' to start using ZVM in this shell!"
-
+    echo "Run 'zvm i master' to install Zig"
 fi
     
 echo

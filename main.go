@@ -110,6 +110,7 @@ func main() {
 			if *installDeps != "" {
 				switch *installDeps {
 				case "zls":
+					
 					zvm.InstallZls(req.Package)
 				}
 			}

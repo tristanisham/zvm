@@ -128,8 +128,8 @@ func (z *ZVM) Upgrade() error {
 		}
 
 		fmt.Println("Run the following to complete your upgrade on Windows.")
-		fmt.Printf("- Command Prompt:\n\tmove /Y %s %s\n", secondaryZVM, zvmPath)
-		fmt.Printf("- Powershell:\n\tMove-Item -Path %s -Destination %s -Force\n", secondaryZVM, zvmPath)
+		fmt.Printf("- Command Prompt:\n\tmove /Y '%s' '%s'\n", secondaryZVM, zvmPath)
+		fmt.Printf("- Powershell:\n\tMove-Item -Path '%s' -Destination '%s' -Force\n", secondaryZVM, zvmPath)
 
 	} else {
 		if err := untar(tempDownload.Name(), newTemp); err != nil {

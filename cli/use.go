@@ -43,11 +43,13 @@ func (z *ZVM) setBin(ver string) error {
 	// which is specifically to check symbolic links.
 	// Seemed like the more appropriate solution here
 	stat, err := os.Lstat(bin_dir);
-	if errors.Is(err, os.ErrExist) || stat != nil {
+	if err == nil {
 		fmt.Printf("Removing old %s", bin_dir)
 		if err := os.Remove(bin_dir); err != nil {
 			return err
 		}
+	} else {
+		return fmt.Errorf("%w: %s", err, stat.Name())
 	}
 
 	if err := meta.Symlink(version_path, bin_dir); err != nil {

@@ -19,7 +19,6 @@ import (
 	"golang.org/x/sys/windows"
 )
 
-
 func becomeAdmin() error {
 	verb := "runas"
 	exe, _ := os.Executable()
@@ -51,23 +50,23 @@ func isAdmin() bool {
 // but with automatic privilege escalation on windows
 // for systems that do not support non-admin symlinks.
 func Symlink(oldname, newname string) error {
-
-	// Check if already admin first
-	if isAdmin() {
-		if err := os.Symlink(oldname, newname); err != nil {
-			return errors.Join(ErrEscalatedSymlink, err)
-		}
-		return nil
-	} else { 
-		// If not already admin, try to become admin
-		if err := becomeAdmin(); err != nil {
+	// Attempt to do a regular symlink if allowed by user's permissions
+	if err := os.Symlink(oldname, newname); err != nil {
+		// Check if already admin first
+		if isAdmin() {
 			if err := os.Symlink(oldname, newname); err != nil {
 				return errors.Join(ErrEscalatedSymlink, err)
 			}
+			return nil
+		} else {
+			// If not already admin, try to become admin
+			if err := becomeAdmin(); err != nil {
+				if err := os.Symlink(oldname, newname); err != nil {
+					return errors.Join(ErrEscalatedSymlink, err)
+				}
+			}
 		}
 	}
-
-	
 
 	return nil
 }

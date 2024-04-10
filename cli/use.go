@@ -39,10 +39,11 @@ func (z *ZVM) setBin(ver string) error {
 	version_path := filepath.Join(z.baseDir, ver)
 	bin_dir := filepath.Join(z.baseDir, "bin")
 
-	// Remove "bin" dir only if it already exists
-	// According to https://stackoverflow.com/a/12518877/598919
-	// errors.Is(err, os.ErrNotExist) should be used
-	if _, err := os.Stat(bin_dir); !errors.Is(err, os.ErrNotExist) {
+	// Came across https://pkg.go.dev/os#Lstat
+	// which is specifically to check symbolic links.
+	// Seemed like the more appropriate solution here
+	stat, err := os.Lstat(bin_dir);
+	if errors.Is(err, os.ErrExist) || stat != nil {
 		fmt.Printf("Removing old %s", bin_dir)
 		if err := os.Remove(bin_dir); err != nil {
 			return err

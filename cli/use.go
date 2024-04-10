@@ -8,6 +8,7 @@ import (
 	"bufio"
 	"errors"
 	"fmt"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"strings"
@@ -40,8 +41,8 @@ func (z *ZVM) setBin(ver string) error {
 	bin_dir := filepath.Join(z.baseDir, "bin")
 
 	// Remove "bin" dir only if it already exists
-	_, err := os.Stat(bin_dir)
-	if !os.IsNotExist(err) {
+	
+	if _, err := os.Stat(bin_dir); errors.Is(err, fs.ErrExist) {
 		fmt.Printf("Removing old %s", bin_dir)
 		if err := os.Remove(bin_dir); err != nil {
 			return err

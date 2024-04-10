@@ -9,7 +9,6 @@ import (
 	// "bytes"
 	"errors"
 	"os"
-	"runtime"
 
 	// "os/exec"
 	"strings"
@@ -54,21 +53,21 @@ func isAdmin() bool {
 func Symlink(oldname, newname string) error {
 
 	// Check if already admin first
-	if runtime.GOOS == "windows" && isAdmin() {
+	if isAdmin() {
 		if err := os.Symlink(oldname, newname); err != nil {
 			return errors.Join(ErrEscalatedSymlink, err)
 		}
 		return nil
-	}
-
-	// If not already admin, try to become admin
-	if runtime.GOOS == "windows" && !isAdmin() {
+	} else { 
+		// If not already admin, try to become admin
 		if err := becomeAdmin(); err != nil {
 			if err := os.Symlink(oldname, newname); err != nil {
 				return errors.Join(ErrEscalatedSymlink, err)
 			}
 		}
 	}
+
+	
 
 	return nil
 }

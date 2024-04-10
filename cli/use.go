@@ -41,8 +41,9 @@ func (z *ZVM) setBin(ver string) error {
 	bin_dir := filepath.Join(z.baseDir, "bin")
 
 	// Remove "bin" dir only if it already exists
-	
-	if _, err := os.Stat(bin_dir); errors.Is(err, fs.ErrExist) {
+	// According to https://stackoverflow.com/a/12518877/598919
+	// errors.Is(err, os.ErrNotExist) should be used
+	if _, err := os.Stat(bin_dir); !errors.Is(err, os.ErrNotExist) {
 		fmt.Printf("Removing old %s", bin_dir)
 		if err := os.Remove(bin_dir); err != nil {
 			return err

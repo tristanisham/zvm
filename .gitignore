@@ -8,3 +8,4 @@ zvm.exe
 testdata/
 .env*
 *.syso
+zvm-*

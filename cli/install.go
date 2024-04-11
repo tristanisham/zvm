@@ -484,10 +484,14 @@ func zigStyleSysInfo() (arch string, os string) {
 }
 
 func ExtractBundle(bundle, out string) error {
+	// This is how I extracted an extension from a path in a cross-platform manner before 
+	// I realized filepath existed.
+	// -----------------------------------------------------------------------------------
 	// get extension
-	replacedBundle := strings.ReplaceAll(bundle, "\\", "/")
-	splitPath := strings.Split(replacedBundle, "/")
-	_, extension, _ := strings.Cut(splitPath[len(splitPath)-1], ".")
+	// replacedBundle := strings.ReplaceAll(bundle, "\\", "/")
+	// splitPath := strings.Split(replacedBundle, "/")
+	// _, extension, _ := strings.Cut(splitPath[len(splitPath)-1], ".")
+	extension := filepath.Ext(bundle)
 
 	if strings.Contains(extension, "tar") {
 		return untarXZ(bundle, out)

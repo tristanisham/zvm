@@ -493,6 +493,8 @@ func ExtractBundle(bundle, out string) error {
 	// _, extension, _ := strings.Cut(splitPath[len(splitPath)-1], ".")
 	extension := filepath.Ext(bundle)
 
+	// For some reason, this broke inexplicably in v0.6.6. Added check for ".xz" extension
+	// to fix, but would love to know how this became an issue.
 	if strings.Contains(extension, "tar") || extension == ".xz" {
 		return untarXZ(bundle, out)
 	} else if strings.Contains(extension, "zip") {
@@ -529,10 +531,13 @@ func unzipSource(source, destination string) error {
 
 	// 3. Iterate over zip files inside the archive and unzip each of them
 	for _, f := range reader.File {
-		err := unzipFile(f, destination)
-		if err != nil {
-			return err
-		}
+		go func(f *zip.File, destination string) {
+			err := unzipFile(f, destination)
+			if err != nil {
+				meta.CtaFatal(err)
+			}
+		}(f, destination)
+		
 	}
 
 	return nil

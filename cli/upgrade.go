@@ -122,7 +122,8 @@ func (z *ZVM) Upgrade() error {
 		secondaryZVM := fmt.Sprintf("%s2", zvmPath)
 		log.Debug("SecondaryZVM", "path", secondaryZVM)
 
-		if err := os.Rename(filepath.Join(newTemp, fmt.Sprintf("zvm-%s-%s", runtime.GOOS, runtime.GOARCH), zvmBinaryName), secondaryZVM); err != nil {
+		newDownload := filepath.Join(newTemp, fmt.Sprintf("zvm-%s-%s", runtime.GOOS, runtime.GOARCH), zvmBinaryName)
+		if err := os.Rename(newDownload, secondaryZVM); err != nil {
 			log.Debugf("Failed to rename %s to %s", filepath.Join(newTemp, fmt.Sprintf("zvm-%s-%s", runtime.GOOS, runtime.GOARCH), zvmBinaryName), secondaryZVM)
 			return errors.Join(ErrFailedUpgrade, err)
 		}

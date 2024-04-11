@@ -43,13 +43,23 @@ func (z *ZVM) setBin(ver string) error {
 	// which is specifically to check symbolic links.
 	// Seemed like the more appropriate solution here
 	stat, err := os.Lstat(bin_dir);
-	if err == nil {
-		fmt.Printf("Removing old %s", bin_dir)
-		if err := os.Remove(bin_dir); err != nil {
-			return err
+
+	// Actually we need to check if the symbolic link to ~/.zvm/bin
+	// exists yet, otherwise we get err:
+	//
+	// CreateFile C:\Users\gs\.zvm\bin: The system cannot find the file specified.
+	//
+	// which leads to evaluation of the else case (line 59) and to an early return
+	// therefore the the inital symbolic link is never created.
+	if stat != nil {
+		if err == nil {
+			fmt.Printf("Removing old %s", bin_dir)
+			if err := os.Remove(bin_dir); err != nil {
+				return err
+			}
+		} else {
+			return fmt.Errorf("%w: %s", err, stat.Name())
 		}
-	} else {
-		return fmt.Errorf("%w: %s", err, stat.Name())
 	}
 
 	if err := meta.Symlink(version_path, bin_dir); err != nil {

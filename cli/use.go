@@ -12,7 +12,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	// "github.com/charmbracelet/log"
+	"github.com/charmbracelet/log"
 	"github.com/tristanisham/zvm/cli/meta"
 )
 
@@ -53,7 +53,7 @@ func (z *ZVM) setBin(ver string) error {
 	// therefore the the inital symbolic link is never created.
 	if stat != nil {
 		if err == nil {
-			fmt.Printf("Removing old %s", bin_dir)
+			log.Infof("Removing old %s", bin_dir)
 			if err := os.Remove(bin_dir); err != nil {
 				return err
 			}

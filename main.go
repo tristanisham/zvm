@@ -122,6 +122,7 @@ func main() {
 				if err := zvm.Use(version); err != nil {
 					meta.CtaFatal(err)
 				}
+				fmt.Printf("Switched to Zig v%s\n", version)
 			}
 			return
 

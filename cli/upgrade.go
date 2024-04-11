@@ -119,18 +119,18 @@ func (z *ZVM) Upgrade() error {
 			return err
 		}
 
-		secondaryZVM := fmt.Sprintf("%s2", zvmPath)
+		secondaryZVM := fmt.Sprintf("%s.old", zvmPath)
 		log.Debug("SecondaryZVM", "path", secondaryZVM)
 
 		newDownload := filepath.Join(newTemp, fmt.Sprintf("zvm-%s-%s", runtime.GOOS, runtime.GOARCH), zvmBinaryName)
-		if err := os.Rename(newDownload, secondaryZVM); err != nil {
-			log.Debugf("Failed to rename %s to %s", filepath.Join(newTemp, fmt.Sprintf("zvm-%s-%s", runtime.GOOS, runtime.GOARCH), zvmBinaryName), secondaryZVM)
-			return errors.Join(ErrFailedUpgrade, err)
-		}
 
-		fmt.Println("Run the following to complete your upgrade on Windows.")
-		fmt.Printf("- Command Prompt:\n\tmove /Y '%s' '%s'\n", secondaryZVM, zvmPath)
-		fmt.Printf("- Powershell:\n\tMove-Item -Path '%s' -Destination '%s' -Force\n", secondaryZVM, zvmPath)
+		if err := replaceExe(newDownload, zvmPath); err != nil {
+			log.Warn("This command might break if ZVM is installed outside of ~/.zvm/self/")
+			return fmt.Errorf("upgrade error: %q", err)
+		}
+		// fmt.Println("Run the following to complete your upgrade on Windows.")
+		// fmt.Printf("- Command Prompt:\n\tmove /Y '%s' '%s'\n", secondaryZVM, zvmPath)
+		// fmt.Printf("- Powershell:\n\tMove-Item -Path '%s' -Destination '%s' -Force\n", secondaryZVM, zvmPath)
 
 	} else {
 		if err := untar(tempDownload.Name(), newTemp); err != nil {
@@ -147,6 +147,39 @@ func (z *ZVM) Upgrade() error {
 	if err := os.Chmod(zvmPath, 0775); err != nil {
 		log.Debugf("Failed to update permissions for %s", zvmPath)
 		return errors.Join(ErrFailedUpgrade, err)
+	}
+
+	return nil
+}
+
+func replaceExe(from, to string) error {
+	if runtime.GOOS == "windows" {
+		if err := os.Rename(to, fmt.Sprintf("%s.old", to)); err != nil {
+			return err
+		}
+	} else {
+		if err := os.Remove(to); err != nil {
+			return err
+		}
+	}
+
+	if err := os.Rename(from, to); err != nil {
+		from_io, err := os.Open(from)
+		if err != nil {
+			return err
+		}
+		defer from_io.Close()
+
+		to_io, err := os.Create(to)
+		if err != nil {
+			return err
+		}
+		defer to_io.Close()
+
+
+		if _, err := io.Copy(from_io, to_io); err != nil {
+			return nil
+		}
 	}
 
 	return nil

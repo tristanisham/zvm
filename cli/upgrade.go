@@ -152,6 +152,7 @@ func (z *ZVM) Upgrade() error {
 	return nil
 }
 
+// Replaces one file with another on Windows. 
 func replaceExe(from, to string) error {
 	if runtime.GOOS == "windows" {
 		if err := os.Rename(to, fmt.Sprintf("%s.old", to)); err != nil {

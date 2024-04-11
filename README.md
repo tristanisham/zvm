@@ -2,7 +2,7 @@
   <img width="400px"  src ="https://github.com/tristanisham/zvm/assets/23124818/be5c3713-8aaf-4419-a1ae-acb29da36eae"/>
 </p>
 
-Zig Version Manager (zvm) is a tool for managing your Zig installs. With std
+Zig Version Manager (zvm) is a tool for managing your [Zig](https://ziglang.org/) installs. With std
 under heavy development and a large feature roadmap, Zig is bound to continue
 changing. Breaking existing builds, updating valid syntax, and introducing new
 features like a package manager. While this is great for developers, it also can

@@ -8,7 +8,6 @@ import (
 	"bufio"
 	"errors"
 	"fmt"
-	"io/fs"
 	"os"
 	"path/filepath"
 	"strings"
@@ -40,13 +39,17 @@ func (z *ZVM) setBin(ver string) error {
 	version_path := filepath.Join(z.baseDir, ver)
 	bin_dir := filepath.Join(z.baseDir, "bin")
 
-	// Remove "bin" dir only if it already exists
-	
-	if _, err := os.Stat(bin_dir); errors.Is(err, fs.ErrExist) {
+	// Came across https://pkg.go.dev/os#Lstat
+	// which is specifically to check symbolic links.
+	// Seemed like the more appropriate solution here
+	stat, err := os.Lstat(bin_dir);
+	if err == nil {
 		fmt.Printf("Removing old %s", bin_dir)
 		if err := os.Remove(bin_dir); err != nil {
 			return err
 		}
+	} else {
+		return fmt.Errorf("%w: %s", err, stat.Name())
 	}
 
 	if err := meta.Symlink(version_path, bin_dir); err != nil {

@@ -178,7 +178,7 @@ func replaceExe(from, to string) error {
 		defer to_io.Close()
 
 
-		if _, err := io.Copy(from_io, to_io); err != nil {
+		if _, err := io.Copy(to_io, from_io); err != nil {
 			return nil
 		}
 	}

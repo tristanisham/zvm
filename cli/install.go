@@ -493,7 +493,7 @@ func ExtractBundle(bundle, out string) error {
 	// _, extension, _ := strings.Cut(splitPath[len(splitPath)-1], ".")
 	extension := filepath.Ext(bundle)
 
-	if strings.Contains(extension, "tar") {
+	if strings.Contains(extension, "tar") || extension == ".xz" {
 		return untarXZ(bundle, out)
 	} else if strings.Contains(extension, "zip") {
 		return unzipSource(bundle, out)
@@ -507,6 +507,7 @@ func untarXZ(in, out string) error {
 	tar.Stdout = os.Stdout
 	tar.Stderr = os.Stderr
 	if err := tar.Run(); err != nil {
+		log.Debug("Error untarring bundle")
 		return err
 	}
 	return nil

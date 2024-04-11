@@ -484,7 +484,7 @@ func zigStyleSysInfo() (arch string, os string) {
 }
 
 func ExtractBundle(bundle, out string) error {
-	// This is how I extracted an extension from a path in a cross-platform manner before 
+	// This is how I extracted an extension from a path in a cross-platform manner before
 	// I realized filepath existed.
 	// -----------------------------------------------------------------------------------
 	// get extension
@@ -497,7 +497,7 @@ func ExtractBundle(bundle, out string) error {
 	// to fix, but would love to know how this became an issue.
 	if strings.Contains(extension, "tar") || extension == ".xz" {
 		return untarXZ(bundle, out)
-	} else if strings.Contains(extension, "zip") {
+	} else if extension == ".zip" {
 		return unzipSource(bundle, out)
 	}
 
@@ -531,13 +531,12 @@ func unzipSource(source, destination string) error {
 
 	// 3. Iterate over zip files inside the archive and unzip each of them
 	for _, f := range reader.File {
-		go func(f *zip.File, destination string) {
-			err := unzipFile(f, destination)
-			if err != nil {
-				meta.CtaFatal(err)
-			}
-		}(f, destination)
-		
+
+		err := unzipFile(f, destination)
+		if err != nil {
+			meta.CtaFatal(err)
+		}
+
 	}
 
 	return nil

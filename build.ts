@@ -54,10 +54,10 @@ for (const os of GOOS) {
       Deno.exit(1);
     }
 
-    if (os == "windows") {
-      await Deno.mkdir(zvm_str, { recursive: true });
-
-    }
+//    if (os == "windows") {
+//      await Deno.mkdir(zvm_str, { recursive: true });
+//
+//   }
 
     console.timeEnd(`Build zvm: ${zvm_str}`);
   }

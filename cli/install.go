@@ -275,6 +275,10 @@ func getZLSDownloadUrl(version string, archDouble string) (string, error) {
 			return "", err
 		}
 
+		if len(taggedReleaseResponse.Assets) == 0 {
+			return "", errors.New("invalid ZLS version")
+		}
+
 		// getting platform information
 		var downloadUrl string
 		for _, asset := range taggedReleaseResponse.Assets {
@@ -285,7 +289,7 @@ func getZLSDownloadUrl(version string, archDouble string) (string, error) {
 		}
 
 		if downloadUrl == "" {
-			return "", errors.New("invalid release URl")
+			return "", errors.New("invalid ZLS release URL")
 		}
 
 		return downloadUrl, nil

@@ -110,8 +110,10 @@ func main() {
 			if *installDeps != "" {
 				switch *installDeps {
 				case "zls":
-					
-					zvm.InstallZls(req.Package)
+
+					if err := zvm.InstallZls(req.Package); err != nil {
+						meta.CtaFatal(err)
+					}
 				}
 			}
 

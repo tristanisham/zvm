@@ -18,7 +18,8 @@ compile your projects, or a language gets updated frequently.
 
 ## Remember to Star the Repo
 
-<a href="https://star-history.com/#tristanisham/zvm&Timeline">
+<!-- https://star-history.com/#tristanisham/zvm&Timeline -->
+<a href="https://github.com/tristanisham/zvm">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=tristanisham/zvm&type=Timeline&theme=dark" />
     <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/svg?repos=tristanisham/zvm&type=Timeline" />
@@ -26,8 +27,7 @@ compile your projects, or a language gets updated frequently.
   </picture>
 </a>
 
-<!-- Place this tag where you want the button to render. -->
-<a class="github-button" href="https://github.com/tristanisham/zvm" data-color-scheme="no-preference: light; light: light; dark: dark;" data-icon="octicon-star" data-size="large" data-show-count="true" aria-label="Star tristanisham/zvm on GitHub">Star</a>
+
 <br> 
 
 # Installing ZVM

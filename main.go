@@ -160,7 +160,7 @@ var zvmApp = &opts.App{
 		},
 		{
 			Name:  "upgrade",
-			Usage: "self-update ZVM",
+			Usage: "self-upgrade ZVM",
 			Action: func(ctx *opts.Context) error {
 				return zvm.Upgrade()
 			},

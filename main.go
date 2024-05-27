@@ -19,7 +19,6 @@ import (
 
 	"github.com/charmbracelet/log"
 
-	_ "embed"
 )
 
 

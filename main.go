@@ -30,7 +30,7 @@ var zvmApp = &opts.App{
 	Usage: "Zig Version Manager",
 	Description: "zvm lets you easily install, upgrade, and switch between different versions of Zig.",
 	HelpName:  "zvm",
-	Version:   meta.VERSION,
+	Version:   meta.VerCopy,
 	Copyright: "Copyright © 2022 Tristan Isham",
 	Suggest:   true,
 	Before: func(ctx *opts.Context) error {

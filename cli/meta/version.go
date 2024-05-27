@@ -16,6 +16,6 @@ const (
 
 
 var (
-	VerCopy = fmt.Sprintf("zvm %s %s/%s", VERSION, runtime.GOOS, runtime.GOARCH)
+	VerCopy = fmt.Sprintf("%s %s/%s", VERSION, runtime.GOOS, runtime.GOARCH)
 )
 

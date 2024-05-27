@@ -249,7 +249,7 @@ Enable or disable colored ZVM output. No value toggles colors.
 
 
 ```sh
--color # Toggle ANSI color printing on or off for ZVM's output, i.e. --color=true
+--color # Toggle ANSI color printing on or off for ZVM's output, i.e. --color=true
 ```
 
 ## Please Consider Giving the Repo a Star ⭐

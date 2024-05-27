@@ -41,14 +41,14 @@ var zvmApp = &opts.App{
 	Flags: []opts.Flag{
 		&opts.StringFlag{
 			Name:  "color",
-			Usage: "enable (on, yes/y, enabled) or disable (off, no/n, disabled) colored ZVM output",
+			Usage: "enable (on, yes/y, enabled, true) or disable (off, no/n, disabled, false) colored ZVM output",
 			Value: "toggle",
 			Action: func(ctx *opts.Context, val string) error {
 				switch val {
-				case "on", "yes", "enabled", "y":
+				case "on", "yes", "enabled", "y", "true":
 					zvm.Settings.YesColor()
 
-				case "off", "no", "disabled", "n":
+				case "off", "no", "disabled", "n", "false":
 					zvm.Settings.NoColor()
 
 				default:

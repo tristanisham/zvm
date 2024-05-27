@@ -16,6 +16,20 @@ compile your projects, or a language gets updated frequently.
 
 <a href="https://polar.sh/tristanisham"><picture><source media="(prefers-color-scheme: dark)" srcset="https://polar.sh/embed/subscribe.svg?org=tristanisham&label=Subscribe&darkmode"><img alt="Subscribe on Polar" src="https://polar.sh/embed/subscribe.svg?org=tristanisham&label=Subscribe"></picture></a>
 
+## Remember to Star the Repo
+
+<a href="https://star-history.com/#tristanisham/zvm&Timeline">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=tristanisham/zvm&type=Timeline&theme=dark" />
+    <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/svg?repos=tristanisham/zvm&type=Timeline" />
+    <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=tristanisham/zvm&type=Timeline" />
+  </picture>
+</a>
+
+<!-- Place this tag where you want the button to render. -->
+<a class="github-button" href="https://github.com/tristanisham/zvm" data-color-scheme="no-preference: light; light: light; dark: dark;" data-icon="octicon-star" data-size="large" data-show-count="true" aria-label="Star tristanisham/zvm on GitHub">Star</a>
+<br> 
+
 # Installing ZVM
 
 ZVM lives entirely in `$HOME/.zvm` on all platforms it supports. Inside of the
@@ -133,10 +147,10 @@ zvm i master
 ### Install ZLS with ZVM
 
 You can now install ZLS with your Zig download! To install ZLS with ZVM, simply
-pass the `-D=zls` flag with `zvm i`. For example:
+pass the `--zls` flag with `zvm i`. For example:
 
 ```sh
-zvm i -D=zls master
+zvm i --zls master
 ```
 
 ## Switch between installed Zig versions
@@ -201,14 +215,16 @@ zvm clean
 
 Use `clean` to remove build artifacts (Good if you're on Windows).
 
-## Print program version
+### Version Map Source
 
 ```sh
-zvm version
-zvm --version
-```
+vmu "https://validurl.local/vmu.json" # Change the source ZVM pulls Zig release information from. Good for self-hosted Zig CDNs.
+                                       # ZVM only supports schemas that match the offical version map schema. 
+                                       # Run `vmu default` to reset your version map.
 
-Prints the version of ZVM you have installed.
+vmu default # Resets back to default Zig releases.
+vmu mach # Sets ZVM to pull from Mach nominated Zig.
+```
 
 ## Print program help
 
@@ -216,33 +232,38 @@ Prints the version of ZVM you have installed.
 zvm help
 ```
 
+## Print program version
+
+```sh
+zvm --version
+```
+Prints the version of ZVM you have installed.
+
 <hr>
 
 ## Option flags
 
 ### Color Toggle
 
+Enable or disable colored ZVM output. No value toggles colors.
+
+#### Enable
+- on
+- yes/y
+- enabled
+- true
+
+#### Disabled
+
+- off
+- no/n
+- disabled
+- false
+
+
 ```sh
--color # Turn ANSI color printing on or off for ZVM's output, i.e. -color=true
+-color # Toggle ANSI color printing on or off for ZVM's output, i.e. --color=true
 ```
 
-### Version Map Source
-
-```sh
--vmu="https://validurl.local/vmu.json" # Change the source ZVM pulls Zig release information from. Good for self-hosted Zig CDNs.
-                                       # ZVM only supports schemas that match the offical version map schema. 
-                                       # Run `-vmu=default` to reset your version map.
-
--vmu default # Resets back to default Zig releases.
--vmu mach # Sets ZVM to pull from Mach nominated Zig.
-```
-
-## Remember to Star the Repo
-
-<a href="https://star-history.com/#tristanisham/zvm&Timeline">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=tristanisham/zvm&type=Timeline&theme=dark" />
-    <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/svg?repos=tristanisham/zvm&type=Timeline" />
-    <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=tristanisham/zvm&type=Timeline" />
-  </picture>
-</a>
+<!-- Place this tag in your head or just before your close body tag. -->
+<script async defer src="https://buttons.github.io/buttons.js"></script>

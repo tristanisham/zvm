@@ -38,7 +38,7 @@ func (z *ZVM) Upgrade() error {
 		}
 	}()
 
-	upgradable, tagName, err := CanIUpgrade()
+	tagName, upgradable, err := CanIUpgrade()
 	if err != nil {
 		return errors.Join(ErrFailedUpgrade, err)
 	}
@@ -152,7 +152,7 @@ func (z *ZVM) Upgrade() error {
 	return nil
 }
 
-// Replaces one file with another on Windows. 
+// Replaces one file with another on Windows.
 func replaceExe(from, to string) error {
 	if runtime.GOOS == "windows" {
 		if err := os.Rename(to, fmt.Sprintf("%s.old", to)); err != nil {
@@ -176,7 +176,6 @@ func replaceExe(from, to string) error {
 			return err
 		}
 		defer to_io.Close()
-
 
 		if _, err := io.Copy(to_io, from_io); err != nil {
 			return nil
@@ -291,17 +290,18 @@ func isSymlink(path string) (bool, error) {
 	return fileInfo.Mode()&os.ModeSymlink != 0, nil
 }
 
-func CanIUpgrade() (bool, string, error) {
+func CanIUpgrade() (string, bool, error) {
 	release, err := getLatestGitHubRelease("tristanisham", "zvm")
 	if err != nil {
-		return false, "", err
+		return "", false, err
 	}
 
 	if semver.Compare(meta.VERSION, release.TagName) == -1 {
-		return true, release.TagName, nil
+		return release.TagName, true, nil
 	}
 
-	return false, release.TagName, nil
+	return release.TagName, false, nil
+
 }
 
 // func getGitHubReleases(owner, repo string) ([]GithubRelease, error) {

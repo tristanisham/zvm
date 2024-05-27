@@ -18,20 +18,18 @@ import (
 	opts "github.com/urfave/cli/v2"
 
 	"github.com/charmbracelet/log"
-
 )
-
 
 var zvm cli.ZVM
 
 var zvmApp = &opts.App{
-	Name:      "ZVM",
-	Usage: "Zig Version Manager",
+	Name:        "ZVM",
+	Usage:       "Zig Version Manager",
 	Description: "zvm lets you easily install, upgrade, and switch between different versions of Zig.",
-	HelpName:  "zvm",
-	Version:   meta.VerCopy,
-	Copyright: "Copyright © 2022 Tristan Isham",
-	Suggest:   true,
+	HelpName:    "zvm",
+	Version:     meta.VerCopy,
+	Copyright:   "Copyright © 2022 Tristan Isham",
+	Suggest:     true,
 	Before: func(ctx *opts.Context) error {
 		zvm = *cli.Initialize()
 		return nil
@@ -65,9 +63,9 @@ var zvmApp = &opts.App{
 			Aliases: []string{"i"},
 			Flags: []opts.Flag{
 				&opts.BoolFlag{
-					Name:    "zls",
+					Name: "zls",
 					// Aliases: []string{"z"},
-					Usage:   "install ZLS",
+					Usage: "install ZLS",
 				},
 			},
 			Description: "To install the latest version, use `master`",
@@ -116,7 +114,7 @@ var zvmApp = &opts.App{
 			Args:  true,
 			Flags: []opts.Flag{
 				&opts.BoolFlag{
-					Name: "sync",
+					Name:  "sync",
 					Usage: "sync your current version of Zig with the repository",
 				},
 			},
@@ -127,7 +125,7 @@ var zvmApp = &opts.App{
 					versionArg := strings.TrimPrefix(ctx.Args().First(), "v")
 					return zvm.Use(versionArg)
 				}
-				
+
 			},
 		},
 		{
@@ -211,8 +209,31 @@ func main() {
 		log.SetLevel(log.DebugLevel)
 	}
 
+	_, checkUpgradeDisabled := os.LookupEnv("ZVM_SET_CU")
+	log.Debug("Automatic Upgrade Checker", "disabled", checkUpgradeDisabled)
+
+	// Upgrade 
+	upSig := make(chan string, 1)
+
+	if !checkUpgradeDisabled {
+		go func(out chan<- string) {
+			if tag, ok, _ := cli.CanIUpgrade(); ok {
+				out <- tag
+			} else {
+				out <- ""
+			}
+		}(upSig)
+	} else {
+		upSig <- ""
+	}
+
 	// run and report errors
 	if err := zvmApp.Run(os.Args); err != nil {
 		meta.CtaFatal(err)
 	}
+
+	if tag := <-upSig; tag != "" {
+		meta.CtaUpgradeAvailable(tag)
+	}
+
 }

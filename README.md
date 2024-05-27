@@ -202,7 +202,7 @@ zvm clean
 
 Use `clean` to remove build artifacts (Good if you're on Windows).
 
-### Version Map Source
+## Set Version Map Source
 
 ```sh
 vmu "https://validurl.local/vmu.json" # Change the source ZVM pulls Zig release information from. Good for self-hosted Zig CDNs.
@@ -251,6 +251,13 @@ Enable or disable colored ZVM output. No value toggles colors.
 ```sh
 --color # Toggle ANSI color printing on or off for ZVM's output, i.e. --color=true
 ```
+
+## Environment Variables
+
+- `ZVM_DEBG` enables DEBUG logging for your executable. This is meant for
+  contributors and developers.
+- `ZVM_SET_CU` Toggle the automatic upgrade checker. If you want to reenable the
+  checker, just `uset ZVM_SET_CU`.
 
 ## Please Consider Giving the Repo a Star ⭐
 

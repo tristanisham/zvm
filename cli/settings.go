@@ -19,6 +19,7 @@ type Settings struct {
 	path          string
 	UseColor      bool   `json:"useColor"`
 	VersionMapUrl string `json:"versionMapUrl,omitempty"`
+	// CheckForUpgrade bool `json:"checkForUpgrade"`
 }
 
 func (s *Settings) ToggleColor() {

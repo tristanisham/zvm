@@ -40,7 +40,7 @@ func (z *ZVM) ListVersions() error {
 		case "settings.json", "bin", "versions.json", "self":
 			continue
 		default:
-			if key.Name() == strings.TrimSpace(version) {
+			if key.Name() == strings.TrimSpace(version) || key.Name() == "master" && strings.Contains(version, "-dev.") {
 				if z.Settings.UseColor {
 					// Should just check bin for used version
 					fmt.Println(clr.Green(key.Name()))

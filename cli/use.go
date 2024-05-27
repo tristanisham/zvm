@@ -53,7 +53,7 @@ func (z *ZVM) setBin(ver string) error {
 	// therefore the the inital symbolic link is never created.
 	if stat != nil {
 		if err == nil {
-			log.Infof("Removing old %s", bin_dir)
+			log.Debugf("Removing old %s", bin_dir)
 			if err := os.Remove(bin_dir); err != nil {
 				return err
 			}

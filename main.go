@@ -115,9 +115,20 @@ var zvmApp = &opts.App{
 			Name:  "use",
 			Usage: "switch between versions of Zig",
 			Args:  true,
+			Flags: []opts.Flag{
+				&opts.BoolFlag{
+					Name: "sync",
+					Usage: "sync your current version of Zig with the repository",
+				},
+			},
 			Action: func(ctx *opts.Context) error {
-				versionArg := strings.TrimPrefix(ctx.Args().First(), "v")
-				return zvm.Use(versionArg)
+				if ctx.Bool("sync") {
+					return zvm.Sync()
+				} else {
+					versionArg := strings.TrimPrefix(ctx.Args().First(), "v")
+					return zvm.Use(versionArg)
+				}
+				
 			},
 		},
 		{

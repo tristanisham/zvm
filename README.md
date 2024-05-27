@@ -15,20 +15,7 @@ compile your projects, or a language gets updated frequently.
 - [Twitter|X](https://twitter.com/atalocke)
 
 <a href="https://polar.sh/tristanisham"><picture><source media="(prefers-color-scheme: dark)" srcset="https://polar.sh/embed/subscribe.svg?org=tristanisham&label=Subscribe&darkmode"><img alt="Subscribe on Polar" src="https://polar.sh/embed/subscribe.svg?org=tristanisham&label=Subscribe"></picture></a>
-
-## Please Consider Giving the Repo a Star ⭐
-
-<!-- https://star-history.com/#tristanisham/zvm&Timeline -->
-<a href="https://github.com/tristanisham/zvm">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=tristanisham/zvm&type=Timeline&theme=dark" />
-    <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/svg?repos=tristanisham/zvm&type=Timeline" />
-    <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=tristanisham/zvm&type=Timeline" />
-  </picture>
-</a>
-
-
-<br> 
+ 
 
 # Installing ZVM
 
@@ -265,5 +252,13 @@ Enable or disable colored ZVM output. No value toggles colors.
 -color # Toggle ANSI color printing on or off for ZVM's output, i.e. --color=true
 ```
 
-<!-- Place this tag in your head or just before your close body tag. -->
-<script async defer src="https://buttons.github.io/buttons.js"></script>
+## Please Consider Giving the Repo a Star ⭐
+
+<!-- https://star-history.com/#tristanisham/zvm&Timeline -->
+<a href="https://github.com/tristanisham/zvm">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=tristanisham/zvm&type=Timeline&theme=dark" />
+    <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/svg?repos=tristanisham/zvm&type=Timeline" />
+    <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=tristanisham/zvm&type=Timeline" />
+  </picture>
+</a>

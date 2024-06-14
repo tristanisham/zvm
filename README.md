@@ -254,10 +254,11 @@ Enable or disable colored ZVM output. No value toggles colors.
 
 ## Environment Variables
 
-- `ZVM_DEBG` enables DEBUG logging for your executable. This is meant for
+- `ZVM_DEBUG` enables DEBUG logging for your executable. This is meant for
   contributors and developers.
 - `ZVM_SET_CU` Toggle the automatic upgrade checker. If you want to reenable the
   checker, just `uset ZVM_SET_CU`.
+- `ZVM_PATH` sets the install location for ZVM. Set the environment variable to the parent directory of where you've placed the `.zvm` directory. 
 
 ## Please Consider Giving the Repo a Star ⭐
 

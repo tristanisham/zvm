@@ -388,7 +388,7 @@ func (z *ZVM) InstallZls(version string) error {
 		if err := ExtractBundle(tempDir.Name(), filepath.Join(z.baseDir, version)); err != nil {
 			log.Fatal(err)
 		}
-		if err := os.Rename(filepath.Join(versionPath, "bin", filename), filepath.Join(versionPath, filename)); err != nil {
+		if err := os.Rename(filepath.Join(versionPath, filename), filepath.Join(versionPath, filename)); err != nil {
 			return err
 		}
 	}

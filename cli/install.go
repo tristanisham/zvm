@@ -384,11 +384,40 @@ func (z *ZVM) InstallZls(version string) error {
 			return err
 		}
 
+		zlsTempDir, err := os.MkdirTemp(z.baseDir, "zls-*")
+		if err != nil {
+			return err
+		}
+		defer os.RemoveAll(zlsTempDir)
+
 		fmt.Println("Extracting ZLS...") // Edgy bit
-		if err := ExtractBundle(tempDir.Name(), versionPath); err != nil {
+		if err := ExtractBundle(tempDir.Name(), zlsTempDir); err != nil {
 			log.Fatal(err)
 		}
-		
+
+		zlsPath := ""
+		candidateSubdirs := [...]string{"", "bin"}
+
+		// NOTE: Should we care about possible TOCTOU error here?
+		for _, subdir := range candidateSubdirs {
+			path, err := findZlsExecutable(filepath.Join(zlsTempDir, subdir))
+			if err != nil {
+				return err
+			}
+			if path != "" {
+				zlsPath = path
+				break
+			}
+		}
+
+		if err := os.Rename(zlsPath, filepath.Join(versionPath, filename)); err != nil {
+			return err
+		}
+
+		if zlsPath == "" {
+			return fmt.Errorf("Could not find ZLS in %s", zlsTempDir)
+		}
+
 	}
 
 	if err := os.Chmod(filepath.Join(versionPath, filename), 0755); err != nil {
@@ -398,6 +427,38 @@ func (z *ZVM) InstallZls(version string) error {
 	z.createSymlink(version)
 	fmt.Println("Done! 🎉")
 	return nil
+}
+
+func findZlsExecutable(dir string) (string, error) {
+	var result string
+
+	filename := "zls"
+	if runtime.GOOS == "windows" {
+		filename += ".exe"
+	}
+
+	err := filepath.Walk(dir, filepath.WalkFunc(func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+		// Discard directories and symlinks (if any)
+		if info.IsDir() || info.Mode().Type() == os.ModeSymlink {
+			return nil
+		}
+
+		if filepath.Base(path) != filename {
+			return nil
+		}
+		result = path
+
+		return filepath.SkipAll
+	}))
+
+	if err != nil {
+		return "", err
+	}
+
+	return result, nil
 }
 
 func (z *ZVM) createSymlink(version string) {

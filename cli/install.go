@@ -384,7 +384,7 @@ func (z *ZVM) InstallZls(version string) error {
 			return err
 		}
 
-		fmt.Println("Extracting ZLS...")
+		fmt.Println("Extracting ZLS...") // Edgy bit
 		if err := ExtractBundle(tempDir.Name(), versionPath); err != nil {
 			log.Fatal(err)
 		}

@@ -130,18 +130,18 @@ var zvmApp = &opts.App{
 		},
 		{
 			Name:    "list",
-			Usage:   "list installed Zig versions",
+			Usage:   "list installed Zig versions. Flag `--all` to see remote options",
 			Aliases: []string{"ls"},
 			Args:    true,
 			Flags: []opts.Flag{
 				&opts.BoolFlag{
 					Name:    "all",
 					Aliases: []string{"a"},
-					Usage:   "list remote Zig versions available for download",
+					Usage:   "list remote Zig versions available for download, based on your version map",
 				},
 			},
 			Action: func(ctx *opts.Context) error {
-				log.Debug("Version Map", "url", zvm.Settings.VersionMapUrl)
+				log.Debug("Version Map", "url", zvm.Settings.VersionMapUrl, "cmd", "list/ls")
 				if ctx.Bool("all") {
 					return zvm.ListRemoteAvailable()
 				} else {
@@ -149,6 +149,23 @@ var zvmApp = &opts.App{
 				}
 			},
 		},
+		// {
+		// 	Name:  "list:all",
+		// 	Usage: "list remote Zig versions available for download, based on your version map",
+		// 	Aliases: []string{"la"},
+		// 	Args: false,
+		// 	// Flags: []opts.Flag{
+		// 	// 	&opts.BoolFlag{
+		// 	// 		Name:    "all",
+		// 	// 		Aliases: []string{"a"},
+		// 	// 		Usage:   "list remote Zig versions available for download",
+		// 	// 	},
+		// 	// },
+		// 	Action: func(ctx *opts.Context) error {
+		// 		log.Debug("Version Map", "url", zvm.Settings.VersionMapUrl, "cmd", "la")
+		// 		return zvm.ListRemoteAvailable()
+		// 	},
+		// },
 		{
 			Name:    "uninstall",
 			Usage:   "remove an installed version of Zig",
@@ -212,7 +229,7 @@ func main() {
 	_, checkUpgradeDisabled := os.LookupEnv("ZVM_SET_CU")
 	log.Debug("Automatic Upgrade Checker", "disabled", checkUpgradeDisabled)
 
-	// Upgrade 
+	// Upgrade
 	upSig := make(chan string, 1)
 
 	if !checkUpgradeDisabled {

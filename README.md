@@ -218,6 +218,21 @@ vmu mach # Sets ZVM to pull from Mach nominated Zig.
 ```sh
 zvm help
 ```
+Or use it to dive deeper into a specific command.
+```sh
+zvm help list
+```
+```
+NAME:
+   zvm list - list installed Zig versions. Flag `--all` to see remote options
+
+USAGE:
+   zvm list [command options] [arguments...]
+
+OPTIONS:
+   --all, -a   list remote Zig versions available for download, based on your version map (default: false)
+   --help, -h  show help
+```
 
 ## Print program version
 

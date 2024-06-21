@@ -385,12 +385,10 @@ func (z *ZVM) InstallZls(version string) error {
 		}
 
 		fmt.Println("Extracting ZLS...")
-		if err := ExtractBundle(tempDir.Name(), filepath.Join(z.baseDir, version)); err != nil {
+		if err := ExtractBundle(tempDir.Name(), versionPath); err != nil {
 			log.Fatal(err)
 		}
-		if err := os.Rename(filepath.Join(versionPath, filename), filepath.Join(versionPath, filename)); err != nil {
-			return err
-		}
+		
 	}
 
 	if err := os.Chmod(filepath.Join(versionPath, filename), 0755); err != nil {

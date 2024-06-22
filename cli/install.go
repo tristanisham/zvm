@@ -395,19 +395,9 @@ func (z *ZVM) InstallZls(version string) error {
 			log.Fatal(err)
 		}
 
-		zlsPath := ""
-		candidateSubdirs := [...]string{"", "bin"}
-
-		// NOTE: Should we care about possible TOCTOU error here?
-		for _, subdir := range candidateSubdirs {
-			path, err := findZlsExecutable(filepath.Join(zlsTempDir, subdir))
-			if err != nil {
-				return err
-			}
-			if path != "" {
-				zlsPath = path
-				break
-			}
+		zlsPath, err := findZlsExecutable(zlsTempDir)
+		if err != nil {
+			return err
 		}
 
 		if err := os.Rename(zlsPath, filepath.Join(versionPath, filename)); err != nil {

@@ -13,6 +13,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"io/fs"
 	"net/http"
 	"net/url"
 	"os"
@@ -372,15 +373,15 @@ func (z *ZVM) InstallZls(version string) error {
 			pathEnding = "*.tar.xz"
 		}
 
-		tempDir, err := os.CreateTemp(z.baseDir, pathEnding)
+		tempFile, err := os.CreateTemp(z.baseDir, pathEnding)
 		if err != nil {
 			return err
 		}
 
-		defer tempDir.Close()
-		defer os.RemoveAll(tempDir.Name())
+		defer tempFile.Close()
+		defer os.RemoveAll(tempFile.Name())
 
-		if _, err := io.Copy(io.MultiWriter(pbar, tempDir), response.Body); err != nil {
+		if _, err := io.Copy(io.MultiWriter(pbar, tempFile), response.Body); err != nil {
 			return err
 		}
 
@@ -388,10 +389,11 @@ func (z *ZVM) InstallZls(version string) error {
 		if err != nil {
 			return err
 		}
+
 		defer os.RemoveAll(zlsTempDir)
 
 		fmt.Println("Extracting ZLS...") // Edgy bit
-		if err := ExtractBundle(tempDir.Name(), zlsTempDir); err != nil {
+		if err := ExtractBundle(tempFile.Name(), zlsTempDir); err != nil {
 			log.Fatal(err)
 		}
 
@@ -405,7 +407,7 @@ func (z *ZVM) InstallZls(version string) error {
 		}
 
 		if zlsPath == "" {
-			return fmt.Errorf("Could not find ZLS in %s", zlsTempDir)
+			return fmt.Errorf("could not find ZLS in %q", zlsTempDir)
 		}
 
 	}
@@ -427,22 +429,23 @@ func findZlsExecutable(dir string) (string, error) {
 		filename += ".exe"
 	}
 
-	err := filepath.Walk(dir, filepath.WalkFunc(func(path string, info os.FileInfo, err error) error {
+	err := filepath.WalkDir(dir, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}
-		// Discard directories and symlinks (if any)
-		if info.IsDir() || info.Mode().Type() == os.ModeSymlink {
+
+		if d.IsDir() || d.Type().Type() == os.ModeSymlink {
 			return nil
 		}
 
 		if filepath.Base(path) != filename {
 			return nil
 		}
+
 		result = path
 
-		return filepath.SkipAll
-	}))
+		return fs.SkipAll
+	})
 
 	if err != nil {
 		return "", err

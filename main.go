@@ -5,10 +5,6 @@
 package main
 
 import (
-	// "errors"
-	// "flag"
-	// "fmt"
-	// "html/template"
 	"errors"
 	"os"
 	"strings"
@@ -81,7 +77,7 @@ var zvmApp = &opts.App{
 				req := cli.ExtractInstall(versionArg)
 				req.Version = strings.TrimPrefix(req.Version, "v")
 
-				// // Verify the requeste Zig version is good
+				// // Verify the request Zig version is good
 				// if err := zvm.ZigVersionIsValid(req.Package); err != nil {
 				// 	return err
 				// }

@@ -33,6 +33,7 @@ import (
 func (z *ZVM) Install(version string) error {
 
 	os.Mkdir(z.baseDir, 0755)
+
 	rawVersionStructure, err := z.fetchVersionMap()
 	if err != nil {
 		return err
@@ -314,9 +315,9 @@ func (z *ZVM) InstallZls(version string) error {
 	arch, osType := zigStyleSysInfo()
 	expectedArchOs := fmt.Sprintf("%v-%v", arch, osType)
 
-	filename := "zls"
+	zlsFilename := "zls"
 	if osType == "windows" {
-		filename += ".exe"
+		zlsFilename += ".exe"
 	}
 
 	// master does not need unzipping, zpm just serves full binary
@@ -353,7 +354,7 @@ func (z *ZVM) InstallZls(version string) error {
 	)
 
 	versionPath := filepath.Join(z.baseDir, version)
-	binaryLocation := filepath.Join(versionPath, filename)
+	binaryLocation := filepath.Join(versionPath, zlsFilename)
 
 	if !shouldUnzip {
 		file, err := os.Create(binaryLocation)
@@ -402,7 +403,7 @@ func (z *ZVM) InstallZls(version string) error {
 			return err
 		}
 
-		if err := os.Rename(zlsPath, filepath.Join(versionPath, filename)); err != nil {
+		if err := os.Rename(zlsPath, filepath.Join(versionPath, zlsFilename)); err != nil {
 			return err
 		}
 
@@ -412,7 +413,7 @@ func (z *ZVM) InstallZls(version string) error {
 
 	}
 
-	if err := os.Chmod(filepath.Join(versionPath, filename), 0755); err != nil {
+	if err := os.Chmod(filepath.Join(versionPath, zlsFilename), 0755); err != nil {
 		return err
 	}
 
@@ -665,3 +666,31 @@ func ExtractInstall(input string) InstallRequest {
 
 	return req
 }
+
+// TODO finish writing this function
+//func (z *ZVM) UserSpecifiedInstall(ops, arch, version string) error {
+//	os.Mkdir(z.baseDir, 0755)
+//
+//	rawVersionStructure, err := z.fetchVersionMap()
+//	if err != nil {
+//		return err
+//	}
+//
+//	var tarball string
+//
+//	if info, ok := rawVersionStructure[version]; ok {
+//		if systemInfo, ok := info[fmt.Sprintf("%s-%s", arch, ops)]; ok {
+//			if base, ok := systemInfo.(map[string]any); ok {
+//				if tar, ok := base["tarball"].(string); ok {
+//					tarball = tar
+//				}
+//			} else {
+//				return ErrMissingBundlePath
+//			}
+//		} else {
+//			return ErrUnsupportedSystem
+//		}
+//	}
+//
+//	return nil
+//}

@@ -1,6 +1,8 @@
 // Copyright 2022 Tristan Isham. All rights reserved.
 // Use of this source code is governed by the MIT
 // license that can be found in the LICENSE file.
+
+// Package meta is for internal facing functions that aren't tied to the core functionality of ZVM itself. CTA, errors, etc.
 package meta
 
 import (
@@ -59,5 +61,21 @@ func CtaUpgradeAvailable(tag string) {
 		Foreground(lipgloss.Color("#fee12b"))
 
 	fmt.Printf("\nZVM %s is available. You are currently on %s.\n\nRun %s or download the latest release at\n%s\n\n", blueLink.Render(tag), blueLink.Render(VERSION), yellowText.Render("zvm upgrade"), blueLink.Render("https://github.com/tristanisham/zvm/releases/latest"))
-	
+
 }
+
+//// CtaAlert prints an aesthetic notice.
+//func CtaAlert(title, body string) {
+//	var style = lipgloss.NewStyle().
+//		Bold(true).
+//		Foreground(lipgloss.Color("#FAFAFA")).
+//		Background(lipgloss.Color("#ffd966")).
+//		Width(10).
+//		MarginTop(1).
+//		MarginBottom(1).
+//		Align(lipgloss.Center)
+//	fmt.Printf("%s: %s", style.Render("Alert"), title)
+//
+//	fmt.Println(body)
+//
+//}

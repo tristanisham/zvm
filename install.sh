@@ -85,19 +85,21 @@ if [[ "$TERM" == "xterm" || "$TERM" == "xterm-256color" || "$TERM" == "screen" |
     NC='\033[0m'       # No Color
 
     echo -e "${GREEN}echo${NC} ${RED}\"# ZVM\"${NC} ${GREEN}>>${NC} ${BLUE}\$HOME/.profile${NC}"
-    echo -e "${GREEN}echo${NC} ${RED}'export ZVM_INSTALL=\"\$HOME/.zvm/self\"'${NC} ${GREEN}>>${NC} ${BLUE}\$HOME/.profile${NC}"
-    echo -e "${GREEN}echo${NC} ${RED}'export PATH=\"\$PATH:\$HOME/.zvm/bin\"'${NC} ${GREEN}>>${NC} ${BLUE}\$HOME/.profile${NC}"
-    echo -e "${GREEN}echo${NC} ${RED}'export PATH=\"\$PATH:\$ZVM_INSTALL/\"'${NC} ${GREEN}>>${NC} ${BLUE}\$HOME/.profile${NC}"
+    echo -e "${GREEN}echo${NC} ${RED}'export ZVM_PATH=\"\$XDG_DATA_HOME/zvm\"'${NC} ${GREEN}>>${NC} ${BLUE}\$HOME/.profile${NC} ${GREEN}# Linux${NC}"
+    echo -e "${GREEN}echo${NC} ${RED}'export ZVM_PATH=\"\$HOME/Library/zvm\"'${NC} ${GREEN}>>${NC} ${BLUE}\$HOME/.profile${NC} ${GREEN}# macOS${NC}"
 
-    echo -e "Run '${GREEN}source ~/.profile${NC}' to start using ZVM in this shell!"
+    echo "Make sure ${RED}\$HOME/.local/bin${NC} is in your PATH on Linux."
+    echo "Make sure ${RED}\$HOME/bin${NC} is in your PATH on macOS."
+
     echo "Run 'zvm i master' to install Zig"
 else
     echo 'echo "# ZVM" >> $HOME/.profile'
-    echo 'echo '\''export ZVM_INSTALL="$HOME/.zvm/self"'\'' >> $HOME/.profile'
-    echo 'echo '\''export PATH="$PATH:$HOME/.zvm/bin"'\'' >> $HOME/.profile'
-    echo 'echo '\''export PATH="$PATH:$ZVM_INSTALL/"'\'' >> $HOME/.profile'
+    echo 'echo '\''export ZVM_PATH="$XDG_DATA_HOME/zvm"'\'' >> $HOME/.profile # Linux'
+    echo 'echo '\''export ZVM_PATH="$HOME/Library/zvm"'\'' >> $HOME/.profile # macOS'
 
-    echo "Run 'source ~/.profile' to start using ZVM in this shell!"
+    echo "Make sure \$HOME/.local/bin is in your PATH on Linux."
+    echo "Make sure \$HOME/bin is in your PATH on macOS."
+
     echo "Run 'zvm i master' to install Zig"
 fi
 

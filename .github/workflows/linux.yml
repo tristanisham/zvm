@@ -11,12 +11,12 @@ jobs:
     strategy:
       matrix:
         os:
-          - ubuntu
-          - fedora
-          - manjaro
-          - gentoo
-          - opensuse
-    container: '${{ matrix.os }}-image'
+          - "ubuntu"
+          - "fedora"
+          - "archlinux"
+          - "gentoo"
+          - "opensuse/leap"
+    container: '${{ matrix.os }}'
     steps:
       - name: Print Distro Info
         run: cat /etc/os-release

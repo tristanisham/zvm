@@ -24,16 +24,16 @@ jobs:
       - name: Update System and Git
         run: |
           case ${{ matrix.os }} in
-            ubuntu:latest)
+            ubuntu)
               apt-get update && apt-get upgrade -y && apt-get install -y git
               ;;
-            fedora:latest)
+            fedora)
               dnf update -y && dnf install -y git
               ;;
-            archlinux:latest)
+            archlinux)
               pacman -Syu --noconfirm && pacman -S --noconfirm git
               ;;
-            opensuse:latest)
+            opensuse/leap)
               zypper refresh && zypper update -y && zypper install -y git
               ;;
           esac

@@ -14,7 +14,6 @@ jobs:
           - "ubuntu"
           - "fedora"
           - "archlinux"
-          - "gentoo"
           - "opensuse/leap"
     container: '${{ matrix.os }}'
     steps:

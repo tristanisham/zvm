@@ -21,6 +21,24 @@ jobs:
         run: cat /etc/os-release
         shell: bash
       
+      - name: Update System and Git
+        run: |
+          case ${{ matrix.os }} in
+            ubuntu:latest)
+              apt-get update && apt-get upgrade -y && apt-get install -y git
+              ;;
+            fedora:latest)
+              dnf update -y && dnf install -y git
+              ;;
+            archlinux:latest)
+              pacman -Syu --noconfirm && pacman -S --noconfirm git
+              ;;
+            opensuse:latest)
+              zypper refresh && zypper update -y && zypper install -y git
+              ;;
+          esac
+        shell: bash
+
       - uses: actions/checkout@v4
 
       - name: Install ZVM

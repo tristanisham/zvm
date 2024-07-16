@@ -20,3 +20,8 @@ jobs:
       - name: Print Distro Info
         run: cat /etc/os-release
         shell: bash
+      
+      - uses: actions/checkout@v4
+
+      - name: Install ZVM
+        run: cat install.sh | bash

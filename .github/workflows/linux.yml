@@ -1,0 +1,23 @@
+name: Linux Installation Tests
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+    
+jobs:
+  container-test-job:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        os:
+          - ubuntu
+          - fedora
+          - manjaro
+          - gentoo
+          - opensuse
+    container: '${{ matrix.os }}-image'
+    steps:
+      - name: Print Distro Info
+        run: cat /etc/os-release
+        shell: bash

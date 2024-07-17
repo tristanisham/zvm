@@ -14,8 +14,9 @@ jobs:
           - "ubuntu"
           - "fedora"
           - "archlinux"
-          - "opensuse/leap"
-    container: '${{ matrix.os }}'
+    container:
+      image: '${{ matrix.os }}'
+    
     steps:
       - name: Print Distro Info
         run: cat /etc/os-release
@@ -25,16 +26,13 @@ jobs:
         run: |
           case ${{ matrix.os }} in
             ubuntu)
-              apt-get update && apt-get upgrade -y && apt-get install -y git
+              apt-get update && apt-get upgrade -y && apt-get install -y git curl xz-utils
               ;;
             fedora)
-              dnf update -y && dnf install -y git
+              dnf update -y && dnf install -y git wget2 xz
               ;;
             archlinux)
-              pacman -Syu --noconfirm && pacman -S --noconfirm git
-              ;;
-            opensuse/leap)
-              zypper refresh && zypper update -y && zypper install -y git
+              pacman -Syu --noconfirm && pacman -S --noconfirm git wget xz
               ;;
           esac
         shell: bash
@@ -42,4 +40,58 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Install ZVM
-        run: cat install.sh | bash
+        run: | 
+          cat install.sh | bash
+          echo "XDG_DATA_HOME=${HOME}/.local/share" >> $GITHUB_ENV
+        shell: bash
+
+      - name: Setting up ZVM_PATH
+        run: |
+          echo "ZVM_PATH=${XDG_DATA_HOME}/zvm" >> $GITHUB_ENV
+        shell: bash
+
+      - name: Update PATH
+        run: |
+          echo "${ZVM_PATH}/bin" >> $GITHUB_PATH
+          echo "${HOME}/.local/bin" >> $GITHUB_PATH
+        shell: bash
+
+      - name: Verify Environment Variables and PATH
+        run: |
+          echo "XDG_DATA_HOME is set to $XDG_DATA_HOME"
+          echo "ZVM_PATH is set to $ZVM_PATH"
+        shell: bash
+
+      - name: Verify ZVM Installation
+        run: |
+          ls -alF $ZVM_PATH
+          ls -alF ${HOME}/.local/bin
+
+          if [ ! -f "$ZVM_PATH/self/zvm" ]; then
+            echo "zvm binary not found in $ZVM_PATH/self"
+            exit 1
+          fi
+
+          zvm --version
+        shell: bash
+      
+      - name: Installing Zig and verifying symlink
+        run: |
+          zvm i 0.13.0
+
+          if [ "$(readlink -e $ZVM_PATH/bin)" != "$ZVM_PATH/0.13.0" ]; then
+            echo "readlink -e $ZVM_PATH/bin does not return $ZVM_PATH/0.13.0"
+            exit 1
+          fi
+
+          zvm i master
+          if [ "$(readlink -e $ZVM_PATH/bin)" != "$ZVM_PATH/master" ]; then
+            echo "readlink -e $ZVM_PATH/bin does not return $ZVM_PATH/0.13.0"
+            exit 1
+          fi
+        shell: bash
+
+      - name: Verifing Zig Path
+        run: |
+          zig version
+        shell: bash

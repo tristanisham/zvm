@@ -104,12 +104,16 @@ install_zvm() {
         return 1
     fi
 
-    download_file "https://github.com/tristanisham/zvm/releases/latest/download/$1" "zvm.zip"
+    if ! download_file "https://github.com/tristanisham/zvm/releases/latest/download/$1" "zvm.zip"; then
+        echo "Error: Failed to download zvm from https://github.com/tristanisham/zvm/releases/latest/download/$1"
+        exit 1
+    fi
 
     echo -e "Installing $1 in $install_dir"
     mkdir -p "$install_dir"
     tar -xf "zvm.zip" -C "$install_dir"
-    ln -sf "$install_dir/zvm" "$bin_dir"
+    mkdir -p "$bin_dir"
+    ln -sf "$install_dir/zvm" "$bin_dir/zvm"
     rm "zvm.zip"
 
     post_install_setup

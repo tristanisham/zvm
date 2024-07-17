@@ -26,10 +26,10 @@ jobs:
         run: |
           case ${{ matrix.os }} in
             ubuntu)
-              apt-get update && apt-get upgrade -y && apt-get install -y git curl xz-utils
+              apt-get update && apt-get upgrade -y && apt-get install -y git wget2 xz-utils
               ;;
             fedora)
-              dnf update -y && dnf install -y git wget2 xz
+              dnf update -y && dnf install -y git curl xz
               ;;
             archlinux)
               pacman -Syu --noconfirm && pacman -S --noconfirm git wget xz

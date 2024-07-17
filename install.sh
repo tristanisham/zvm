@@ -135,8 +135,10 @@ main() {
         return 1
     fi
 
-    echo "Installing zvm-${OS,,}-$ARCH.tar"
-    install_zvm "zvm-${OS,,}-$ARCH.tar"
+    local os_lower
+    os_lower=$(uname -s | tr '[:upper:]' '[:lower:]')
+    echo "Installing zvm-${os_lower}-$ARCH.tar"
+    install_zvm "zvm-${os_lower}-$ARCH.tar"
 
 }
 

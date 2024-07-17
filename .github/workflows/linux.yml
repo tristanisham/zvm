@@ -78,6 +78,7 @@ jobs:
       - name: Installing Zig and verifying symlink
         run: |
           zvm i 0.13.0
+          ls -alF $ZVM_PATH
 
           if [ "$(readlink -e $ZVM_PATH/bin)" != "$ZVM_PATH/0.13.0" ]; then
             echo "readlink -e $ZVM_PATH/bin does not return $ZVM_PATH/0.13.0"
@@ -85,6 +86,8 @@ jobs:
           fi
 
           zvm i master
+          ls -alF $ZVM_PATH
+          
           if [ "$(readlink -e $ZVM_PATH/bin)" != "$ZVM_PATH/master" ]; then
             echo "readlink -e $ZVM_PATH/bin does not return $ZVM_PATH/0.13.0"
             exit 1

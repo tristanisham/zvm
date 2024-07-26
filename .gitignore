@@ -9,3 +9,5 @@ testdata/
 .env*
 *.syso
 zvm-*
+dev/
+*.output

@@ -7,6 +7,8 @@ import (
 	"strconv"
 	"strings"
 	"unicode"
+
+	"github.com/charmbracelet/log"
 )
 
 // Parse parses the input and returs the result.
@@ -31,14 +33,22 @@ func newLex(input []byte) *lex {
 
 // Lex satisfies yyLexer.
 func (l *lex) Lex(lval *yySymType) int {
-	return l.scanNormal(lval)
+	token := l.scanNormal(lval)
+	log.Debugf("Lex: returning token %s (%d)\n", yyTokname(token), token)
+	return token
 }
 
 func (l *lex) scanNormal(lval *yySymType) int {
 	for b := l.next(); b != 0; b = l.next() {
+		log.Debugf("scanNormal: processing character %s (%d) @ (%d)\n", string(b), b, l.pos)
 		switch {
-		case unicode.IsSpace(rune(b)):
+		case unicode.IsSpace(rune(b)) || b == '\n' || b == '\r':
 			continue
+		case b == '/' && l.peek() == '/': // Check for the beginning of a comment
+			for b := l.next(); b != '\n' && b != 0; b = l.next() {
+				// Skip until end of line or end of input
+			}
+			continue // Continue scanning after skipping the comment
 		case b == '"':
 			return l.scanString(lval)
 		case unicode.IsDigit(rune(b)) || b == '+' || b == '-':
@@ -47,6 +57,9 @@ func (l *lex) scanNormal(lval *yySymType) int {
 		case unicode.IsLetter(rune(b)):
 			l.backup()
 			return l.scanLiteral(lval)
+		case b == '.' && unicode.IsLetter(rune(b)) || rune(b) == '_':
+			l.backup()
+			return l.scanKey(lval)
 		default:
 			return int(b)
 		}
@@ -139,6 +152,17 @@ func (l *lex) backup() {
 	l.pos--
 }
 
+// peek advances the iterator without consuming the present value
+func (l *lex) peek() byte {
+	if l.pos >= len(l.input) || l.pos == -1 {
+		l.pos = -1
+		return 0
+	}
+
+	return l.input[l.pos]
+}
+
+// next advances the iterator and consumes the present value
 func (l *lex) next() byte {
 	if l.pos >= len(l.input) || l.pos == -1 {
 		l.pos = -1
@@ -151,4 +175,20 @@ func (l *lex) next() byte {
 // Error satisfies yyLexer.
 func (l *lex) Error(s string) {
 	l.err = errors.New(s)
+}
+
+func (l *lex) scanKey(lval *yySymType) int {
+	buf := bytes.NewBuffer(nil)
+	for {
+		b := l.next()
+		switch {
+		case unicode.IsLetter(rune(b)) || unicode.IsDigit(rune(b)) || b == '_':
+			buf.WriteByte(b)
+		default:
+			l.backup()
+			str := buf.String()
+			lval.val = str
+			return UnquotedKey
+		}
+	}
 }

@@ -3,43 +3,39 @@ package pm
 
 import __yyfmt__ "fmt"
 
-type pair struct {
-	key string
-	val interface{}
+type Node struct {
+	Type  string
+	Key   string
+	Value interface{}
+	Items []Node
 }
+
+var result Node
 
 func setResult(l yyLexer, v map[string]interface{}) {
 	l.(*lex).result = v
 }
 
 type yySymType struct {
-	yys  int
-	obj  map[string]interface{}
-	list []interface{}
-	pair pair
-	val  interface{}
+	yys   int
+	node  Node
+	nodes []Node
+	str   string
 }
 
-const LexError = 57346
-const String = 57347
-const Number = 57348
-const Literal = 57349
+const STRING = 57346
+const KEY = 57347
 
 var yyToknames = [...]string{
 	"$end",
 	"error",
 	"$unk",
-	"LexError",
-	"String",
-	"Number",
-	"Literal",
+	"STRING",
+	"KEY",
+	"'.'",
 	"'{'",
 	"'}'",
-	"','",
-	"':'",
-	"'['",
-	"']'",
-	"'.'",
+	"'='",
 }
 
 var yyStatenames = [...]string{}
@@ -56,44 +52,38 @@ var yyExca = [...]int8{
 
 const yyPrivate = 57344
 
-const yyLast = 29
+const yyLast = 17
 
 var yyAct = [...]int8{
-	15, 16, 17, 18, 4, 4, 7, 8, 21, 25,
-	3, 3, 24, 13, 11, 5, 12, 6, 14, 10,
-	11, 1, 23, 9, 19, 2, 26, 22, 20,
+	5, 8, 10, 16, 8, 3, 6, 14, 12, 4,
+	13, 9, 1, 11, 7, 15, 2,
 }
 
 var yyPact = [...]int16{
-	-3, -1000, -1000, 7, 2, 2, 10, -1000, 5, 4,
-	-1000, 2, -4, -1000, -1000, -1000, -1000, -1000, -1000, -1000,
-	-1000, -4, -1, -1000, -1000, -4, -1000,
+	-1, -1000, -1000, 2, -1000, -2, -1000, -1000, 6, -7,
+	4, -1000, -1000, 0, -1000, -5, -1000,
 }
 
 var yyPgo = [...]int8{
-	0, 24, 17, 6, 28, 27, 0, 21,
+	0, 16, 14, 13, 0, 12,
 }
 
 var yyR1 = [...]int8{
-	0, 7, 1, 1, 2, 2, 2, 3, 4, 5,
-	5, 5, 6, 6, 6, 6, 6,
+	0, 5, 1, 4, 4, 2, 3, 3, 3,
 }
 
 var yyR2 = [...]int8{
-	0, 1, 4, 3, 0, 1, 3, 3, 3, 0,
-	1, 3, 1, 1, 1, 1, 1,
+	0, 1, 4, 2, 0, 4, 1, 4, 0,
 }
 
 var yyChk = [...]int16{
-	-1000, -7, -1, 14, 8, 8, -2, -3, 5, -2,
-	9, 10, 11, 9, -3, -6, 5, 6, 7, -1,
-	-4, 12, -5, -6, 13, 10, -6,
+	-1000, -5, -1, 6, 7, -4, 8, -2, 6, 5,
+	9, -3, 4, 6, 7, -4, 8,
 }
 
 var yyDef = [...]int8{
-	0, -2, 1, 0, 4, 4, 0, 5, 0, 0,
-	3, 0, 0, 2, 6, 7, 12, 13, 14, 15,
-	16, 9, 0, 10, 8, 0, 11,
+	0, -2, 1, 0, 4, 0, 2, 3, 0, 0,
+	8, 5, 6, 0, 4, 0, 7,
 }
 
 var yyTok1 = [...]int8{
@@ -101,19 +91,19 @@ var yyTok1 = [...]int8{
 	3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
 	3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
 	3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
-	3, 3, 3, 3, 10, 3, 14, 3, 3, 3,
-	3, 3, 3, 3, 3, 3, 3, 3, 11, 3,
+	3, 3, 3, 3, 3, 3, 6, 3, 3, 3,
+	3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
+	3, 9, 3, 3, 3, 3, 3, 3, 3, 3,
 	3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
 	3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
 	3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
-	3, 12, 3, 13, 3, 3, 3, 3, 3, 3,
 	3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
 	3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
-	3, 3, 3, 8, 3, 9,
+	3, 3, 3, 7, 3, 8,
 }
 
 var yyTok2 = [...]int8{
-	2, 3, 4, 5, 6, 7,
+	2, 3, 4, 5,
 }
 
 var yyTok3 = [...]int8{
@@ -458,85 +448,42 @@ yydefault:
 	case 1:
 		yyDollar = yyS[yypt-1 : yypt+1]
 		{
-			setResult(yylex, yyDollar[1].obj)
+			result = yyDollar[1].node
 		}
 	case 2:
 		yyDollar = yyS[yypt-4 : yypt+1]
 		{
-			yyVAL.obj = yyDollar[3].obj
+			yyVAL.node = Node{Type: "object", Items: yyDollar[3].nodes}
 		}
 	case 3:
-		yyDollar = yyS[yypt-3 : yypt+1]
+		yyDollar = yyS[yypt-2 : yypt+1]
 		{
-			yyVAL.obj = yyDollar[2].obj
+			yyVAL.nodes = append(yyDollar[1].nodes, yyDollar[2].node)
 		}
 	case 4:
 		yyDollar = yyS[yypt-0 : yypt+1]
 		{
-			yyVAL.obj = make(map[string]interface{})
+			yyVAL.nodes = []Node{}
 		}
 	case 5:
-		yyDollar = yyS[yypt-1 : yypt+1]
+		yyDollar = yyS[yypt-4 : yypt+1]
 		{
-			yyVAL.obj = map[string]interface{}{
-				yyDollar[1].pair.key: yyDollar[1].pair.val,
-			}
+			yyVAL.node = Node{Type: "pair", Key: yyDollar[2].str, Value: yyDollar[4].node}
 		}
 	case 6:
-		yyDollar = yyS[yypt-3 : yypt+1]
+		yyDollar = yyS[yypt-1 : yypt+1]
 		{
-			yyDollar[1].obj[yyDollar[3].pair.key] = yyDollar[3].pair.val
-			yyVAL.obj = yyDollar[1].obj
+			yyVAL.node = Node{Type: "string", Value: yyDollar[1].str}
 		}
 	case 7:
-		yyDollar = yyS[yypt-3 : yypt+1]
+		yyDollar = yyS[yypt-4 : yypt+1]
 		{
-			yyVAL.pair = pair{key: yyDollar[1].val.(string), val: yyDollar[3].val}
+			yyVAL.node = Node{Type: "object", Items: yyDollar[3].nodes}
 		}
 	case 8:
-		yyDollar = yyS[yypt-3 : yypt+1]
-		{
-			yyVAL.val = yyDollar[2].list
-		}
-	case 9:
 		yyDollar = yyS[yypt-0 : yypt+1]
 		{
-			yyVAL.list = make([]interface{}, 0)
-		}
-	case 10:
-		yyDollar = yyS[yypt-1 : yypt+1]
-		{
-			yyVAL.list = []interface{}{yyDollar[1].val}
-		}
-	case 11:
-		yyDollar = yyS[yypt-3 : yypt+1]
-		{
-			yyVAL.list = append(yyDollar[1].list, yyDollar[3].val)
-		}
-	case 12:
-		yyDollar = yyS[yypt-1 : yypt+1]
-		{
-			yyVAL.val = yyDollar[1].val
-		}
-	case 13:
-		yyDollar = yyS[yypt-1 : yypt+1]
-		{
-			yyVAL.val = yyDollar[1].val
-		}
-	case 14:
-		yyDollar = yyS[yypt-1 : yypt+1]
-		{
-			yyVAL.val = yyDollar[1].val
-		}
-	case 15:
-		yyDollar = yyS[yypt-1 : yypt+1]
-		{
-			yyVAL.val = yyDollar[1].obj
-		}
-	case 16:
-		yyDollar = yyS[yypt-1 : yypt+1]
-		{
-			yyVAL.val = yyDollar[1].val
+			yyVAL.node = Node{Type: "empty"}
 		}
 	}
 	goto yystack /* stack new state and value */

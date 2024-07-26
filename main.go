@@ -11,6 +11,7 @@ import (
 
 	"github.com/tristanisham/zvm/cli"
 	"github.com/tristanisham/zvm/cli/meta"
+	"github.com/tristanisham/zvm/pm"
 	opts "github.com/urfave/cli/v2"
 
 	"github.com/charmbracelet/log"
@@ -145,23 +146,21 @@ var zvmApp = &opts.App{
 				}
 			},
 		},
-		// {
-		// 	Name:  "list:all",
-		// 	Usage: "list remote Zig versions available for download, based on your version map",
-		// 	Aliases: []string{"la"},
-		// 	Args: false,
-		// 	// Flags: []opts.Flag{
-		// 	// 	&opts.BoolFlag{
-		// 	// 		Name:    "all",
-		// 	// 		Aliases: []string{"a"},
-		// 	// 		Usage:   "list remote Zig versions available for download",
-		// 	// 	},
-		// 	// },
-		// 	Action: func(ctx *opts.Context) error {
-		// 		log.Debug("Version Map", "url", zvm.Settings.VersionMapUrl, "cmd", "la")
-		// 		return zvm.ListRemoteAvailable()
-		// 	},
-		// },
+		{
+			Name:  "pm",
+			Usage: "install and manage packages for Zig",
+			Args:  true,
+			Subcommands: []*opts.Command{
+				{
+					Name: "validate",
+					Usage: "validate build.zig.zon",
+					Aliases: []string{"val"},
+					Action: func(ctx *opts.Context) error {
+						return pm.Validate()
+					},
+				},
+			},
+		},
 		{
 			Name:    "uninstall",
 			Usage:   "remove an installed version of Zig",

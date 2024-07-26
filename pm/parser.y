@@ -1,110 +1,67 @@
 %{
 package pm
 
-type pair struct {
-  key string
-  val interface{}
+type Node struct {
+    Type  string
+    Key   string
+    Value interface{}
+    Items []Node
 }
+
+var result Node
 
 func setResult(l yyLexer, v map[string]interface{}) {
   l.(*lex).result = v
 }
 %}
 
-%union{
-  obj map[string]interface{}
-  list []interface{}
-  pair pair
-  val interface{}
+%union {
+    node  Node
+    nodes []Node
+    str   string
 }
 
-%token LexError
-%token <val> String Number Literal
-%token '{' '}' ',' ':' '[' ']' '.'
-
-%type <obj> object members
-%type <pair> pair
-%type <val> array
-%type <list> elements
-%type <val> value
-
-%start start
+%token <str> STRING KEY
+%type <node> obj pair value
+%type <nodes> pairlist
 
 %%
 
-start: object
-  {
-    setResult(yylex, $1)
-  }
+start
+    : obj { result = $1 }
+    ;
 
-object: '.' '{' members '}'
-  {
-    $$ = $3
-  }
-| '{' members '}'
-  {
-    $$ = $2
-  }
-
-members:
-  {
-    $$ = make(map[string]interface{})
-  }
-| pair
-  {
-    $$ = map[string]interface{}{
-      $1.key: $1.val,
+obj
+    : '.' '{' pairlist '}' {
+        $$ = Node{Type: "object", Items: $3}
     }
-  }
-| members ',' pair
-  {
-    $1[$3.key] = $3.val
-    $$ = $1
-  }
+    ;
 
-pair: String ':' value
-  {
-    $$ = pair{key: $1.(string), val: $3}
-  }
+pairlist
+    : pairlist pair {
+        $$ = append($1, $2)
+    }
+    | /* empty */ {
+        $$ = []Node{}
+    }
+    ;
 
-array: '[' elements ']'
-  {
-    $$ = $2
-  }
+pair
+    : '.' KEY '=' value {
+        $$ = Node{Type: "pair", Key: $2, Value: $4}
+    }
+    ;
 
-elements:
-  {
-    $$ = make([]interface{}, 0)
-  }
-| value
-  {
-    $$ = []interface{}{$1}
-  }
-| elements ',' value
-  {
-    $$ = append($1, $3)
-  }
-
-value:
-  String
-  {
-    $$ = $1
-  }
-| Number
-  {
-    $$ = $1
-  }
-| Literal
-  {
-    $$ = $1
-  }
-| object
-  {
-    $$ = $1
-  }
-| array
-  {
-    $$ = $1
-  }
+value
+    : STRING {
+        $$ = Node{Type: "string", Value: $1}
+    }
+    | '.' '{' pairlist '}' {
+        $$ = Node{Type: "object", Items: $3}
+    }
+    | /* empty */ {
+        $$ = Node{Type: "empty"}
+    }
+    ;
 
 %%

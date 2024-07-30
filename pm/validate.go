@@ -2,28 +2,22 @@ package pm
 
 import (
 	"fmt"
-	"os"
-	"path/filepath"
+	"net/url"
 )
 
-func Validate() error {
-	cwd, err := os.Getwd()
-	if err != nil {
-		return err
+// Validate checks the zvm.json in the present directory for invalid schema.
+func (p Project) Validate() error {
+	if p.Url != "" {
+		parsed, err := url.Parse(p.Url)
+		if err != nil {
+			return fmt.Errorf("invalid field \"url\", %w", err)
+		}
+
+		if parsed.Scheme != "git" {
+			return fmt.Errorf("%w. Expected 'git'", ErrInvalidScheme)
+		}
 	}
 
-	buildFile := filepath.Join(cwd, "build.zig.zon")
-	data, err := os.ReadFile(buildFile)
-	if err != nil {
-		return err
-	}
-
-	lex, err := Parse(data)
-	if err != nil {
-		return err
-	}
-
-	fmt.Println(lex)
 
 	return nil
 }

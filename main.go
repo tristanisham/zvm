@@ -7,6 +7,7 @@ package main
 import (
 	"errors"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/tristanisham/zvm/cli"
@@ -152,11 +153,51 @@ var zvmApp = &opts.App{
 			Args:  true,
 			Subcommands: []*opts.Command{
 				{
-					Name: "validate",
-					Usage: "validate build.zig.zon",
+					Name:    "install",
+					Usage:   "install package@version",
+					Aliases: []string{"i"},
+					Action: func(ctx *opts.Context) error {
+						proj, err := pm.LoadProject()
+						if err != nil {
+							if errors.Is(err, pm.ErrMissingConfig) {
+								defaultProj := pm.NewProject()
+								cwd, err := os.Getwd()
+								if err != nil {
+									return err
+								}
+								filename := filepath.Base(cwd)
+
+								defaultProj.Name = filename
+								defaultProj.Version = "v0.0.1"
+
+								proj = &defaultProj
+							}
+							return err
+						}
+
+						pkg := ctx.Args().First()
+						return proj.Install(pkg)
+					},
+				},
+				{
+					Name:    "validate",
+					Usage:   "validate zvm.json",
 					Aliases: []string{"val"},
 					Action: func(ctx *opts.Context) error {
-						return pm.Validate()
+						proj, err := pm.LoadProject()
+						if err != nil {
+							return err
+						}
+
+						err = proj.Validate()
+						switch err {
+						case pm.ErrInvalidScheme:
+							log.Warn(err)
+						default:
+							return err
+						}
+
+						return nil
 					},
 				},
 			},

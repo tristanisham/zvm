@@ -5,9 +5,9 @@
 package main
 
 import (
+	"encoding/json"
 	"errors"
 	"os"
-	"path/filepath"
 	"strings"
 
 	"github.com/tristanisham/zvm/cli"
@@ -160,17 +160,12 @@ var zvmApp = &opts.App{
 						proj, err := pm.LoadProject()
 						if err != nil {
 							if errors.Is(err, pm.ErrMissingConfig) {
-								defaultProj := pm.NewProject()
-								cwd, err := os.Getwd()
+								defaultProj, err := pm.DefaultProject()
 								if err != nil {
 									return err
 								}
-								filename := filepath.Base(cwd)
 
-								defaultProj.Name = filename
-								defaultProj.Version = "v0.0.1"
-
-								proj = &defaultProj
+								proj = defaultProj
 							}
 							return err
 						}
@@ -196,6 +191,33 @@ var zvmApp = &opts.App{
 						default:
 							return err
 						}
+
+						return nil
+					},
+				},
+				{
+					Name:  "init",
+					Usage: "initalize a new ZVM package",
+					Action: func(ctx *opts.Context) error {
+						_, err := pm.LoadProject()
+						if errors.Is(err, pm.ErrMissingConfig) {
+							defaultProj, err := pm.DefaultProject()
+
+							if err != nil {
+								return err
+							}
+
+							data, err := json.MarshalIndent(defaultProj, "", "  ")
+							if err != nil {
+								return err
+							}
+
+							os.WriteFile("zvm.json", data, 0775)
+						} else {
+							log.Info("zvm.json already exists. Doing nothing.")
+						}
+
+						
 
 						return nil
 					},

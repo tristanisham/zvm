@@ -39,8 +39,19 @@ func LoadProject() (*Project, error) {
 	return &proj, nil
 }
 
-func NewProject() Project {
-	return Project{
+func DefaultProject() (*Project, error) {
+	defaultProj := &Project{
 		Deps: make([]Project, 0),
 	}
+
+	cwd, err := os.Getwd()
+	if err != nil {
+		return nil, err
+	}
+	filename := filepath.Base(cwd)
+
+	defaultProj.Name = filename
+	defaultProj.Version = "v0.0.1"
+
+	return defaultProj, nil
 }

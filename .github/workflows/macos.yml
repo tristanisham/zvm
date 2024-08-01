@@ -1,0 +1,83 @@
+name: Mac OS Installation Tests
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+    
+jobs:
+    test-job:
+        runs-on: "macos-latest"
+    
+        steps:
+            - name: Print Distro Info
+              run: sw_vers
+              shell: bash
+            
+            - name: Update System and Git
+              run: |
+                /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)" || true
+                brew update
+                brew upgrade
+                brew install git curl xz
+              shell: bash
+      
+            - uses: actions/checkout@v4
+      
+            - name: Install ZVM
+              run: | 
+                cat install.sh | bash
+              shell: bash
+      
+            - name: Setting up ZVM_PATH
+              run: |
+                echo "ZVM_PATH=${HOME}/Library/zvm" >> $GITHUB_ENV
+              shell: bash
+      
+            - name: Update PATH
+              run: |
+                echo "${ZVM_PATH}/bin" >> $GITHUB_PATH
+                echo "${HOME}/bin" >> $GITHUB_PATH
+              shell: bash
+      
+            - name: Verify Environment Variables and PATH
+              run: |
+                echo "ZVM_PATH is set to $ZVM_PATH"
+              shell: bash
+      
+            - name: Verify ZVM Installation
+              run: |
+                ls -alF $ZVM_PATH
+                ls -alF ${HOME}/bin
+      
+                if [ ! -f "$ZVM_PATH/self/zvm" ]; then
+                  echo "zvm binary not found in $ZVM_PATH/self"
+                  exit 1
+                fi
+      
+                zvm --version
+              shell: bash
+            
+            - name: Installing Zig and verifying symlink
+              run: |
+                zvm i 0.13.0
+                ls -alF $ZVM_PATH
+      
+                if [ "$(readlink -f $ZVM_PATH/bin)" != "$ZVM_PATH/0.13.0" ]; then
+                  echo "readlink -f $ZVM_PATH/bin does not return $ZVM_PATH/0.13.0"
+                  exit 1
+                fi
+      
+                zvm i master
+                ls -alF $ZVM_PATH
+                
+                if [ "$(readlink -f $ZVM_PATH/bin)" != "$ZVM_PATH/master" ]; then
+                  echo "readlink -f $ZVM_PATH/bin does not return $ZVM_PATH/0.13.0"
+                  exit 1
+                fi
+              shell: bash
+      
+            - name: Verifing Zig Path
+              run: |
+                zig version
+              shell: bash

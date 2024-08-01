@@ -19,6 +19,7 @@ import (
 )
 
 var zvm cli.ZVM
+var printUpgradeNotice bool = true
 
 var zvmApp = &opts.App{
 	Name:        "ZVM",
@@ -160,12 +161,11 @@ var zvmApp = &opts.App{
 						proj, err := pm.LoadProject()
 						if err != nil {
 							if errors.Is(err, pm.ErrMissingConfig) {
-								defaultProj, err := pm.DefaultProject()
+								proj, err = pm.DefaultProject()
 								if err != nil {
 									return err
 								}
 
-								proj = defaultProj
 							}
 							return err
 						}
@@ -230,6 +230,7 @@ var zvmApp = &opts.App{
 			Aliases: []string{"rm"},
 			Args:    true,
 			Action: func(ctx *opts.Context) error {
+				printUpgradeNotice = false
 				versionArg := strings.TrimPrefix(ctx.Args().First(), "v")
 				return zvm.Uninstall(versionArg)
 			},
@@ -290,7 +291,7 @@ func main() {
 	// Upgrade
 	upSig := make(chan string, 1)
 
-	if !checkUpgradeDisabled {
+	if !checkUpgradeDisabled || !printUpgradeNotice {
 		go func(out chan<- string) {
 			if tag, ok, _ := cli.CanIUpgrade(); ok {
 				out <- tag

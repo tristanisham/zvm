@@ -17,6 +17,7 @@ import (
 )
 
 var zvm cli.ZVM
+var printUpgradeNotice bool = true
 
 var zvmApp = &opts.App{
 	Name:        "ZVM",
@@ -183,6 +184,7 @@ var zvmApp = &opts.App{
 			Name:  "upgrade",
 			Usage: "self-upgrade ZVM",
 			Action: func(ctx *opts.Context) error {
+				printUpgradeNotice = false
 				return zvm.Upgrade()
 			},
 		},
@@ -246,7 +248,11 @@ func main() {
 	}
 
 	if tag := <-upSig; tag != "" {
-		meta.CtaUpgradeAvailable(tag)
+		if printUpgradeNotice {
+			meta.CtaUpgradeAvailable(tag)
+		} else {
+			log.Infof("You are now using ZVM %s\n", tag)
+		}
 	}
 
 }

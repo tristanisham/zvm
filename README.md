@@ -24,9 +24,7 @@ directory, ZVM will download new ZIG versions and symlink whichever version you
 specify with `zvm use` to `$HOME/.zvm/bin`. You should add this folder to your
 path. After ZVM 0.2.3, ZVM's installer will now add ZVM to `$HOME/.zvm/self`.
 You should also add this directory as the environment variable `ZVM_INSTALL`.
-The installer should handle this for you automatically if you're on *nix
-systems, but you'll have to manually do this on Windows. You can then add
-`ZVM_INSTALL` to your path.
+The installer scripts should handle this for you automatically on *nix and Windows systems. 
 
 If you don't want to use ZVM_INSTALL (like you already have ZVM in a place you
 like), then ZVM will update the exact executable you've called `upgrade` from.

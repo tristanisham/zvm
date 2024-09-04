@@ -29,6 +29,19 @@ func ParseConfig(reader io.Reader) (*Config, error) {
 		Dependencies: make(map[string]Dependency),
 	}
 
+    tokens := tokenize(scanner)
+	fmt.Println(tokens)
+
+	if err := scanner.Err(); err != nil {
+		return nil, err
+	}
+
+	return config, nil
+}
+
+// tokenize tokenizes a scanned zon file
+func tokenize(scanner *bufio.Scanner) []tc {
+    
 	tokens := make([]tc, 0)
 	depth := 0
 	cursor := 0
@@ -78,16 +91,9 @@ func ParseConfig(reader io.Reader) (*Config, error) {
 
 	}
 
-	fmt.Println(tokens)
-	fmt.Println()
 	tokens = extractStrings(tokens)
-	fmt.Println(tokens)
 
-	if err := scanner.Err(); err != nil {
-		return nil, err
-	}
-
-	return config, nil
+    return tokens
 }
 
 func extractStrings(tokens []tc) []tc {

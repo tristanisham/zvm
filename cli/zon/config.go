@@ -90,51 +90,49 @@ func tokenize(scanner *bufio.Scanner) []tc {
 		}
 
 	}
-
 	tokens = extractStrings(tokens)
 
     return tokens
 }
 
-func extractStrings(tokens []tc) []tc {
-	tks := make([]tc, 0)
-	for i := 0; i < len(tokens); i++ {
 
-		 if tokens[i].token == tkLexeme {
-			newStr := ""
-            k := 0
+func extractStrings(tokens []tc) []tc {
+    tks := make([]tc, 0)
+    for i := 0; i < len(tokens); i++ {
+        if tokens[i].token == tkLexeme {
+            var newStr string
+            var k int
             quoted := false
-            if tokens[i-1].token == tkQuote {
+            
+            if i > 0 && tokens[i-1].token == tkQuote {
                 for j := i; j < len(tokens); j++ {
-                    if t := tokens[j].token; t != tkQuote  {
+                    if tokens[j].token != tkQuote {
                         newStr += tokens[j].lexeme
-                        continue
+                    } else {
+                        k = j
+                        break
                     }
-                    k = j
-                    break
                 }
                 quoted = true
             } else {
                 for j := i; j < len(tokens); j++ {
-                    if t := tokens[j].token; t == tkLexeme || t == tkUnderscore  {
+                    if tokens[j].token == tkLexeme || tokens[j].token == tkUnderscore {
                         newStr += tokens[j].lexeme
-                        continue
+                    } else {
+                        k = j - 1 // Step back one to include the non-lexeme token
+                        break
                     }
-                    k = j
-                    break
                 }
             }
-			
+            
             tks = append(tks, tc{lexeme: newStr, token: tkLexeme, depth: tokens[i].depth})
             if quoted {
                 tks = append(tks, tc{lexeme: "\"", token: tkQuote, depth: tokens[i].depth})
-                quoted = true
             }
             i = k
-		} else {
-			tks = append(tks, tokens[i])
-		}
-	}
-
-	return tks
+        } else {
+            tks = append(tks, tokens[i])
+        }
+    }
+    return tks
 }

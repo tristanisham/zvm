@@ -40,7 +40,7 @@ install_latest() {
         if command -v wget2 >/dev/null 2>&1; then
     
             echo "wget2 is installed. Using wget2..."
-            wget -q --force-progress --max-redirect 5 -O zvm.tar "https://github.com/tristanisham/zvm/releases/latest/download/$1"
+            wget2 -q --force-progress --max-redirect 5 -O zvm.tar "https://github.com/tristanisham/zvm/releases/latest/download/$1"
         elif command -v wget >/dev/null 2>&1; then
     
             echo "wget is installed. Using wget..."

@@ -9,3 +9,4 @@ testdata/
 .env*
 *.syso
 zvm-*
+.idea/

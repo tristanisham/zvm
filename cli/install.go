@@ -38,7 +38,6 @@ func (z *ZVM) Install(version string) error {
 		return err
 	}
 
-	wasZigOnl := false
 	tarPath, err := getTarPath(version, &rawVersionStructure)
 	if err != nil {
 		if errors.Is(err, ErrUnsupportedVersion) {
@@ -48,7 +47,6 @@ func (z *ZVM) Install(version string) error {
 		}
 	}
 
-	zigArch, zigOS := zigStyleSysInfo()
 	log.Debug("tarPath", "url", tarPath)
 
 	tarResp, err := reqZigDownload(tarPath)
@@ -111,7 +109,6 @@ func (z *ZVM) Install(version string) error {
 		fmt.Println("Shasums match! 🎉")
 	} else {
 		log.Warnf("No shasum provided by host")
-		// log.Warnf("No shasum. Downloaded from zig.onl: %v", wasZigOnl)
 	}
 
 	// The base directory where all Zig files for the appropriate version are installed
@@ -128,67 +125,37 @@ func (z *ZVM) Install(version string) error {
 		log.Error(err)
 		tarName = version
 	}
-	if wasZigOnl {
-		if rel := resultUrl.Query().Get("release"); len(rel) > 0 {
-			tarName = strings.Replace(rel, " ", "+", 1)
-		} else {
-			tarName = version
-		}
 
-	} else {
-		// Maybe think of a better algorithm
-		urlPath := strings.Split(resultUrl.Path, "/")
-		tarName = urlPath[len(urlPath)-1]
-		tarName = strings.TrimSuffix(tarName, ".tar.xz")
-		tarName = strings.TrimSuffix(tarName, ".zip")
+	// Maybe think of a better algorithm
+	urlPath := strings.Split(resultUrl.Path, "/")
+	tarName = urlPath[len(urlPath)-1]
+	tarName = strings.TrimSuffix(tarName, ".tar.xz")
+	tarName = strings.TrimSuffix(tarName, ".zip")
+
+	if err := os.Rename(filepath.Join(z.baseDir, tarName), filepath.Join(z.baseDir, version)); err != nil {
+		if _, err := os.Stat(filepath.Join(z.baseDir, version)); err == nil {
+			// Room here to make the backup file.
+			log.Debug("removing", "path", filepath.Join(z.baseDir, version))
+			if err := os.RemoveAll(filepath.Join(z.baseDir, version)); err != nil {
+				log.Fatal(err)
+			} else {
+				oldName := filepath.Join(z.baseDir, tarName)
+				newName := filepath.Join(z.baseDir, version)
+				log.Debug("renaming", "old", oldName, "new", newName, "identical", oldName == newName)
+				if oldName != newName {
+					if err := os.Rename(oldName, newName); err != nil {
+						log.Fatal(clr.Yellow(err))
+					}
+				}
+
+			}
+
+		}
 	}
 
-	if wasZigOnl {
-
-		untarredPath := filepath.Join(z.baseDir, fmt.Sprintf("zig-%s-%s-%s", zigOS, zigArch, version))
-		newPath := filepath.Join(z.baseDir, tarName)
-
-		if _, err := os.Stat(untarredPath); err == nil {
-			if _, err = os.Stat(newPath); err == nil {
-				if err = os.RemoveAll(newPath); err == nil {
-					if err = os.Rename(untarredPath, newPath); err != nil {
-						log.Debug("rename err", "untarrPath", untarredPath, "newPath", newPath, "err", err)
-						return fmt.Errorf("renaming error: rename %q to %q", untarredPath, newPath)
-					}
-				} else {
-					log.Debug("remove existing install", "err", err)
-					return err
-				}
-
-			}
-
-		}
-	} else {
-		if err := os.Rename(filepath.Join(z.baseDir, tarName), filepath.Join(z.baseDir, version)); err != nil {
-			if _, err := os.Stat(filepath.Join(z.baseDir, version)); err == nil {
-				// Room here to make the backup file.
-				log.Debug("removing", "path", filepath.Join(z.baseDir, version))
-				if err := os.RemoveAll(filepath.Join(z.baseDir, version)); err != nil {
-					log.Fatal(err)
-				} else {
-					oldName := filepath.Join(z.baseDir, tarName)
-					newName := filepath.Join(z.baseDir, version)
-					log.Debug("renaming", "old", oldName, "new", newName, "identical", oldName == newName)
-					if oldName != newName {
-						if err := os.Rename(oldName, newName); err != nil {
-							log.Fatal(clr.Yellow(err))
-						}
-					}
-
-				}
-
-			}
-		}
-
-		// This removes the extra download
-		if err := os.RemoveAll(filepath.Join(z.baseDir, tarName)); err != nil {
-			log.Warn(err)
-		}
+	// This removes the extra download
+	if err := os.RemoveAll(filepath.Join(z.baseDir, tarName)); err != nil {
+		log.Warn(err)
 	}
 
 	z.createSymlink(version)

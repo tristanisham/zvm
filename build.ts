@@ -4,7 +4,8 @@
 
 import { Tar } from "https://deno.land/std@0.184.0/archive/mod.ts";
 import { copy } from "https://deno.land/std@0.184.0/streams/copy.ts";
-
+// Command to count final build results
+//  find ./build -type f \( -name "*.tar" -o -name "*.zip" \) | wc -l
 
 const GOARCH = [
   "amd64",

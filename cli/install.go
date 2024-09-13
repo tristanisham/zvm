@@ -222,6 +222,7 @@ func requestWithMirror(tarURL string) (*http.Response, error) {
 
 		tarResp, err = attemptDownload(newURL)
 		if err != nil {
+			log.Debug("mirror req err", "mirror", newURL, "error", err)
 			continue
 		}
 

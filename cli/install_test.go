@@ -55,3 +55,29 @@ func TestPkg(t *testing.T) {
 		t.Fatalf("Recieved %q. Wanted %q", result.Version, "11")
 	}
 }
+
+func TestMirrors(t *testing.T) {
+	tarURL := "https://ziglang.org/builds/zig-linux-x86_64-0.14.0-dev.1550+4fba7336a.tar.xz"
+	mirrors := []func(string) (string, error){mirrorHryx, mirrorMachEngine}
+
+    for i, mirror := range mirrors {
+		t.Logf("requestWithMirror url #%d", i) 
+
+
+        newURL, err := mirror(tarURL)
+        if err != nil {
+            t.Errorf("%q: %q", ErrDownloadFail, err)
+        }
+
+        t.Logf("mirror %d; url: %s", i, newURL)
+
+        tarResp, err := attemptDownload(newURL)
+        if err != nil {
+            continue 
+        }
+
+        if tarResp.StatusCode != 200 {
+            t.Fail()
+        }
+    }
+}

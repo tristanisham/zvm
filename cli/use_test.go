@@ -10,7 +10,7 @@ func TestSymlinkExists(t *testing.T) {
 		t.Error(err)
 	}
 
-	stat, err := os.Lstat("symlink.test");
+	stat, err := os.Lstat("symlink.test")
 	if err != nil {
 		t.Errorf("%q: %s", err, stat.Name())
 	}

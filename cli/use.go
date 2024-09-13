@@ -30,7 +30,7 @@ func (z *ZVM) Use(ver string) error {
 			}
 		}
 	}
-	
+
 	return z.setBin(ver)
 }
 
@@ -42,7 +42,7 @@ func (z *ZVM) setBin(ver string) error {
 	// Came across https://pkg.go.dev/os#Lstat
 	// which is specifically to check symbolic links.
 	// Seemed like the more appropriate solution here
-	stat, err := os.Lstat(bin_dir);
+	stat, err := os.Lstat(bin_dir)
 
 	// Actually we need to check if the symbolic link to ~/.zvm/bin
 	// exists yet, otherwise we get err:

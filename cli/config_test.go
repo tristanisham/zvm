@@ -7,7 +7,7 @@ func TestValidateVMUalias(t *testing.T) {
 		t.Errorf("mach: should be true")
 	}
 
-	if !validVmuAlis("default"){
+	if !validVmuAlis("default") {
 		t.Errorf("default: should be true")
 	}
 }

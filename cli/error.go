@@ -15,4 +15,7 @@ var (
 	ErrMissingInstallPathEnv = errors.New("env 'ZVM_INSTALL' is not set")
 	ErrFailedUpgrade         = errors.New("failed to self-upgrade zvm")
 	ErrInvalidVersionMap     = errors.New("invalid version map format")
+	ErrInvalidInput          = errors.New("invalid input")
+	// ErrDownloadFail is an an error when fetching Zig, or constructing a target URL to fetch Zig.
+	ErrDownloadFail = errors.New("failed to download Zig")
 )

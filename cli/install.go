@@ -50,22 +50,12 @@ func (z *ZVM) Install(version string) error {
 
 	zigArch, zigOS := zigStyleSysInfo()
 	log.Debug("tarPath", "url", tarPath)
-	zigDownloadReq, err := http.NewRequest("GET", tarPath, nil)
-	if err != nil {
-		return err
-	}
 
-	zigDownloadReq.Header.Set("User-Agent", "zvm "+meta.VERSION)
-	zigDownloadReq.Header.Set("X-Client-Os", zigOS)
-	zigDownloadReq.Header.Set("X-Client-Arch", zigArch)
-
-	tarResp, err := http.DefaultClient.Do(zigDownloadReq)
+	tarResp, err := requestWithMirror(tarPath)
 	if err != nil {
 		return err
 	}
 	defer tarResp.Body.Close()
-	// _ = os.MkdirAll(filepath.Join(z.zvmBaseDir, version), 0755)
-	// tarDownloadPath := filepath.Join(z.zvmBaseDir, version, fmt.Sprintf("%s.tar.xz", version))
 
 	var pathEnding string
 	if runtime.GOOS == "windows" {
@@ -205,6 +195,92 @@ func (z *ZVM) Install(version string) error {
 	fmt.Println("Successfully installed Zig!")
 
 	return nil
+}
+func requestWithMirror(tarURL string) (*http.Response, error) {
+    log.Debug("requestWithMirror", "tarURL", tarURL)
+
+    tarResp, err := attemptDownload(tarURL)
+    if err != nil {
+        return nil, err
+    }
+
+    if tarResp.StatusCode == 200 {
+        return tarResp, nil 
+    }
+
+    mirrors := []func(string) (string, error){mirrorHryx, mirrorMachEngine}
+
+    for i, mirror := range mirrors {
+        log.Debugf("requestWithMirror url #%d", i) 
+
+        newURL, err := mirror(tarURL)
+        if err != nil {
+            return nil, fmt.Errorf("%w: %w", ErrDownloadFail, err) 
+        }
+
+        log.Debug(fmt.Sprintf("mirror %d", i), "url", newURL)
+
+        tarResp, err = attemptDownload(newURL)
+        if err != nil {
+            continue 
+        }
+
+        if tarResp.StatusCode == 200 {
+            return tarResp, nil 
+        }
+    }
+
+    return nil, errors.Join(err, fmt.Errorf("all download attempts failed")) 
+}
+
+func attemptDownload(url string) (*http.Response, error) {
+    req, err := createDownloadReq(url)
+    if err != nil {
+        return nil, err
+    }
+
+    resp, err := http.DefaultClient.Do(req)
+    if err != nil {
+        return nil, err
+    }
+
+    log.Debug("requestWithMirror", "status code", resp.StatusCode)
+
+    return resp, nil
+}
+
+
+func createDownloadReq(tarURL string) (*http.Request, error) {
+	zigArch, zigOS := zigStyleSysInfo()
+
+	zigDownloadReq, err := http.NewRequest("GET", tarURL, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	zigDownloadReq.Header.Set("User-Agent", "zvm "+meta.VERSION)
+	zigDownloadReq.Header.Set("X-Client-Os", zigOS)
+	zigDownloadReq.Header.Set("X-Client-Arch", zigArch)
+
+	return zigDownloadReq, nil
+}
+
+// mirrorHryx returns the Hryx mirror url equivilant for a Zig Build tarball URL.
+func mirrorHryx(url string) (string, error) {
+	if !strings.HasPrefix(url, "https://ziglang.org/builds/") {
+		return "", fmt.Errorf("%w: expected a url that started with https://ziglang.org/builds/. Recieved %q", ErrInvalidInput, url)
+	}
+
+	return strings.Replace(url, "https://ziglang.org/builds/", "https://zigmirror.hryx.net/zig/", 1), nil
+}
+
+// mirrorMachEngine returns the Mach Engine mirror url equivilant for a Zig Build tarball URL.
+func mirrorMachEngine(url string) (string, error) {
+	if !strings.HasPrefix(url, "https://ziglang.org/builds/") {
+		return "", fmt.Errorf("%w: expected a url that started with https://ziglang.org/builds/. Recieved %q", ErrInvalidInput, url)
+	}
+
+	return strings.Replace(url, "https://ziglang.org/builds/", "https://pkg.machengine.org/zig/", 1), nil
 }
 
 type githubTaggedReleaseResponse struct {
@@ -637,12 +713,12 @@ func unzipFile(f *zip.File, destination string) error {
 	return nil
 }
 
-type InstallRequest struct {
+type installRequest struct {
 	Site, Package, Version string
 }
 
-func ExtractInstall(input string) InstallRequest {
-	var req InstallRequest
+func ExtractInstall(input string) installRequest {
+	var req installRequest
 	colonIdx := strings.Index(input, ":")
 	atIdx := strings.Index(input, "@")
 

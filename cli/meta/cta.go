@@ -59,5 +59,5 @@ func CtaUpgradeAvailable(tag string) {
 		Foreground(lipgloss.Color("#fee12b"))
 
 	fmt.Printf("\nZVM %s is available. You are currently on %s.\n\nRun %s or download the latest release at\n%s\n\n", blueLink.Render(tag), blueLink.Render(VERSION), yellowText.Render("zvm upgrade"), blueLink.Render("https://github.com/tristanisham/zvm/releases/latest"))
-	
+
 }

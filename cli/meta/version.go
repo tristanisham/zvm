@@ -9,13 +9,11 @@ import (
 )
 
 const (
-	VERSION = "v0.7.4"
+	VERSION = "v0.7.5"
 	// VERSION = "v0.0.0" // For testing zvm upgrade
 
 )
 
-
 var (
 	VerCopy = fmt.Sprintf("%s %s/%s", VERSION, runtime.GOOS, runtime.GOARCH)
 )
-

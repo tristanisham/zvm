@@ -86,16 +86,17 @@ type zigVersion = map[string]any
 
 type ZigOnlVersion = map[string][]map[string]string
 
-// func (z *ZVM) loadVersionCache() error {
-// 	ver, err := os.ReadFile(filepath.Join(z.zvmBaseDir, "versions.json"))
-// 	if err != nil {
-// 		return err
-// 	}
-// 	if err := json.Unmarshal(ver, &z.zigVersions); err != nil {
-// 		return err
-// 	}
-// 	return nil
-// }
+//	func (z *ZVM) loadVersionCache() error {
+//		ver, err := os.ReadFile(filepath.Join(z.zvmBaseDir, "versions.json"))
+//		if err != nil {
+//			return err
+//		}
+//		if err := json.Unmarshal(ver, &z.zigVersions); err != nil {
+//			return err
+//		}
+//		return nil
+//	}
+//
 // TODO switch to error so we can handle common typos. Make it return an (error, bool)
 func validVmuAlis(version string) bool {
 	return version == "default" || version == "mach"

@@ -197,58 +197,57 @@ func (z *ZVM) Install(version string) error {
 	return nil
 }
 func requestWithMirror(tarURL string) (*http.Response, error) {
-    log.Debug("requestWithMirror", "tarURL", tarURL)
+	log.Debug("requestWithMirror", "tarURL", tarURL)
 
-    tarResp, err := attemptDownload(tarURL)
-    if err != nil {
-        return nil, err
-    }
+	tarResp, err := attemptDownload(tarURL)
+	if err != nil {
+		return nil, err
+	}
 
-    if tarResp.StatusCode == 200 {
-        return tarResp, nil 
-    }
+	if tarResp.StatusCode == 200 {
+		return tarResp, nil
+	}
 
-    mirrors := []func(string) (string, error){mirrorHryx, mirrorMachEngine}
+	mirrors := []func(string) (string, error){mirrorHryx, mirrorMachEngine}
 
-    for i, mirror := range mirrors {
-        log.Debugf("requestWithMirror url #%d", i) 
+	for i, mirror := range mirrors {
+		log.Debugf("requestWithMirror url #%d", i)
 
-        newURL, err := mirror(tarURL)
-        if err != nil {
-            return nil, fmt.Errorf("%w: %w", ErrDownloadFail, err) 
-        }
+		newURL, err := mirror(tarURL)
+		if err != nil {
+			return nil, fmt.Errorf("%w: %w", ErrDownloadFail, err)
+		}
 
-        log.Debug(fmt.Sprintf("mirror %d", i), "url", newURL)
+		log.Debug(fmt.Sprintf("mirror %d", i), "url", newURL)
 
-        tarResp, err = attemptDownload(newURL)
-        if err != nil {
-            continue 
-        }
+		tarResp, err = attemptDownload(newURL)
+		if err != nil {
+			continue
+		}
 
-        if tarResp.StatusCode == 200 {
-            return tarResp, nil 
-        }
-    }
+		if tarResp.StatusCode == 200 {
+			return tarResp, nil
+		}
+	}
 
-    return nil, errors.Join(err, fmt.Errorf("all download attempts failed")) 
+	return nil, errors.Join(err, fmt.Errorf("all download attempts failed"))
 }
 
 func attemptDownload(url string) (*http.Response, error) {
-    req, err := createDownloadReq(url)
-    if err != nil {
-        return nil, err
-    }
+	req, err := createDownloadReq(url)
+	if err != nil {
+		return nil, err
+	}
 
-    resp, err := http.DefaultClient.Do(req)
-    if err != nil {
-        return nil, err
-    }
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
 
-    log.Debug("requestWithMirror", "status code", resp.StatusCode)
+	log.Debug("requestWithMirror", "status code", resp.StatusCode)
 
-    return resp, nil
+	return resp, nil
 }
-
 
 func createDownloadReq(tarURL string) (*http.Request, error) {
 	zigArch, zigOS := zigStyleSysInfo()

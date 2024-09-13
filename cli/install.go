@@ -110,7 +110,8 @@ func (z *ZVM) Install(version string) error {
 		}
 		fmt.Println("Shasums match! 🎉")
 	} else {
-		log.Warnf("No shasum. Downloaded from zig.onl: %v", wasZigOnl)
+		log.Warnf("No shasum provided by host")
+		// log.Warnf("No shasum. Downloaded from zig.onl: %v", wasZigOnl)
 	}
 
 	// The base directory where all Zig files for the appropriate version are installed

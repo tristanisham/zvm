@@ -51,7 +51,7 @@ func (z *ZVM) Install(version string) error {
 	zigArch, zigOS := zigStyleSysInfo()
 	log.Debug("tarPath", "url", tarPath)
 
-	tarResp, err := requestWithMirror(tarPath)
+	tarResp, err := reqZigDownload(tarPath)
 	if err != nil {
 		return err
 	}
@@ -197,7 +197,9 @@ func (z *ZVM) Install(version string) error {
 
 	return nil
 }
-func requestWithMirror(tarURL string) (*http.Response, error) {
+
+// reqZigDownload HTTP requests Zig downloads from the official site and mirrors
+func reqZigDownload(tarURL string) (*http.Response, error) {
 	log.Debug("requestWithMirror", "tarURL", tarURL)
 
 	tarResp, err := attemptDownload(tarURL)

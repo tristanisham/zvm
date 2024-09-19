@@ -18,12 +18,11 @@ fi
 # echo "Installing zvm-$OS-$ARCH"
 
 install_latest() {
-    echo -e "Installing $1 in $(pwd)/zvm"
+    echo -e "Downloading $1 in $(pwd)"
     if [ "$(uname)" = "Darwin" ]; then
      # Do something under MacOS platform
 
         if command -v wget >/dev/null 2>&1; then
-    
             echo "wget is installed. Using wget..."
             wget -q --show-progress --max-redirect 5 -O zvm.tar "https://github.com/tristanisham/zvm/releases/latest/download/$1"
         else
@@ -38,7 +37,6 @@ install_latest() {
     elif [ $OS = "Linux" ]; then
      # Do something under GNU/Linux platform
         if command -v wget2 >/dev/null 2>&1; then
-    
             echo "wget2 is installed. Using wget2..."
             wget2 -q --force-progress --max-redirect 5 -O zvm.tar "https://github.com/tristanisham/zvm/releases/latest/download/$1"
         elif command -v wget >/dev/null 2>&1; then
@@ -53,14 +51,9 @@ install_latest() {
         mkdir -p $HOME/.zvm/self
         tar -xf zvm.tar -C $HOME/.zvm/self
         rm "zvm.tar"
-    elif [ $OS = "MINGW32_NT" ]; then
-    # Do something under 32 bits Windows NT platform
-        curl -L --max-redirs 5 "https://github.com/tristanisham/zvm/releases/latest/download/$($1)" -o zvm.zip
-
-    elif [ $OS == "MINGW64_NT" ]; then
-    # Do something under 64 bits Windows NT platform
-        curl -L --max-redirs 5 "https://github.com/tristanisham/zvm/releases/latest/download/$($1)" -o zvm.zip
-
+     elif [ $OS = "MINGW32_NT" ] || [ $OS == "MINGW64_NT" ]; then
+        curl -L --max-redirs 5 "https://github.com/tristanisham/zvm/releases/latest/download/$1" -o zvm.zip
+        # Additional extraction steps for Windows can be added here
     fi
 }
 
@@ -72,40 +65,86 @@ if [ "$(uname)" = "Darwin" ]; then
 elif [ $OS = "Linux" ]; then
      # Do something under GNU/Linux platform
     install_latest "zvm-linux-$ARCH.tar"
-elif [ $OS = "MINGW32_NT" ]; then
-    # Do something under 32 bits Windows NT platform
-    install_latest "zvm-windows-$ARCH.zip"
-elif [ $OS == "MINGW64_NT" ]; then
-    # Do something under 64 bits Windows NT platform
+elif [ $OS = "MINGW32_NT" ] || [ $OS == "MINGW64_NT" ]; then
     install_latest "zvm-windows-$ARCH.zip"
 fi
 
-echo
-echo "Run the following commands to put ZVM on your path via $HOME/.profile"
-echo 
-# Check if TERM is set to a value that typically supports colors
-if [[ "$TERM" == "xterm" || "$TERM" == "xterm-256color" || "$TERM" == "screen" || "$TERM" == "tmux" ]]; then
-    # Colors
-    RED='\033[0;31m'        # For strings
-    GREEN='\033[0;32m'      # For commands
-    BLUE='\033[0;34m'       # For variables
-    NC='\033[0m'            # No Color
+# Determine the target file
+if [ -f "$HOME/.profile" ]; then
+    TARGET_FILE="$HOME/.profile"
+elif [ -f "$HOME/.bashrc" ]; then
+    TARGET_FILE="$HOME/.bashrc"
+else
+    TARGET_FILE=""
+fi
 
-    echo -e "${GREEN}echo${NC} ${RED}\"# ZVM\"${NC} ${GREEN}>>${NC} ${BLUE}\$HOME/.profile${NC}"
-    echo -e "${GREEN}echo${NC} ${RED}'export ZVM_INSTALL=\"\$HOME/.zvm/self\"'${NC} ${GREEN}>>${NC} ${BLUE}\$HOME/.profile${NC}"
-    echo -e "${GREEN}echo${NC} ${RED}'export PATH=\"\$PATH:\$HOME/.zvm/bin\"'${NC} ${GREEN}>>${NC} ${BLUE}\$HOME/.profile${NC}"
-    echo -e "${GREEN}echo${NC} ${RED}'export PATH=\"\$PATH:\$ZVM_INSTALL/\"'${NC} ${GREEN}>>${NC} ${BLUE}\$HOME/.profile${NC}"
-
-    echo -e "Run '${GREEN}source ~/.profile${NC}' to start using ZVM in this shell!"
+if [ -n "$TARGET_FILE" ]; then
+    # Check if variables are already present
+    if grep -q 'ZVM_INSTALL' "$TARGET_FILE"; then
+        echo "ZVM environment variables are already present in $TARGET_FILE"
+        exit 0
+    fi
+    # Append the export statements to the TARGET_FILE
+    echo "Adding ZVM environment variables to $TARGET_FILE"
+    {
+        echo
+        echo "# ZVM"
+        echo 'export ZVM_INSTALL="$HOME/.zvm/self"'
+        echo 'export PATH="$PATH:$HOME/.zvm/bin"'
+        echo 'export PATH="$PATH:$ZVM_INSTALL/"'
+    } >> "$TARGET_FILE"
+    echo "Run 'source $TARGET_FILE' to start using ZVM in this shell!"
     echo "Run 'zvm i master' to install Zig"
 else
-    echo 'echo "# ZVM" >> $HOME/.profile'
-    echo 'echo '\''export ZVM_INSTALL="$HOME/.zvm/self"'\'' >> $HOME/.profile'
-    echo 'echo '\''export PATH="$PATH:$HOME/.zvm/bin"'\'' >> $HOME/.profile'
-    echo 'echo '\''export PATH="$PATH:$ZVM_INSTALL/"'\'' >> $HOME/.profile'
+    echo
+    echo "No ~/.profile or ~/.bashrc file found."
+    echo "Run the following commands to set up ZVM environment variables in this session:"
+    echo
+    if [[ "$TERM" == "xterm"* || "$TERM" == "screen"* || "$TERM" == "tmux"* ]]; then
+        # Colors
+        RED='\033[0;31m'   # For strings
+        GREEN='\033[0;32m' # For commands
+        BLUE='\033[0;34m'  # For variables
+        NC='\033[0m'       # No Color
 
-    echo "Run 'source ~/.profile' to start using ZVM in this shell!"
-    echo "Run 'zvm i master' to install Zig"
+        echo -e "${GREEN}export${NC} ${BLUE}ZVM_INSTALL${NC}${GREEN}=${NC}${RED}\"\$HOME/.zvm/self\"${NC}"
+        echo -e "${GREEN}export${NC} ${BLUE}PATH${NC}${GREEN}=${NC}${RED}\"\$PATH:\$HOME/.zvm/bin\"${NC}"
+        echo -e "${GREEN}export${NC} ${BLUE}PATH${NC}${GREEN}=${NC}${RED}\"\$PATH:\$ZVM_INSTALL/\"${NC}"
+        echo -e "Run 'zvm i master' to install Zig"
+    else
+        echo 'export ZVM_INSTALL="$HOME/.zvm/self"'
+        echo 'export PATH="$PATH:$HOME/.zvm/bin"'
+        echo 'export PATH="$PATH:$ZVM_INSTALL/"'
+        echo "Run 'zvm i master' to install Zig"
+    fi
 fi
+
+# echo
+# echo "Run the following commands to put ZVM on your path via $HOME/.profile"
+# echo 
+# # Check if TERM is set to a value that typically supports colors
+# if [[ "$TERM" == "xterm" || "$TERM" == "xterm-256color" || "$TERM" == "screen" || "$TERM" == "tmux" ]]; then
+#     # Colors
+#     RED='\033[0;31m'        # For strings
+#     GREEN='\033[0;32m'      # For commands
+#     BLUE='\033[0;34m'       # For variables
+#     NC='\033[0m'            # No Color
+
+#     echo -e "${GREEN}echo${NC} ${RED}\"# ZVM\"${NC} ${GREEN}>>${NC} ${BLUE}\$HOME/.profile${NC}"
+#     echo -e "${GREEN}echo${NC} ${RED}'export ZVM_INSTALL=\"\$HOME/.zvm/self\"'${NC} ${GREEN}>>${NC} ${BLUE}\$HOME/.profile${NC}"
+#     echo -e "${GREEN}echo${NC} ${RED}'export PATH=\"\$PATH:\$HOME/.zvm/bin\"'${NC} ${GREEN}>>${NC} ${BLUE}\$HOME/.profile${NC}"
+#     echo -e "${GREEN}echo${NC} ${RED}'export PATH=\"\$PATH:\$ZVM_INSTALL/\"'${NC} ${GREEN}>>${NC} ${BLUE}\$HOME/.profile${NC}"
+
+#     echo -e "Run '${GREEN}source ~/.profile${NC}' to start using ZVM in this shell!"
+#     echo "Run 'zvm i master' to install Zig"
+# else
+#     echo 'echo "# ZVM" >> $HOME/.profile'
+#     echo 'echo '\''export ZVM_INSTALL="$HOME/.zvm/self"'\'' >> $HOME/.profile'
+#     echo 'echo '\''export PATH="$PATH:$HOME/.zvm/bin"'\'' >> $HOME/.profile'
+#     echo 'echo '\''export PATH="$PATH:$ZVM_INSTALL/"'\'' >> $HOME/.profile'
+
+#     echo "Run 'source ~/.profile' to start using ZVM in this shell!"
+#     echo "Run 'zvm i master' to install Zig"
+# fi
     
-echo
+# echo

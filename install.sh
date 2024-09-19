@@ -98,7 +98,7 @@ if [ -n "$TARGET_FILE" ]; then
 else
     echo
     echo "No ~/.profile or ~/.bashrc file found."
-    echo "Run the following commands to set up ZVM environment variables in this session:"
+    echo "Run the following commands to set up ZVM environment variables in this session or append them to your shell's startup script:"
     echo
     if [[ "$TERM" == "xterm"* || "$TERM" == "screen"* || "$TERM" == "tmux"* ]]; then
         # Colors

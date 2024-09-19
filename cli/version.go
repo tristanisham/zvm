@@ -25,7 +25,7 @@ func (z *ZVM) fetchVersionMap() (zigVersionMap, error) {
 	log.Debug("inital VMU", "url", z.Settings.VersionMapUrl)
 
 	if err := z.loadSettings(); err != nil {
-		log.Warnf("could not read settings: %q", err)
+		log.Warnf("could not load version map from settings: %q", err)
 		log.Debug("vmu", z.Settings.VersionMapUrl)
 	}
 

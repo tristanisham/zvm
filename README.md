@@ -35,7 +35,7 @@ like), then ZVM will update the exact executable you've called `upgrade` from.
 curl https://raw.githubusercontent.com/tristanisham/zvm/master/install.sh | bash
 ```
 
-This script will automatically append ZVM's required environment variables (see below) to `~/.profile` or `~/.bashrc`.
+This script will **automatically append** ZVM's required environment variables (see below) to `~/.profile` or `~/.bashrc`.
 
 ```sh
 echo "# ZVM" >> $HOME/.profile

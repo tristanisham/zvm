@@ -80,9 +80,6 @@ elif [ $OS == "MINGW64_NT" ]; then
     install_latest "zvm-windows-$ARCH.zip"
 fi
 
-echo
-echo "Run the following commands to put ZVM on your path via $HOME/.profile"
-echo 
 # Check if TERM is set to a value that typically supports colors
 if [[ "$TERM" == "xterm" || "$TERM" == "xterm-256color" || "$TERM" == "screen" || "$TERM" == "tmux" ]]; then
     # Colors
@@ -90,22 +87,24 @@ if [[ "$TERM" == "xterm" || "$TERM" == "xterm-256color" || "$TERM" == "screen" |
     GREEN='\033[0;32m'      # For commands
     BLUE='\033[0;34m'       # For variables
     NC='\033[0m'            # No Color
-
-    echo -e "${GREEN}echo${NC} ${RED}\"# ZVM\"${NC} ${GREEN}>>${NC} ${BLUE}\$HOME/.profile${NC}"
-    echo -e "${GREEN}echo${NC} ${RED}'export ZVM_INSTALL=\"\$HOME/.zvm/self\"'${NC} ${GREEN}>>${NC} ${BLUE}\$HOME/.profile${NC}"
-    echo -e "${GREEN}echo${NC} ${RED}'export PATH=\"\$PATH:\$HOME/.zvm/bin\"'${NC} ${GREEN}>>${NC} ${BLUE}\$HOME/.profile${NC}"
-    echo -e "${GREEN}echo${NC} ${RED}'export PATH=\"\$PATH:\$ZVM_INSTALL/\"'${NC} ${GREEN}>>${NC} ${BLUE}\$HOME/.profile${NC}"
-
-    echo -e "Run '${GREEN}source ~/.profile${NC}' to start using ZVM in this shell!"
-    echo "Run 'zvm i master' to install Zig"
 else
-    echo 'echo "# ZVM" >> $HOME/.profile'
-    echo 'echo '\''export ZVM_INSTALL="$HOME/.zvm/self"'\'' >> $HOME/.profile'
-    echo 'echo '\''export PATH="$PATH:$HOME/.zvm/bin"'\'' >> $HOME/.profile'
-    echo 'echo '\''export PATH="$PATH:$ZVM_INSTALL/"'\'' >> $HOME/.profile'
-
-    echo "Run 'source ~/.profile' to start using ZVM in this shell!"
-    echo "Run 'zvm i master' to install Zig"
+    # No Colors (set to empty strings)
+    RED=''
+    GREEN=''
+    BLUE=''
+    NC=''
 fi
-    
+
 echo
+echo -e "Next steps to get started:"
+echo
+echo -e "1. Run the following commands to put ZVM on your \$PATH (via $HOME/.profile):"
+echo 
+echo -e "${GREEN}echo${NC} ${RED}\"# ZVM\"${NC} ${GREEN}>>${NC} ${BLUE}\$HOME/.profile${NC}"
+echo -e "${GREEN}echo${NC} ${RED}'export ZVM_INSTALL=\"\$HOME/.zvm/self\"'${NC} ${GREEN}>>${NC} ${BLUE}\$HOME/.profile${NC}"
+echo -e "${GREEN}echo${NC} ${RED}'export PATH=\"\$PATH:\$HOME/.zvm/bin\"'${NC} ${GREEN}>>${NC} ${BLUE}\$HOME/.profile${NC}"
+echo -e "${GREEN}echo${NC} ${RED}'export PATH=\"\$PATH:\$ZVM_INSTALL/\"'${NC} ${GREEN}>>${NC} ${BLUE}\$HOME/.profile${NC}"
+echo 
+echo -e "2. Run '${GREEN}source ~/.profile${NC}' to start using ZVM in this shell!"
+echo -e "3. Run '${GREEN}zvm i master${NC}' to install Zig"
+echo 

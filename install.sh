@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# ZVM install script - v0.1.5 - ZVM: https://github.com/tristanisham/zvm
+# ZVM install script - v0.2.0 - ZVM: https://github.com/tristanisham/zvm
 
 
 

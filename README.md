@@ -88,8 +88,7 @@ It is possible to overwrite the default behavior of ZVM to adhere to XDG specifi
 
 ### AUR
 
-`zvm` on the [Arch AUR](https://aur.archlinux.org/packages/zvm) is a community
-maintained package, and may be out of date.
+`zvm` on the [Arch AUR](https://aur.archlinux.org/packages/zvm) is a community-maintained package, and may be out of date.
 
 # Why should I use ZVM?
 

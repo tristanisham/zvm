@@ -30,30 +30,43 @@ func (z *ZVM) ListVersions() error {
 	}
 
 	version := zigVersion.String()
-	dir, err := os.ReadDir(z.baseDir)
+
+	installedVersions, err := z.GetInstalledVersions()
 	if err != nil {
 		return err
 	}
 
+	for _, key := range installedVersions {
+		if key == strings.TrimSpace(version) || key == "master" && strings.Contains(version, "-dev.") {
+			if z.Settings.UseColor {
+				// Should just check bin for used version
+				fmt.Println(clr.Green(key))
+			} else {
+				fmt.Printf("%s [x]", key)
+			}
+		} else {
+			fmt.Println(key)
+		}
+	}
+
+	return nil
+}
+
+func (z *ZVM) GetInstalledVersions() ([]string, error) {
+	dir, err := os.ReadDir(z.baseDir)
+	if err != nil {
+		return nil, err
+	}
+	versions := make([]string, 0, len(dir))
 	for _, key := range dir {
 		switch key.Name() {
 		case "settings.json", "bin", "versions.json", "self":
 			continue
 		default:
-			if key.Name() == strings.TrimSpace(version) || key.Name() == "master" && strings.Contains(version, "-dev.") {
-				if z.Settings.UseColor {
-					// Should just check bin for used version
-					fmt.Println(clr.Green(key.Name()))
-				} else {
-					fmt.Printf("%s [x]", key.Name())
-				}
-			} else {
-				fmt.Println(key.Name())
-			}
+			versions = append(versions, key.Name())
 		}
 	}
-
-	return nil
+	return versions, nil
 }
 
 func (z ZVM) ListRemoteAvailable() error {
@@ -62,7 +75,7 @@ func (z ZVM) ListRemoteAvailable() error {
 		return err
 	}
 
-	options := make([]string, 0)
+	options := make([]string, 0, len(versions))
 
 	for key := range versions {
 		options = append(options, "v"+key)
@@ -72,14 +85,10 @@ func (z ZVM) ListRemoteAvailable() error {
 	slices.Reverse(options)
 
 	// Remove "v" prefix to maintain consistency with zig versioning
-	newOptions := options[:0]
+	finalList := options[:0]
 	for _, version := range options {
-		newOptions = append(newOptions, version[1:])
+		finalList = append(finalList, version[1:])
 	}
-
-	finalList := make([]string, 0)
-
-	finalList = append(finalList, newOptions...)
 
 	fmt.Println(strings.Join(finalList, "\n"))
 

@@ -20,6 +20,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"runtime"
+	"slices"
 	"strings"
 
 	"github.com/schollz/progressbar/v3"
@@ -30,11 +31,45 @@ import (
 	"github.com/tristanisham/clr"
 )
 
-func (z *ZVM) Install(version string) error {
+func (z *ZVM) Install(version string, force bool) error {
 	os.Mkdir(z.baseDir, 0755)
 	rawVersionStructure, err := z.fetchVersionMap()
 	if err != nil {
 		return err
+	}
+
+	if !force {
+		installedVersions, err := z.GetInstalledVersions()
+		if err != nil {
+			return err
+		}
+		if slices.Contains(installedVersions, version) {
+			alreadyInstalled := true
+			installedVersion := version
+			if version == "master" {
+				targetZig := strings.TrimSpace(filepath.Join(z.baseDir, "master", "zig"))
+				cmd := exec.Command(targetZig, "version")
+				var zigVersion strings.Builder
+				cmd.Stdout = &zigVersion
+				err := cmd.Run()
+				if err != nil {
+					log.Warn(err)
+				}
+
+				installedVersion = strings.TrimSpace(zigVersion.String())
+				if master, ok := rawVersionStructure["master"]; ok {
+					if remoteVersion, ok := master["version"].(string); ok {
+						if installedVersion != remoteVersion {
+							alreadyInstalled = false
+						}
+					}
+				}
+				if alreadyInstalled {
+					fmt.Printf("Zig version %s is already installed\n", installedVersion)
+					return nil
+				}
+			}
+		}
 	}
 
 	tarPath, err := getTarPath(version, &rawVersionStructure)
@@ -273,23 +308,23 @@ type zlsCIZLSVersion struct {
 	Targets    []string
 }
 
-func getZLSDownloadUrl(version string, archDouble string) (string, error) {
+func getZLSDownloadUrl(version string, archDouble string) (string, string, error) {
 	if version == "master" {
 		resp, err := http.Get("https://zigtools-releases.nyc3.digitaloceanspaces.com/zls/index.json")
 		if err != nil {
-			return "", err
+			return "", "", err
 		}
 		defer resp.Body.Close()
 
 		var releaseBuffer bytes.Buffer
 		_, err = releaseBuffer.ReadFrom(resp.Body)
 		if err != nil {
-			return "", err
+			return "", "", err
 		}
 
 		var ciIndex zlsCIDownloadIndexResponse
 		if err := json.Unmarshal(releaseBuffer.Bytes(), &ciIndex); err != nil {
-			return "", err
+			return "", "", err
 		}
 
 		exeName := "zls"
@@ -298,31 +333,31 @@ func getZLSDownloadUrl(version string, archDouble string) (string, error) {
 		}
 
 		format_url := "https://zigtools-releases.nyc3.digitaloceanspaces.com/zls/%v/%v/%v"
-		return fmt.Sprintf(format_url, ciIndex.Latest, archDouble, exeName), nil
+		return fmt.Sprintf(format_url, ciIndex.Latest, archDouble, exeName), ciIndex.Latest, nil
 	} else {
 		url := fmt.Sprintf("https://api.github.com/repos/zigtools/zls/releases/tags/%v", version)
 
 		// get release information
 		resp, err := http.Get(url)
 		if err != nil {
-			return "", err
+			return "", "", err
 		}
 		defer resp.Body.Close()
 
 		var releaseBuffer bytes.Buffer
 		_, err = releaseBuffer.ReadFrom(resp.Body)
 		if err != nil {
-			return "", err
+			return "", "", err
 		}
 
 		// getting list of assets
 		var taggedReleaseResponse githubTaggedReleaseResponse
 		if err := json.Unmarshal(releaseBuffer.Bytes(), &taggedReleaseResponse); err != nil {
-			return "", err
+			return "", "", err
 		}
 
 		if len(taggedReleaseResponse.Assets) == 0 {
-			return "", errors.New("invalid ZLS version")
+			return "", "", errors.New("invalid ZLS version")
 		}
 
 		// getting platform information
@@ -335,14 +370,14 @@ func getZLSDownloadUrl(version string, archDouble string) (string, error) {
 		}
 
 		if downloadUrl == "" {
-			return "", errors.New("invalid ZLS release URL")
+			return "", "", errors.New("invalid ZLS release URL")
 		}
 
-		return downloadUrl, nil
+		return downloadUrl, version, nil
 	}
 }
 
-func (z *ZVM) InstallZls(version string) error {
+func (z *ZVM) InstallZls(version string, force bool) error {
 	if version != "master" && strings.Count(version, ".") != 2 {
 		return fmt.Errorf("%w: versions are SEMVER (MAJOR.MINOR.MINUSCULE)", ErrUnsupportedVersion)
 	}
@@ -367,9 +402,29 @@ func (z *ZVM) InstallZls(version string) error {
 	// master does not need unzipping, zpm just serves full binary
 	shouldUnzip := version != "master"
 
-	downloadUrl, err := getZLSDownloadUrl(version, expectedArchOs)
+	downloadUrl, selectedVersion, err := getZLSDownloadUrl(version, expectedArchOs)
 	if err != nil {
 		return err
+	}
+
+	if !force {
+		installedVersion := ""
+		targetZls := strings.TrimSpace(filepath.Join(z.baseDir, version, "zls"))
+		if _, err := os.Stat(targetZls); err == nil {
+			cmd := exec.Command(targetZls, "--version")
+			var zigVersion strings.Builder
+			cmd.Stdout = &zigVersion
+			err := cmd.Run()
+			if err != nil {
+				log.Warn(err)
+			}
+
+			installedVersion = strings.TrimSpace(zigVersion.String())
+		}
+		if installedVersion == selectedVersion {
+			fmt.Printf("ZLS version %s is already installed\n", installedVersion)
+			return nil
+		}
 	}
 
 	request, err := http.NewRequest("GET", downloadUrl, nil)

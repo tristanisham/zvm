@@ -31,7 +31,6 @@ import (
 )
 
 func (z *ZVM) Install(version string) error {
-
 	os.Mkdir(z.baseDir, 0755)
 	rawVersionStructure, err := z.fetchVersionMap()
 	if err != nil {
@@ -264,9 +263,9 @@ type gitHubAsset struct {
 }
 
 type zlsCIDownloadIndexResponse struct {
+	Versions     map[string]zlsCIZLSVersion
 	Latest       string // most recent ZLS version
 	LatestTagged string // most recent tagged ZLS version
-	Versions     map[string]zlsCIZLSVersion
 }
 
 type zlsCIZLSVersion struct {
@@ -366,10 +365,7 @@ func (z *ZVM) InstallZls(version string) error {
 	}
 
 	// master does not need unzipping, zpm just serves full binary
-	shouldUnzip := true
-	if version == "master" {
-		shouldUnzip = false
-	}
+	shouldUnzip := version != "master"
 
 	downloadUrl, err := getZLSDownloadUrl(version, expectedArchOs)
 	if err != nil {
@@ -492,7 +488,6 @@ func findZlsExecutable(dir string) (string, error) {
 
 		return fs.SkipAll
 	})
-
 	if err != nil {
 		return "", err
 	}
@@ -512,7 +507,6 @@ func (z *ZVM) createSymlink(version string) {
 	if err := meta.Symlink(filepath.Join(z.baseDir, version), filepath.Join(z.baseDir, "bin")); err != nil {
 		log.Fatal(err)
 	}
-
 }
 
 func getTarPath(version string, data *map[string]map[string]any) (string, error) {
@@ -540,7 +534,6 @@ func getTarPath(version string, data *map[string]map[string]any) (string, error)
 	// return nil, fmt.Errorf("invalid Zig version: %s\nAllowed versions:%s", version, strings.Join(verMap, "\n  "))
 
 	return "", ErrUnsupportedVersion
-
 }
 
 func getVersionShasum(version string, data *map[string]map[string]any) (string, error) {

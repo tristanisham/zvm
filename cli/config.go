@@ -17,9 +17,7 @@ import (
 	"github.com/charmbracelet/log"
 )
 
-var (
-	ErrNoSettings = errors.New("settings.json not found")
-)
+var ErrNoSettings = errors.New("settings.json not found")
 
 func Initialize() *ZVM {
 	home, err := os.UserHomeDir()
@@ -128,7 +126,6 @@ func (z ZVM) getVersion(version string) error {
 		}
 		return fmt.Errorf("version %s is not a released version", version)
 	}
-
 }
 
 func (z *ZVM) loadSettings() error {

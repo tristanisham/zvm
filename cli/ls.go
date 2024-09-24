@@ -65,7 +65,6 @@ func (z ZVM) ListRemoteAvailable() error {
 	options := make([]string, 0)
 
 	for key := range versions {
-
 		options = append(options, "v"+key)
 	}
 

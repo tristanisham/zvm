@@ -64,10 +64,10 @@ func (z *ZVM) Install(version string, force bool) error {
 						}
 					}
 				}
-				if alreadyInstalled {
-					fmt.Printf("Zig version %s is already installed\n", installedVersion)
-					return nil
-				}
+			}
+			if alreadyInstalled {
+				fmt.Printf("Zig version %s is already installed\n", installedVersion)
+				return nil
 			}
 		}
 	}

@@ -75,5 +75,4 @@ func getConfirmation() bool {
 
 	answer := strings.TrimSpace(strings.ToLower(text))
 	return answer == "y" || answer == "ye" || answer == "yes"
-
 }

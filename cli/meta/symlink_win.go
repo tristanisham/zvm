@@ -12,7 +12,6 @@ import (
 
 	// "os/exec"
 	"strings"
-
 	"syscall"
 
 	// "github.com/charmbracelet/log"
@@ -30,7 +29,7 @@ func becomeAdmin() error {
 	cwdPtr, _ := syscall.UTF16PtrFromString(cwd)
 	argPtr, _ := syscall.UTF16PtrFromString(args)
 
-	var showCmd int32 = 1 //SW_NORMAL
+	var showCmd int32 = 1 // SW_NORMAL
 
 	err := windows.ShellExecute(0, verbPtr, exePtr, argPtr, cwdPtr, showCmd)
 	if err != nil {

@@ -5,23 +5,20 @@
 package cli
 
 import (
+	"archive/tar"
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/schollz/progressbar/v3"
 	"io"
 	"net/http"
 	"os"
-
-	// "os/user"
 	"path/filepath"
 	"runtime"
-
-	// "syscall"
-	"github.com/tristanisham/zvm/cli/meta"
 	"time"
 
-	"archive/tar"
+	"github.com/schollz/progressbar/v3"
+
+	"github.com/tristanisham/zvm/cli/meta"
 
 	"github.com/charmbracelet/log"
 	"github.com/tristanisham/clr"
@@ -31,7 +28,6 @@ import (
 // Upgrade will upgrade the system installation of ZVM.
 // I wrote most of it before I remembered that GitHub has an API so expect major refactoring.
 func (z *ZVM) Upgrade() error {
-
 	defer func() {
 		if err := z.Clean(); err != nil {
 			log.Warn("ZVM failed to clean up after itself.")
@@ -78,7 +74,6 @@ func (z *ZVM) Upgrade() error {
 		return err
 	}
 	defer tempDownload.Close()
-	// log.Debug("temp name", "path", tempDownload.Name())
 	defer os.Remove(tempDownload.Name())
 
 	log.Debug("tempDir", "name", tempDownload.Name())
@@ -99,7 +94,6 @@ func (z *ZVM) Upgrade() error {
 				log.Debug("Failed to remove file", "path", zvmPath)
 			}
 		}
-
 	}
 
 	log.Debug("zvmPath", "path", zvmPath)
@@ -235,14 +229,12 @@ func resolveSymlink(symlink string) (string, error) {
 		return "", err
 	}
 	return absolutePath, nil
-
 }
 
 func untar(tarball, target string) error {
 	log.Debug("untar", "tarball", tarball, "target", target)
 	reader, err := os.Open(tarball)
 	if err != nil {
-
 		return err
 	}
 	defer reader.Close()
@@ -301,7 +293,6 @@ func CanIUpgrade() (string, bool, error) {
 	}
 
 	return release.TagName, false, nil
-
 }
 
 // func getGitHubReleases(owner, repo string) ([]GithubRelease, error) {
@@ -339,74 +330,74 @@ func getLatestGitHubRelease(owner, repo string) (*GithubRelease, error) {
 }
 
 type GithubRelease struct {
-	URL       string `json:"url"`
-	AssetsURL string `json:"assets_url"`
-	UploadURL string `json:"upload_url"`
-	HTMLURL   string `json:"html_url"`
-	ID        int    `json:"id"`
-	Author    struct {
-		Login             string `json:"login"`
-		ID                int    `json:"id"`
-		NodeID            string `json:"node_id"`
-		AvatarURL         string `json:"avatar_url"`
-		GravatarID        string `json:"gravatar_id"`
-		URL               string `json:"url"`
-		HTMLURL           string `json:"html_url"`
-		FollowersURL      string `json:"followers_url"`
-		FollowingURL      string `json:"following_url"`
-		GistsURL          string `json:"gists_url"`
-		StarredURL        string `json:"starred_url"`
-		SubscriptionsURL  string `json:"subscriptions_url"`
-		OrganizationsURL  string `json:"organizations_url"`
-		ReposURL          string `json:"repos_url"`
-		EventsURL         string `json:"events_url"`
-		ReceivedEventsURL string `json:"received_events_url"`
-		Type              string `json:"type"`
-		SiteAdmin         bool   `json:"site_admin"`
-	} `json:"author"`
-	NodeID          string    `json:"node_id"`
-	TagName         string    `json:"tag_name"`
-	TargetCommitish string    `json:"target_commitish"`
-	Name            string    `json:"name"`
-	Draft           bool      `json:"draft"`
-	Prerelease      bool      `json:"prerelease"`
 	CreatedAt       time.Time `json:"created_at"`
 	PublishedAt     time.Time `json:"published_at"`
+	TargetCommitish string    `json:"target_commitish"`
+	Name            string    `json:"name"`
+	Body            string    `json:"body"`
+	ZipballURL      string    `json:"zipball_url"`
+	NodeID          string    `json:"node_id"`
+	TagName         string    `json:"tag_name"`
+	URL             string    `json:"url"`
+	HTMLURL         string    `json:"html_url"`
+	TarballURL      string    `json:"tarball_url"`
+	AssetsURL       string    `json:"assets_url"`
+	UploadURL       string    `json:"upload_url"`
 	Assets          []struct {
-		URL      string      `json:"url"`
-		ID       int         `json:"id"`
-		NodeID   string      `json:"node_id"`
-		Name     string      `json:"name"`
-		Label    interface{} `json:"label"`
-		Uploader struct {
-			Login             string `json:"login"`
-			ID                int    `json:"id"`
+		UpdatedAt          time.Time   `json:"updated_at"`
+		CreatedAt          time.Time   `json:"created_at"`
+		Label              interface{} `json:"label"`
+		ContentType        string      `json:"content_type"`
+		Name               string      `json:"name"`
+		URL                string      `json:"url"`
+		State              string      `json:"state"`
+		NodeID             string      `json:"node_id"`
+		BrowserDownloadURL string      `json:"browser_download_url"`
+		Uploader           struct {
+			FollowingURL      string `json:"following_url"`
 			NodeID            string `json:"node_id"`
-			AvatarURL         string `json:"avatar_url"`
+			GistsURL          string `json:"gists_url"`
+			StarredURL        string `json:"starred_url"`
 			GravatarID        string `json:"gravatar_id"`
 			URL               string `json:"url"`
 			HTMLURL           string `json:"html_url"`
 			FollowersURL      string `json:"followers_url"`
-			FollowingURL      string `json:"following_url"`
-			GistsURL          string `json:"gists_url"`
-			StarredURL        string `json:"starred_url"`
+			Login             string `json:"login"`
+			Type              string `json:"type"`
+			AvatarURL         string `json:"avatar_url"`
 			SubscriptionsURL  string `json:"subscriptions_url"`
 			OrganizationsURL  string `json:"organizations_url"`
 			ReposURL          string `json:"repos_url"`
 			EventsURL         string `json:"events_url"`
 			ReceivedEventsURL string `json:"received_events_url"`
-			Type              string `json:"type"`
+			ID                int    `json:"id"`
 			SiteAdmin         bool   `json:"site_admin"`
 		} `json:"uploader"`
-		ContentType        string    `json:"content_type"`
-		State              string    `json:"state"`
-		Size               int       `json:"size"`
-		DownloadCount      int       `json:"download_count"`
-		CreatedAt          time.Time `json:"created_at"`
-		UpdatedAt          time.Time `json:"updated_at"`
-		BrowserDownloadURL string    `json:"browser_download_url"`
+		Size          int `json:"size"`
+		DownloadCount int `json:"download_count"`
+		ID            int `json:"id"`
 	} `json:"assets"`
-	TarballURL string `json:"tarball_url"`
-	ZipballURL string `json:"zipball_url"`
-	Body       string `json:"body"`
+	Author struct {
+		FollowingURL      string `json:"following_url"`
+		NodeID            string `json:"node_id"`
+		GistsURL          string `json:"gists_url"`
+		StarredURL        string `json:"starred_url"`
+		GravatarID        string `json:"gravatar_id"`
+		URL               string `json:"url"`
+		HTMLURL           string `json:"html_url"`
+		FollowersURL      string `json:"followers_url"`
+		Login             string `json:"login"`
+		Type              string `json:"type"`
+		AvatarURL         string `json:"avatar_url"`
+		SubscriptionsURL  string `json:"subscriptions_url"`
+		OrganizationsURL  string `json:"organizations_url"`
+		ReposURL          string `json:"repos_url"`
+		EventsURL         string `json:"events_url"`
+		ReceivedEventsURL string `json:"received_events_url"`
+		ID                int    `json:"id"`
+		SiteAdmin         bool   `json:"site_admin"`
+	} `json:"author"`
+	ID         int  `json:"id"`
+	Prerelease bool `json:"prerelease"`
+	Draft      bool `json:"draft"`
 }

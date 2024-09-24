@@ -15,7 +15,6 @@ func (z *ZVM) Clean() error {
 	}
 
 	for _, entry := range dir {
-
 		if filepath.Ext(entry.Name()) == ".zip" || filepath.Ext(entry.Name()) == ".xz" || filepath.Ext(entry.Name()) == ".tar" {
 			if err := os.Remove(filepath.Join(z.baseDir, entry.Name())); err != nil {
 				return err

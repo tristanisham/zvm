@@ -16,8 +16,10 @@ import (
 	"github.com/charmbracelet/log"
 )
 
-var zvm cli.ZVM
-var printUpgradeNotice bool = true
+var (
+	zvm                cli.ZVM
+	printUpgradeNotice bool = true
+)
 
 var zvmApp = &opts.App{
 	Name:        "ZVM",
@@ -122,7 +124,6 @@ var zvmApp = &opts.App{
 					versionArg := strings.TrimPrefix(ctx.Args().First(), "v")
 					return zvm.Use(versionArg)
 				}
-
 			},
 		},
 		{
@@ -254,5 +255,4 @@ func main() {
 			log.Infof("You are now using ZVM %s\n", tag)
 		}
 	}
-
 }

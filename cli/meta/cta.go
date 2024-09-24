@@ -13,8 +13,7 @@ import (
 
 // CtaFatal prints an aesthetic CTA and exits with an error.
 func CtaFatal(err error) {
-
-	var style = lipgloss.NewStyle().
+	style := lipgloss.NewStyle().
 		Bold(true).
 		Foreground(lipgloss.Color("#FAFAFA")).
 		Background(lipgloss.Color("#db0913")).
@@ -40,7 +39,7 @@ func CtaFatal(err error) {
 
 // CtaUpgradeAvailable prints an aesthetic notice.
 func CtaUpgradeAvailable(tag string) {
-	var style = lipgloss.NewStyle().
+	style := lipgloss.NewStyle().
 		Bold(true).
 		Foreground(lipgloss.Color("#FAFAFA")).
 		Background(lipgloss.Color("#6FA8DC")).
@@ -59,5 +58,4 @@ func CtaUpgradeAvailable(tag string) {
 		Foreground(lipgloss.Color("#fee12b"))
 
 	fmt.Printf("\nZVM %s is available. You are currently on %s.\n\nRun %s or download the latest release at\n%s\n\n", blueLink.Render(tag), blueLink.Render(VERSION), yellowText.Render("zvm upgrade"), blueLink.Render("https://github.com/tristanisham/zvm/releases/latest"))
-
 }

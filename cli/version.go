@@ -8,20 +8,17 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-
-	// "fmt"
-	"github.com/tristanisham/zvm/cli/meta"
 	"io"
 	"net/http"
 	"os"
 	"path/filepath"
 
+	"github.com/tristanisham/zvm/cli/meta"
+
 	"github.com/charmbracelet/log"
-	// "github.com/tristanisham/clr"
 )
 
 func (z *ZVM) fetchVersionMap() (zigVersionMap, error) {
-
 	log.Debug("inital VMU", "url", z.Settings.VersionMapUrl)
 
 	if err := z.loadSettings(); err != nil {

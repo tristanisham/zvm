@@ -17,9 +17,8 @@ import (
 
 type Settings struct {
 	path          string
-	UseColor      bool   `json:"useColor"`
 	VersionMapUrl string `json:"versionMapUrl,omitempty"`
-	// CheckForUpgrade bool `json:"checkForUpgrade"`
+	UseColor      bool   `json:"useColor"`
 }
 
 func (s *Settings) ToggleColor() {
@@ -34,7 +33,6 @@ func (s *Settings) ToggleColor() {
 	}
 
 	fmt.Println("Terminal color output: OFF")
-
 }
 
 func (s *Settings) ResetVersionMap() error {
@@ -52,7 +50,6 @@ func (s *Settings) NoColor() {
 		log.Fatal(err)
 	}
 	fmt.Println("Terminal color output: OFF")
-
 }
 
 func (s *Settings) YesColor() {
@@ -61,7 +58,6 @@ func (s *Settings) YesColor() {
 		log.Fatal(err)
 	}
 	fmt.Printf("Terminal color output: %s\n", clr.Green("ON"))
-
 }
 
 func (s *Settings) SetColor(answer bool) {
@@ -72,7 +68,6 @@ func (s *Settings) SetColor(answer bool) {
 }
 
 func (s *Settings) SetVersionMapUrl(versionMapUrl string) error {
-
 	if err := isValidWebURL(versionMapUrl); err != nil {
 		return fmt.Errorf("%w: %w", ErrInvalidVersionMap, err)
 	}

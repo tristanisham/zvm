@@ -66,6 +66,10 @@ var zvmApp = &opts.App{
 					// Aliases: []string{"z"},
 					Usage: "install ZLS",
 				},
+				&opts.BoolFlag{
+					Name:  "force",
+					Usage: "force installation even if the version is already installed",
+				},
 			},
 			Description: "To install the latest version, use `master`",
 			Args:        true,
@@ -91,15 +95,16 @@ var zvmApp = &opts.App{
 				// 		return err
 				// 	}
 				// }
+				force := ctx.Bool("force")
 
 				// Install Zig
-				if err := zvm.Install(req.Package); err != nil {
+				if err := zvm.Install(req.Package, force); err != nil {
 					return err
 				}
 
 				// Install ZLS (if requested)
 				if ctx.Bool("zls") {
-					if err := zvm.InstallZls(req.Package); err != nil {
+					if err := zvm.InstallZls(req.Package, force); err != nil {
 						return err
 					}
 				}

@@ -68,6 +68,7 @@ var zvmApp = &opts.App{
 				},
 				&opts.BoolFlag{
 					Name:  "force",
+					Aliases: []string{"f"},
 					Usage: "force installation even if the version is already installed",
 				},
 			},

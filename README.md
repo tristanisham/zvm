@@ -129,6 +129,8 @@ latest version, use "master".
 zvm i master
 ```
 
+As of `v0.7.6` ZVM will now skip downloading a version if it is already installed. You can alwasy 
+
 ### Install ZLS with ZVM
 
 You can now install ZLS with your Zig download! To install ZLS with ZVM, simply

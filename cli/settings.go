@@ -16,9 +16,10 @@ import (
 )
 
 type Settings struct {
-	path          string
-	VersionMapUrl string `json:"versionMapUrl,omitempty"`
-	UseColor      bool   `json:"useColor"`
+	path               string
+	VersionMapUrl      string `json:"versionMapUrl,omitempty"`
+	UseColor           bool   `json:"useColor"`
+	AlwaysForceInstall bool   `json:"alwaysForceInstall"`
 }
 
 func (s *Settings) ToggleColor() {

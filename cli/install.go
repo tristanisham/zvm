@@ -736,6 +736,7 @@ type installRequest struct {
 }
 
 func ExtractInstall(input string) installRequest {
+	log.Debug("ExtractInstall", "input", input)
 	var req installRequest
 	colonIdx := strings.Index(input, ":")
 	atIdx := strings.Index(input, "@")

@@ -216,6 +216,28 @@ var zvmApp = &opts.App{
 				return nil
 			},
 		},
+		{
+			Name:  "zrw",
+			Usage: "set ZVM's URL for custom Zls Release Workers",
+			Args:  true,
+			Action: func(ctx *opts.Context) error {
+				url := ctx.Args().First()
+				log.Debug("user passed zrw", "url", url)
+
+				switch url {
+				case "default":
+					return zvm.Settings.ResetZlsReleaseWorkerBaseUrl()
+
+				default:
+					if err := zvm.Settings.SetZlsReleaseWorkerBaseUrl(url); err != nil {
+						log.Info("Run `zvm zrw default` to reset your release worker.")
+						return err
+					}
+				}
+
+				return nil
+			},
+		},
 	},
 }
 

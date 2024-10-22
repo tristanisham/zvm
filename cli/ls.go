@@ -70,24 +70,34 @@ func (z *ZVM) GetInstalledVersions() ([]string, error) {
 }
 
 func (z ZVM) ListRemoteAvailable() error {
-	versions, err := z.fetchVersionMap()
+	zigVersions, err := z.fetchVersionMap()
 	if err != nil {
 		return err
 	}
 
-	options := make([]string, 0, len(versions))
+	zlsVersions, err := z.fetchZlsTaggedVersionMap()
+	if err != nil {
+		return err
+	}
 
-	for key := range versions {
+	options := make([]string, 0, len(zigVersions))
+
+	// add 'v' prefix for sorting.
+	for key := range zigVersions {
 		options = append(options, "v"+key)
 	}
 
 	semver.Sort(options)
 	slices.Reverse(options)
 
-	// Remove "v" prefix to maintain consistency with zig versioning
+	// remove "v" prefix to maintain consistency with zig versioning.
 	finalList := options[:0]
 	for _, version := range options {
-		finalList = append(finalList, version[1:])
+		stripped := version[1:]
+		if _, ok := zlsVersions[stripped]; ok {
+			stripped += "\t(tagged zls)"
+		}
+		finalList = append(finalList, stripped)
 	}
 
 	fmt.Println(strings.Join(finalList, "\n"))

@@ -71,4 +71,59 @@ func (z *ZVM) fetchVersionMap() (zigVersionMap, error) {
 	return rawVersionStructure, nil
 }
 
+// note: the zls release-worker uses the same index format as zig, but without the latest master entry.
+func (z *ZVM) fetchZlsTaggedVersionMap() (zigVersionMap, error) {
+	log.Debug("inital ZRW", "url", z.Settings.ZlsReleaseWorkerBaseUrl)
+
+	if err := z.loadSettings(); err != nil {
+		log.Warnf("could not load version map from settings: %q", err)
+		log.Debug("zrw", z.Settings.ZlsReleaseWorkerBaseUrl)
+	}
+
+	defaultZrwBaseUrl := "https://releases.zigtools.org"
+
+	zrwBaseUrl := z.Settings.ZlsReleaseWorkerBaseUrl
+
+	log.Debug("setting's ZRW", "url", zrwBaseUrl)
+
+	if len(zrwBaseUrl) == 0 {
+		zrwBaseUrl = defaultZrwBaseUrl
+	}
+
+	versionMapUrl := zrwBaseUrl + "/v1/zls/index.json"
+	req, err := http.NewRequest("GET", versionMapUrl, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Set("User-Agent", "zvm "+meta.VERSION)
+	client := http.DefaultClient
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	versions, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	rawVersionStructure := make(zigVersionMap)
+	if err := json.Unmarshal(versions, &rawVersionStructure); err != nil {
+		var syntaxErr *json.SyntaxError
+		if errors.As(err, &syntaxErr) {
+			return nil, fmt.Errorf("%w: %w", ErrInvalidVersionMap, err)
+		}
+
+		return nil, err
+	}
+
+	if err := os.WriteFile(filepath.Join(z.baseDir, "versions-zls.json"), versions, 0755); err != nil {
+		return nil, err
+	}
+
+	return rawVersionStructure, nil
+}
+
 // statelessFetchVersionMap is the same as fetchVersionMap but it doesn't write to disk. Will probably be depreciated and nuked from orbit when my

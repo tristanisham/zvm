@@ -18,4 +18,5 @@ var (
 	ErrInvalidInput          = errors.New("invalid input")
 	// ErrDownloadFail is an an error when fetching Zig, or constructing a target URL to fetch Zig.
 	ErrDownloadFail = errors.New("failed to download Zig")
+	ErrNoZlsVersion = errors.New("zls release worker returned error")
 )

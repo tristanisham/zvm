@@ -10,8 +10,10 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
+	"strconv"
 
 	"github.com/tristanisham/zvm/cli/meta"
 
@@ -76,7 +78,7 @@ func (z *ZVM) fetchZlsTaggedVersionMap() (zigVersionMap, error) {
 	log.Debug("inital ZRW", "url", z.Settings.ZlsReleaseWorkerBaseUrl)
 
 	if err := z.loadSettings(); err != nil {
-		log.Warnf("could not load version map from settings: %q", err)
+		log.Warnf("could not load zls release worker base url from settings: %q", err)
 		log.Debug("zrw", z.Settings.ZlsReleaseWorkerBaseUrl)
 	}
 
@@ -121,6 +123,68 @@ func (z *ZVM) fetchZlsTaggedVersionMap() (zigVersionMap, error) {
 
 	if err := os.WriteFile(filepath.Join(z.baseDir, "versions-zls.json"), versions, 0755); err != nil {
 		return nil, err
+	}
+
+	return rawVersionStructure, nil
+}
+
+// note: the zls release-worker uses the same index format as zig, but without the latest master entry.
+// this function does not write the result to a file.
+func (z *ZVM) fetchZlsVersionByZigVersion(version string) (zigVersion, error) {
+	log.Debug("inital ZRW", "url", z.Settings.ZlsReleaseWorkerBaseUrl)
+
+	if err := z.loadSettings(); err != nil {
+		log.Warnf("could not load zls release worker base url from settings: %q", err)
+		log.Debug("zrw", z.Settings.ZlsReleaseWorkerBaseUrl)
+	}
+
+	defaultZrwBaseUrl := "https://releases.zigtools.org"
+
+	zrwBaseUrl := z.Settings.ZlsReleaseWorkerBaseUrl
+
+	log.Debug("setting's ZRW", "url", zrwBaseUrl)
+
+	if len(zrwBaseUrl) == 0 {
+		zrwBaseUrl = defaultZrwBaseUrl
+	}
+
+	// https://github.com/zigtools/release-worker?tab=readme-ov-file#query-parameters
+	// The compatibility query parameter must be either only-runtime or full:
+	//   full: Request a ZLS build that can be built and used with the given Zig version.
+	//   only-runtime: Request a ZLS build that can be used at runtime with the given Zig version but may not be able to build ZLS from source.
+	selectVersionUrl := fmt.Sprintf("%s/v1/zls/select-version?zig_version=%s&compatibility=full", zrwBaseUrl, url.QueryEscape(version))
+	req, err := http.NewRequest("GET", selectVersionUrl, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Set("User-Agent", "zvm "+meta.VERSION)
+	client := http.DefaultClient
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	versions, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	rawVersionStructure := make(zigVersion)
+	if err := json.Unmarshal(versions, &rawVersionStructure); err != nil {
+		var syntaxErr *json.SyntaxError
+		if errors.As(err, &syntaxErr) {
+			return nil, fmt.Errorf("%w: %w", ErrInvalidVersionMap, err)
+		}
+
+		return nil, err
+	}
+
+	if code, ok := rawVersionStructure["code"]; ok {
+		codeStr := strconv.FormatFloat(code.(float64), 'f', 0, 64)
+		msg := rawVersionStructure["message"]
+		return nil, fmt.Errorf("%w: code %s: %s", ErrNoZlsVersion, codeStr, msg)
 	}
 
 	return rawVersionStructure, nil

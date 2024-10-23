@@ -130,7 +130,7 @@ func (z *ZVM) fetchZlsTaggedVersionMap() (zigVersionMap, error) {
 
 // note: the zls release-worker uses the same index format as zig, but without the latest master entry.
 // this function does not write the result to a file.
-func (z *ZVM) fetchZlsVersionByZigVersion(version string) (zigVersion, error) {
+func (z *ZVM) fetchZlsVersionByZigVersion(version string, compatMode string) (zigVersion, error) {
 	log.Debug("inital ZRW", "url", z.Settings.ZlsReleaseWorkerBaseUrl)
 
 	if err := z.loadSettings(); err != nil {
@@ -152,7 +152,8 @@ func (z *ZVM) fetchZlsVersionByZigVersion(version string) (zigVersion, error) {
 	// The compatibility query parameter must be either only-runtime or full:
 	//   full: Request a ZLS build that can be built and used with the given Zig version.
 	//   only-runtime: Request a ZLS build that can be used at runtime with the given Zig version but may not be able to build ZLS from source.
-	selectVersionUrl := fmt.Sprintf("%s/v1/zls/select-version?zig_version=%s&compatibility=full", zrwBaseUrl, url.QueryEscape(version))
+	selectVersionUrl := fmt.Sprintf("%s/v1/zls/select-version?zig_version=%s&compatibility=%s", zrwBaseUrl, url.QueryEscape(version), compatMode)
+	log.Debug("fetching zls version", "zigVersion", version, "url", selectVersionUrl)
 	req, err := http.NewRequest("GET", selectVersionUrl, nil)
 	if err != nil {
 		return nil, err
@@ -179,6 +180,10 @@ func (z *ZVM) fetchZlsVersionByZigVersion(version string) (zigVersion, error) {
 		}
 
 		return nil, err
+	}
+
+	if badRequest, ok := rawVersionStructure["error"].(string); ok {
+		return nil, fmt.Errorf("%w: %s", ErrNoZlsVersion, badRequest)
 	}
 
 	if code, ok := rawVersionStructure["code"]; ok {

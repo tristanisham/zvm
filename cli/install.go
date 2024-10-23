@@ -6,10 +6,8 @@ package cli
 
 import (
 	"archive/zip"
-	"bytes"
 	"crypto/sha256"
 	"encoding/hex"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -287,233 +285,201 @@ func mirrorMachEngine(url string) (string, error) {
 	return strings.Replace(url, "https://ziglang.org/builds/", "https://pkg.machengine.org/zig/", 1), nil
 }
 
-type githubTaggedReleaseResponse struct {
-	Assets []gitHubAsset // json array of platform binaries
-}
-
-type gitHubAsset struct {
-	Url                string // url for asset json object
-	Name               string // contains platform information about binary
-	BrowserDownloadUrl string `json:"browser_download_url"` // download url
-}
-
-type zlsCIDownloadIndexResponse struct {
-	Versions     map[string]zlsCIZLSVersion
-	Latest       string // most recent ZLS version
-	LatestTagged string // most recent tagged ZLS version
-}
-
-type zlsCIZLSVersion struct {
-	ZLSVersion string
-	Targets    []string
-}
-
-func getZLSDownloadUrl(version string, archDouble string) (string, string, error) {
-	if version == "master" {
-		resp, err := http.Get("https://zigtools-releases.nyc3.digitaloceanspaces.com/zls/index.json")
-		if err != nil {
-			return "", "", err
-		}
-		defer resp.Body.Close()
-
-		var releaseBuffer bytes.Buffer
-		_, err = releaseBuffer.ReadFrom(resp.Body)
-		if err != nil {
-			return "", "", err
-		}
-
-		var ciIndex zlsCIDownloadIndexResponse
-		if err := json.Unmarshal(releaseBuffer.Bytes(), &ciIndex); err != nil {
-			return "", "", err
-		}
-
-		exeName := "zls"
-		if strings.Contains(archDouble, "windows") {
-			exeName = "zls.exe"
-		}
-
-		format_url := "https://zigtools-releases.nyc3.digitaloceanspaces.com/zls/%v/%v/%v"
-		return fmt.Sprintf(format_url, ciIndex.Latest, archDouble, exeName), ciIndex.Latest, nil
-	} else {
-		url := fmt.Sprintf("https://api.github.com/repos/zigtools/zls/releases/tags/%v", version)
-
-		// get release information
-		resp, err := http.Get(url)
-		if err != nil {
-			return "", "", err
-		}
-		defer resp.Body.Close()
-
-		var releaseBuffer bytes.Buffer
-		_, err = releaseBuffer.ReadFrom(resp.Body)
-		if err != nil {
-			return "", "", err
-		}
-
-		// getting list of assets
-		var taggedReleaseResponse githubTaggedReleaseResponse
-		if err := json.Unmarshal(releaseBuffer.Bytes(), &taggedReleaseResponse); err != nil {
-			return "", "", err
-		}
-
-		if len(taggedReleaseResponse.Assets) == 0 {
-			return "", "", errors.New("invalid ZLS version")
-		}
-
-		// getting platform information
-		var downloadUrl string
-		for _, asset := range taggedReleaseResponse.Assets {
-			if strings.Contains(asset.Name, archDouble) {
-				downloadUrl = asset.BrowserDownloadUrl
-				break
-			}
-		}
-
-		if downloadUrl == "" {
-			return "", "", errors.New("invalid ZLS release URL")
-		}
-
-		return downloadUrl, version, nil
-	}
-}
-
-func (z *ZVM) InstallZls(version string, force bool) error {
-	if version != "master" && strings.Count(version, ".") != 2 {
-		return fmt.Errorf("%w: versions are SEMVER (MAJOR.MINOR.MINUSCULE)", ErrUnsupportedVersion)
+func (z *ZVM) SelectZlsVersion(version string, compatMode string) (string, string, string, error) {
+	rawVersionStructure, err := z.fetchZlsTaggedVersionMap()
+	if err != nil {
+		return "", "", "", err
 	}
 
-	fmt.Println("Finding ZLS executable...")
+	// tagged releases.
+	tarPath, err := getTarPath(version, &rawVersionStructure)
+	if err == nil {
+		shasum, err := getVersionShasum(version, &rawVersionStructure)
+		if err == nil {
+			return version, tarPath, shasum, nil
+		}
+	}
+
+	// master/nightly releases.
+	if err == ErrUnsupportedVersion {
+		info, err := z.fetchZlsVersionByZigVersion(version, compatMode)
+		if err != nil {
+			return "", "", "", err
+		}
+
+		zlsVersion, ok := info["version"].(string)
+		if !ok {
+			return "", "", "", ErrMissingVersionInfo
+		}
+
+		arch, ops := zigStyleSysInfo()
+		systemInfo, ok := info[fmt.Sprintf("%s-%s", arch, ops)].(map[string]any)
+		if !ok {
+			return "", "", "", ErrUnsupportedSystem
+		}
+
+		tar, ok := systemInfo["tarball"].(string)
+		if !ok {
+			return "", "", "", ErrMissingBundlePath
+		}
+
+		shasum, ok := systemInfo["shasum"].(string)
+		if !ok {
+			return "", "", "", ErrMissingShasum
+		}
+
+		return zlsVersion, tar, shasum, nil
+	}
+
+	return "", "", "", err
+}
+
+func (z *ZVM) InstallZls(requestedVersion string, compatMode string, force bool) error {
+	fmt.Println("Determining installed Zig version...")
 
 	// make sure dir exists
-	installDir := filepath.Join(z.baseDir, version)
+	installDir := filepath.Join(z.baseDir, requestedVersion)
 	err := os.MkdirAll(installDir, 0755)
 	if err != nil {
 		return err
 	}
 
-	arch, osType := zigStyleSysInfo()
-	expectedArchOs := fmt.Sprintf("%v-%v", arch, osType)
+	targetZig := strings.TrimSpace(filepath.Join(z.baseDir, requestedVersion, "zig"))
+	cmd := exec.Command(targetZig, "version")
+	var builder strings.Builder
+	cmd.Stdout = &builder
+	err = cmd.Run()
+	if err != nil {
+		log.Warn(err)
+	}
+	zigVersion := strings.TrimSpace(builder.String())
+	log.Debug("installed zig version", "version", zigVersion)
 
+	fmt.Println("Selecting ZLS version...")
+
+	zlsVersion, tarPath, shasum, err := z.SelectZlsVersion(zigVersion, compatMode)
+	if err != nil {
+		if errors.Is(err, ErrUnsupportedVersion) {
+			return fmt.Errorf("%s: %q", err, zigVersion)
+		} else {
+			return err
+		}
+	}
+	log.Debug("selected zls version", "zigVersion", zigVersion, "zlsVersion", zlsVersion)
+
+	_, osType := zigStyleSysInfo()
 	filename := "zls"
 	if osType == "windows" {
 		filename += ".exe"
 	}
 
-	// master does not need unzipping, zpm just serves full binary
-	shouldUnzip := version != "master"
-
-	downloadUrl, selectedVersion, err := getZLSDownloadUrl(version, expectedArchOs)
-	if err != nil {
-		return err
-	}
-
 	if !force {
 		installedVersion := ""
-		targetZls := strings.TrimSpace(filepath.Join(z.baseDir, version, "zls"))
+		targetZls := strings.TrimSpace(filepath.Join(installDir, filename))
 		if _, err := os.Stat(targetZls); err == nil {
 			cmd := exec.Command(targetZls, "--version")
-			var zigVersion strings.Builder
-			cmd.Stdout = &zigVersion
+			var builder strings.Builder
+			cmd.Stdout = &builder
 			err := cmd.Run()
 			if err != nil {
 				log.Warn(err)
 			}
 
-			installedVersion = strings.TrimSpace(zigVersion.String())
+			installedVersion = strings.TrimSpace(builder.String())
 		}
-		if installedVersion == selectedVersion {
+		if installedVersion == zlsVersion {
 			fmt.Printf("ZLS version %s is already installed\n", installedVersion)
 			return nil
 		}
 	}
 
-	request, err := http.NewRequest("GET", downloadUrl, nil)
+	log.Debug("tarPath", "url", tarPath)
+
+	tarResp, err := reqZigDownload(tarPath)
+	if err != nil {
+		return err
+	}
+	defer tarResp.Body.Close()
+
+	var pathEnding string
+	if runtime.GOOS == "windows" {
+		pathEnding = "*.zip"
+	} else {
+		pathEnding = "*.tar.xz"
+	}
+
+	tempDir, err := os.CreateTemp(z.baseDir, pathEnding)
 	if err != nil {
 		return err
 	}
 
-	request.Header.Set("User-Agent", "zvm "+meta.VERSION)
+	defer tempDir.Close()
+	defer os.RemoveAll(tempDir.Name())
 
-	response, err := http.DefaultClient.Do(request)
-	if err != nil {
-		return err
+	var clr_opt_ver_str string
+	if z.Settings.UseColor {
+		clr_opt_ver_str = clr.Green(zigVersion)
+	} else {
+		clr_opt_ver_str = zigVersion
 	}
-	defer response.Body.Close()
-
-	// if resp.ContentLength == 0 {
-	// 	return fmt.Errorf("invalid ZLS content length (%d bytes)", resp.ContentLength)
-	// }
 
 	pbar := progressbar.DefaultBytes(
-		int64(response.ContentLength),
-		"Downloading ZLS",
+		int64(tarResp.ContentLength),
+		fmt.Sprintf("Downloading %s:", clr_opt_ver_str),
 	)
 
-	versionPath := filepath.Join(z.baseDir, version)
-	binaryLocation := filepath.Join(versionPath, filename)
-
-	if !shouldUnzip {
-		file, err := os.Create(binaryLocation)
-		if err != nil {
-			return err
-		}
-		defer file.Close()
-
-		if _, err := io.Copy(io.MultiWriter(pbar, file), response.Body); err != nil {
-			return err
-		}
-	} else {
-		var pathEnding string
-		if runtime.GOOS == "windows" {
-			pathEnding = "*.zip"
-		} else {
-			pathEnding = "*.tar.xz"
-		}
-
-		tempFile, err := os.CreateTemp(z.baseDir, pathEnding)
-		if err != nil {
-			return err
-		}
-
-		defer tempFile.Close()
-		defer os.RemoveAll(tempFile.Name())
-
-		if _, err := io.Copy(io.MultiWriter(pbar, tempFile), response.Body); err != nil {
-			return err
-		}
-
-		zlsTempDir, err := os.MkdirTemp(z.baseDir, "zls-*")
-		if err != nil {
-			return err
-		}
-
-		defer os.RemoveAll(zlsTempDir)
-
-		fmt.Println("Extracting ZLS...") // Edgy bit
-		if err := ExtractBundle(tempFile.Name(), zlsTempDir); err != nil {
-			log.Fatal(err)
-		}
-
-		zlsPath, err := findZlsExecutable(zlsTempDir)
-		if err != nil {
-			return err
-		}
-
-		if err := os.Rename(zlsPath, filepath.Join(versionPath, filename)); err != nil {
-			return err
-		}
-
-		if zlsPath == "" {
-			return fmt.Errorf("could not find ZLS in %q", zlsTempDir)
-		}
-
-	}
-
-	if err := os.Chmod(filepath.Join(versionPath, filename), 0755); err != nil {
+	hash := sha256.New()
+	_, err = io.Copy(io.MultiWriter(tempDir, pbar, hash), tarResp.Body)
+	if err != nil {
 		return err
 	}
 
-	z.createSymlink(version)
+	fmt.Println("Checking ZLS shasum...")
+	if len(shasum) > 0 {
+		ourHexHash := hex.EncodeToString(hash.Sum(nil))
+		log.Debug("shasum check:", "theirs", shasum, "ours", ourHexHash)
+		if ourHexHash != shasum {
+			// TODO (tristan)
+			// Why is my sha256 identical on the server and sha256sum,
+			// but not when I download it in ZVM? Oh shit.
+			// It's because it's a compressed download.
+			return fmt.Errorf("shasum for zls-%v does not match expected value", zlsVersion)
+		}
+		fmt.Println("Shasums for ZLS match! 🎉")
+	} else {
+		log.Warnf("No ZLS shasum provided by host")
+	}
+
+	fmt.Println("Extracting ZLS bundle...")
+
+	zlsTempDir, err := os.MkdirTemp(z.baseDir, "zls-*")
+	if err != nil {
+		return err
+	}
+	defer os.RemoveAll(zlsTempDir)
+
+	if err := ExtractBundle(tempDir.Name(), zlsTempDir); err != nil {
+		log.Fatal(err)
+	}
+
+	zlsPath, err := findZlsExecutable(zlsTempDir)
+	if err != nil {
+		return err
+	}
+
+	if err := os.Rename(zlsPath, filepath.Join(installDir, filename)); err != nil {
+		return err
+	}
+
+	if zlsPath == "" {
+		return fmt.Errorf("could not find ZLS in %q", zlsTempDir)
+	}
+
+	if err := os.Chmod(filepath.Join(installDir, filename), 0755); err != nil {
+		return err
+	}
+
+	z.createSymlink(requestedVersion)
 	fmt.Println("Done! 🎉")
 	return nil
 }

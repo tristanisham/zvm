@@ -149,6 +149,20 @@ pass the `--zls` flag with `zvm i`. For example:
 zvm i --zls master
 ```
 
+#### Select ZLS compatibility mode
+
+By default, ZVM will install a ZLS build, which can be used with the given Zig version,
+but may not be able to build ZLS from source.
+If you want to use a ZLS build, which can be built using the selected Zig version, pass
+the `--full` flag with `zvm i --zls`. For example:
+
+```sh
+zvm i --zls --full master
+```
+
+> [!IMPORTANT]
+> This does not apply to tagged releases, e.g.: `0.13.0`
+
 ## Switch between installed Zig versions
 
 ```sh

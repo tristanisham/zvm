@@ -71,6 +71,10 @@ var zvmApp = &opts.App{
 					Aliases: []string{"f"},
 					Usage:   "force installation even if the version is already installed",
 				},
+				&opts.BoolFlag{
+					Name:  "full",
+					Usage: "use the 'full' zls compatibility mode",
+				},
 			},
 			Description: "To install the latest version, use `master`",
 			Args:        true,
@@ -91,14 +95,20 @@ var zvmApp = &opts.App{
 					force = ctx.Bool("force")
 				}
 
+				zlsCompat := "only-runtime"
+				if ctx.Bool("full") {
+					zlsCompat = "full"
+				}
+
 				// Install Zig
-				if err := zvm.Install(req.Package, force); err != nil {
+				err := zvm.Install(req.Package, force)
+				if err != nil {
 					return err
 				}
 
 				// Install ZLS (if requested)
 				if ctx.Bool("zls") {
-					if err := zvm.InstallZls(req.Package, force); err != nil {
+					if err := zvm.InstallZls(req.Package, zlsCompat, force); err != nil {
 						return err
 					}
 				}

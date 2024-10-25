@@ -46,7 +46,7 @@ func (s *Settings) ResetVersionMap() error {
 	return nil
 }
 
-func (s *Settings) ResetZlsReleaseWorkerBaseUrl() error {
+func (s *Settings) ResetZlsReleaseWorkerUrl() error {
 	s.ZlsReleaseWorkerUrl = "https://releases.zigtools.org/v1/zls/index.json"
 	if err := s.save(); err != nil {
 		return err
@@ -93,7 +93,7 @@ func (s *Settings) SetVersionMapUrl(versionMapUrl string) error {
 	return nil
 }
 
-func (s *Settings) SetZlsReleaseWorkerBaseUrl(versionMapUrl string) error {
+func (s *Settings) SetZlsReleaseWorkerUrl(versionMapUrl string) error {
 	if err := isValidWebURL(versionMapUrl); err != nil {
 		return fmt.Errorf("%w: %w", ErrInvalidVersionMap, err)
 	}

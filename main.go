@@ -6,6 +6,7 @@ package main
 
 import (
 	"errors"
+	"fmt"
 	"os"
 	"strings"
 
@@ -146,11 +147,34 @@ var zvmApp = &opts.App{
 					Aliases: []string{"a"},
 					Usage:   "list remote Zig versions available for download, based on your version map",
 				},
+				&opts.BoolFlag{
+					Name:    "sources",
+					Aliases: []string{"src"},
+					Usage:   "list set version maps",
+				},
 			},
 			Action: func(ctx *opts.Context) error {
 				log.Debug("Version Map", "url", zvm.Settings.VersionMapUrl, "cmd", "list/ls")
 				if ctx.Bool("all") {
 					return zvm.ListRemoteAvailable()
+				} else if ctx.Bool("sources") {
+					if len(zvm.Settings.VersionMapUrl) == 0 {
+						if err := zvm.Settings.ResetVersionMap(); err != nil {
+							return err
+						}
+					}
+
+					if len(zvm.Settings.ZlsReleaseWorkerUrl) == 0 {
+						if err := zvm.Settings.ResetZlsReleaseWorkerUrl(); err != nil {
+							return err
+						}
+					}
+
+					vmu := zvm.Settings.VersionMapUrl
+					zrw := zvm.Settings.ZlsReleaseWorkerUrl
+
+					fmt.Printf("Zig VMU: %s\nZLS VMU: %s\n", vmu, zrw)
+					return nil
 				} else {
 					return zvm.ListVersions()
 				}
@@ -183,13 +207,13 @@ var zvmApp = &opts.App{
 		},
 		{
 			Name:    "source",
-			Aliases: []string{"src"},
+			Aliases: []string{"src", "vmu"},
 			Usage:   "set ZVM's version map URL for custom Zig distribution servers",
 			Args:    true,
 			Subcommands: []*opts.Command{
 				{
-					Name:  "zig",
-					Usage: "set ZVM's version map URL for custom Zig distribution servers",
+					Name:      "zig",
+					Usage:     "set ZVM's version map URL for custom Zig distribution servers",
 					Args:      true,
 					ArgsUsage: "",
 
@@ -227,10 +251,10 @@ var zvmApp = &opts.App{
 
 						switch url {
 						case "default":
-							return zvm.Settings.ResetZlsReleaseWorkerBaseUrl()
+							return zvm.Settings.ResetZlsReleaseWorkerUrl()
 
 						default:
-							if err := zvm.Settings.SetZlsReleaseWorkerBaseUrl(url); err != nil {
+							if err := zvm.Settings.SetZlsReleaseWorkerUrl(url); err != nil {
 								log.Info("Run `zvm zrw default` to reset your release worker.")
 								return err
 							}

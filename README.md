@@ -267,9 +267,9 @@ USAGE:
    zvm list [command options] [arguments...]
 
 OPTIONS:
-   --all, -a         list remote Zig versions available for download, based on your version map (default: false)
-   --sources, --vmu  list set version maps (default: false)
-   --help, -h        show help
+   --all, -a   list remote Zig versions available for download, based on your version map (default: false)
+   --vmu       list set version maps (default: false)
+   --help, -h  show help
 ```
 
 ## Print program version

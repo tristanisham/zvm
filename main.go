@@ -148,8 +148,7 @@ var zvmApp = &opts.App{
 					Usage:   "list remote Zig versions available for download, based on your version map",
 				},
 				&opts.BoolFlag{
-					Name:    "sources",
-					Aliases: []string{"src"},
+					Name:    "vmu",
 					Usage:   "list set version maps",
 				},
 			},
@@ -157,7 +156,7 @@ var zvmApp = &opts.App{
 				log.Debug("Version Map", "url", zvm.Settings.VersionMapUrl, "cmd", "list/ls")
 				if ctx.Bool("all") {
 					return zvm.ListRemoteAvailable()
-				} else if ctx.Bool("sources") {
+				} else if ctx.Bool("vmu") {
 					if len(zvm.Settings.VersionMapUrl) == 0 {
 						if err := zvm.Settings.ResetVersionMap(); err != nil {
 							return err

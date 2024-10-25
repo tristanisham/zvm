@@ -197,9 +197,9 @@ versions locally installed.
 ### List set version maps
 
 ```sh
-zmv ls --src
+zmv ls --vmu
 ```
-The `--src` flag will list set version maps for Zig and ZLS downloads.
+The `--vmu` flag will list set version maps for Zig and ZLS downloads.
 
 ## Uninstall a Zig version
 
@@ -268,7 +268,7 @@ USAGE:
 
 OPTIONS:
    --all, -a         list remote Zig versions available for download, based on your version map (default: false)
-   --sources, --src  list set version maps (default: false)
+   --sources, --vmu  list set version maps (default: false)
    --help, -h        show help
 ```
 

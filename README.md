@@ -194,6 +194,13 @@ zvm ls --all
 The `--all` flag will list the available verisons of Zig for download. Not the
 versions locally installed.
 
+### List set version maps
+
+```sh
+zmv ls --src
+```
+The `--src` flag will list set version maps for Zig and ZLS downloads.
+
 ## Uninstall a Zig version
 
 ```sh
@@ -227,23 +234,30 @@ Use `clean` to remove build artifacts (Good if you're on Windows).
 
 ## Set Version Map Source
 
+ZVM lets choose your vendor for Zig and ZLS. This is great if your company hosts it's own internal fork of Zig, you prefer a different flavor of the language, like Mach.
+
 ```sh
-zvm vmu "https://validurl.local/vmu.json" # Change the source ZVM pulls Zig release information from. Good for self-hosted Zig CDNs.
+zvm vmu zig "https://machengine.org/zig/index.json" # Change the source ZVM pulls Zig release information from.
+
+zvm vmu zls https://validurl.local/vmu.json
                                        # ZVM only supports schemas that match the offical version map schema. 
                                        # Run `vmu default` to reset your version map.
 
-zvm vmu default # Resets back to default Zig releases.
-zvm vmu mach # Sets ZVM to pull from Mach nominated Zig.
+zvm vmu zig default # Resets back to default Zig releases.
+zvm vmu zig mach # Sets ZVM to pull from Mach nominated Zig.
+
+zvm vmu zls default # Resets back to default ZLS releases.
 ```
 
 ## Print program help
-
+Print global help information by running:
 ```sh
-zvm help
+zvm --help
 ```
-Or use it to dive deeper into a specific command.
+
+Print help information about a specific command or subcommand.
 ```sh
-zvm help list
+zvm list --help
 ```
 ```
 NAME:
@@ -253,8 +267,9 @@ USAGE:
    zvm list [command options] [arguments...]
 
 OPTIONS:
-   --all, -a   list remote Zig versions available for download, based on your version map (default: false)
-   --help, -h  show help
+   --all, -a         list remote Zig versions available for download, based on your version map (default: false)
+   --sources, --src  list set version maps (default: false)
+   --help, -h        show help
 ```
 
 ## Print program version
@@ -296,7 +311,10 @@ Enable or disable colored ZVM output. No value toggles colors.
   contributors and developers.
 - `ZVM_SET_CU` Toggle the automatic upgrade checker. If you want to reenable the
   checker, just `uset ZVM_SET_CU`.
-- `ZVM_PATH` sets the install location for ZVM. Set the environment variable to the parent directory of where you've placed the `.zvm` directory. 
+- `ZVM_PATH` replaces the default install location for ZVM Set the environment variable to the parent directory of where you've placed the `.zvm` directory. 
+
+## Settings
+ZVM has additional setting stored in `~/.zvm/settings.json`. You can manually update version maps, toggle color support, and disable the automatic upgrade checker here. All settings are also exposed as flags or environment variables. This file is stateful, and ZVM will create it if it does not exist and utilizes it for its operation.
 
 ## Please Consider Giving the Repo a Star ⭐
 

@@ -16,11 +16,11 @@ import (
 )
 
 type Settings struct {
-	path                string
-	VersionMapUrl       string `json:"versionMapUrl,omitempty"`
-	ZlsReleaseWorkerUrl string `json:"zlsReleaseWorkerBaseUrl,omitempty"`
-	UseColor            bool   `json:"useColor"`
-	AlwaysForceInstall  bool   `json:"alwaysForceInstall"`
+	path               string
+	VersionMapUrl      string `json:"versionMapUrl,omitempty"`    // Zig's version map URL
+	ZlsVMU             string `json:"zlsVersionMapUrl,omitempty"` // ZLS's version map URL
+	UseColor           bool   `json:"useColor"`
+	AlwaysForceInstall bool   `json:"alwaysForceInstall"`
 }
 
 func (s *Settings) ToggleColor() {
@@ -46,8 +46,8 @@ func (s *Settings) ResetVersionMap() error {
 	return nil
 }
 
-func (s *Settings) ResetZlsReleaseWorkerUrl() error {
-	s.ZlsReleaseWorkerUrl = "https://releases.zigtools.org/v1/zls/index.json"
+func (s *Settings) ResetZlsVMU() error {
+	s.ZlsVMU = "https://releases.zigtools.org/v1/zls/index.json"
 	if err := s.save(); err != nil {
 		return err
 	}
@@ -93,17 +93,17 @@ func (s *Settings) SetVersionMapUrl(versionMapUrl string) error {
 	return nil
 }
 
-func (s *Settings) SetZlsReleaseWorkerUrl(versionMapUrl string) error {
+func (s *Settings) SetZlsVMU(versionMapUrl string) error {
 	if err := isValidWebURL(versionMapUrl); err != nil {
 		return fmt.Errorf("%w: %w", ErrInvalidVersionMap, err)
 	}
 
-	s.ZlsReleaseWorkerUrl = versionMapUrl
+	s.ZlsVMU = versionMapUrl
 	if err := s.save(); err != nil {
 		return err
 	}
 
-	log.Debug("set zls release worker base url", "url", s.ZlsReleaseWorkerUrl)
+	log.Debug("set zls version map url", "url", s.ZlsVMU)
 
 	return nil
 }

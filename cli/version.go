@@ -75,20 +75,18 @@ func (z *ZVM) fetchVersionMap() (zigVersionMap, error) {
 
 // note: the zls release-worker uses the same index format as zig, but without the latest master entry.
 func (z *ZVM) fetchZlsTaggedVersionMap() (zigVersionMap, error) {
-	log.Debug("initial ZRW", "func", "fetchZlsTaggedVersionMap", "url", z.Settings.ZlsReleaseWorkerUrl)
+	log.Debug("initial ZRW", "func", "fetchZlsTaggedVersionMap", "url", z.Settings.ZlsVMU)
 
 	if err := z.loadSettings(); err != nil {
 		log.Warnf("could not load zls release worker base url from settings: %q", err)
-		log.Debug("zrw", z.Settings.ZlsReleaseWorkerUrl)
+		log.Debug("zrw", z.Settings.ZlsVMU)
 	}
 
-	versionMapUrl := z.Settings.ZlsReleaseWorkerUrl
-
-	
+	versionMapUrl := z.Settings.ZlsVMU
 
 	log.Debug("setting's ZRW", "url", versionMapUrl)
 
-	if len(z.Settings.ZlsReleaseWorkerUrl) == 0 {
+	if len(z.Settings.ZlsVMU) == 0 {
 		versionMapUrl = "https://releases.zigtools.org/v1/zls/index.json"
 	}
 
@@ -130,16 +128,16 @@ func (z *ZVM) fetchZlsTaggedVersionMap() (zigVersionMap, error) {
 // note: the zls release-worker uses the same index format as zig, but without the latest master entry.
 // this function does not write the result to a file.
 func (z *ZVM) fetchZlsVersionByZigVersion(version string, compatMode string) (zigVersion, error) {
-	log.Debug("initial ZRW", "func", "fetchZlsVersionByZigVersion", "url", z.Settings.ZlsReleaseWorkerUrl)
+	log.Debug("initial ZRW", "func", "fetchZlsVersionByZigVersion", "url", z.Settings.ZlsVMU)
 
 	if err := z.loadSettings(); err != nil {
 		log.Warnf("could not load zls release worker base url from settings: %q", err)
-		log.Debug("zrw", z.Settings.ZlsReleaseWorkerUrl)
+		log.Debug("zrw", z.Settings.ZlsVMU)
 	}
 
 	defaultZrwBaseUrl := "https://releases.zigtools.org"
 
-	zrwBaseUrl := z.Settings.ZlsReleaseWorkerUrl
+	zrwBaseUrl := z.Settings.ZlsVMU
 
 	log.Debug("setting's ZRW", "url", zrwBaseUrl)
 

@@ -164,14 +164,14 @@ var zvmApp = &opts.App{
 						}
 					}
 
-					if len(zvm.Settings.ZlsReleaseWorkerUrl) == 0 {
-						if err := zvm.Settings.ResetZlsReleaseWorkerUrl(); err != nil {
+					if len(zvm.Settings.ZlsVMU) == 0 {
+						if err := zvm.Settings.ResetZlsVMU(); err != nil {
 							return err
 						}
 					}
 
 					vmu := zvm.Settings.VersionMapUrl
-					zrw := zvm.Settings.ZlsReleaseWorkerUrl
+					zrw := zvm.Settings.ZlsVMU
 
 					fmt.Printf("Zig VMU: %s\nZLS VMU: %s\n", vmu, zrw)
 					return nil
@@ -206,8 +206,7 @@ var zvmApp = &opts.App{
 			},
 		},
 		{
-			Name:    "source",
-			Aliases: []string{"src", "vmu"},
+			Name:    "vmu",
 			Usage:   "set ZVM's version map URL for custom Zig distribution servers",
 			Args:    true,
 			Subcommands: []*opts.Command{
@@ -227,13 +226,13 @@ var zvmApp = &opts.App{
 
 						case "mach":
 							if err := zvm.Settings.SetVersionMapUrl("https://machengine.org/zig/index.json"); err != nil {
-								log.Info("Run `zvm source:zig default` to reset your version map.")
+								log.Info("Run `zvm vmu zig default` to reset your version map.")
 								return err
 							}
 
 						default:
 							if err := zvm.Settings.SetVersionMapUrl(url); err != nil {
-								log.Info("Run `zvm source:zig default` to reset your verison map.")
+								log.Info("Run `zvm vmu zig default` to reset your verison map.")
 								return err
 							}
 						}
@@ -243,7 +242,7 @@ var zvmApp = &opts.App{
 				},
 				{
 					Name:  "zls",
-					Usage: "set ZVM's URL for custom ZLS Release Workers",
+					Usage: "set ZVM's version map URL for custom ZLS Release Workers",
 					Args:  true,
 					Action: func(ctx *opts.Context) error {
 						url := ctx.Args().First()
@@ -251,11 +250,11 @@ var zvmApp = &opts.App{
 
 						switch url {
 						case "default":
-							return zvm.Settings.ResetZlsReleaseWorkerUrl()
+							return zvm.Settings.ResetZlsVMU()
 
 						default:
-							if err := zvm.Settings.SetZlsReleaseWorkerUrl(url); err != nil {
-								log.Info("Run `zvm zrw default` to reset your release worker.")
+							if err := zvm.Settings.SetZlsVMU(url); err != nil {
+								log.Info("Run `zvm vmu zls default` to reset your release worker.")
 								return err
 							}
 						}

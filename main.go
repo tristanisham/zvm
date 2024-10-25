@@ -156,23 +156,6 @@ var zvmApp = &opts.App{
 				}
 			},
 		},
-		// {
-		// 	Name:  "list:all",
-		// 	Usage: "list remote Zig versions available for download, based on your version map",
-		// 	Aliases: []string{"la"},
-		// 	Args: false,
-		// 	// Flags: []opts.Flag{
-		// 	// 	&opts.BoolFlag{
-		// 	// 		Name:    "all",
-		// 	// 		Aliases: []string{"a"},
-		// 	// 		Usage:   "list remote Zig versions available for download",
-		// 	// 	},
-		// 	// },
-		// 	Action: func(ctx *opts.Context) error {
-		// 		log.Debug("Version Map", "url", zvm.Settings.VersionMapUrl, "cmd", "la")
-		// 		return zvm.ListRemoteAvailable()
-		// 	},
-		// },
 		{
 			Name:    "uninstall",
 			Usage:   "remove an installed version of Zig",
@@ -199,53 +182,63 @@ var zvmApp = &opts.App{
 			},
 		},
 		{
-			Name:  "vmu",
-			Usage: "set ZVM's version map URL for custom Zig distribution servers",
-			Args:  true,
-			Action: func(ctx *opts.Context) error {
-				url := ctx.Args().First()
-				log.Debug("user passed vmu", "url", url)
+			Name:    "source",
+			Aliases: []string{"src"},
+			Usage:   "set ZVM's version map URL for custom Zig distribution servers",
+			Args:    true,
+			Subcommands: []*opts.Command{
+				{
+					Name:  "zig",
+					Usage: "set ZVM's version map URL for custom Zig distribution servers",
+					Args:      true,
+					ArgsUsage: "",
 
-				switch url {
-				case "default":
-					return zvm.Settings.ResetVersionMap()
+					Action: func(ctx *opts.Context) error {
+						url := ctx.Args().First()
+						log.Debug("user passed VMU", "url", url)
 
-				case "mach":
-					if err := zvm.Settings.SetVersionMapUrl("https://machengine.org/zig/index.json"); err != nil {
-						log.Info("Run `zvm vmu default` to reset your version map.")
-						return err
-					}
+						switch url {
+						case "default":
+							return zvm.Settings.ResetVersionMap()
 
-				default:
-					if err := zvm.Settings.SetVersionMapUrl(url); err != nil {
-						log.Info("Run `zvm vmu default` to reset your verison map.")
-						return err
-					}
-				}
+						case "mach":
+							if err := zvm.Settings.SetVersionMapUrl("https://machengine.org/zig/index.json"); err != nil {
+								log.Info("Run `zvm source:zig default` to reset your version map.")
+								return err
+							}
 
-				return nil
-			},
-		},
-		{
-			Name:  "zrw",
-			Usage: "set ZVM's URL for custom Zls Release Workers",
-			Args:  true,
-			Action: func(ctx *opts.Context) error {
-				url := ctx.Args().First()
-				log.Debug("user passed zrw", "url", url)
+						default:
+							if err := zvm.Settings.SetVersionMapUrl(url); err != nil {
+								log.Info("Run `zvm source:zig default` to reset your verison map.")
+								return err
+							}
+						}
 
-				switch url {
-				case "default":
-					return zvm.Settings.ResetZlsReleaseWorkerBaseUrl()
+						return nil
+					},
+				},
+				{
+					Name:  "zls",
+					Usage: "set ZVM's URL for custom ZLS Release Workers",
+					Args:  true,
+					Action: func(ctx *opts.Context) error {
+						url := ctx.Args().First()
+						log.Debug("user passed zrw", "url", url)
 
-				default:
-					if err := zvm.Settings.SetZlsReleaseWorkerBaseUrl(url); err != nil {
-						log.Info("Run `zvm zrw default` to reset your release worker.")
-						return err
-					}
-				}
+						switch url {
+						case "default":
+							return zvm.Settings.ResetZlsReleaseWorkerBaseUrl()
 
-				return nil
+						default:
+							if err := zvm.Settings.SetZlsReleaseWorkerBaseUrl(url); err != nil {
+								log.Info("Run `zvm zrw default` to reset your release worker.")
+								return err
+							}
+						}
+
+						return nil
+					},
+				},
 			},
 		},
 	},

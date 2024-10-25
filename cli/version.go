@@ -75,24 +75,23 @@ func (z *ZVM) fetchVersionMap() (zigVersionMap, error) {
 
 // note: the zls release-worker uses the same index format as zig, but without the latest master entry.
 func (z *ZVM) fetchZlsTaggedVersionMap() (zigVersionMap, error) {
-	log.Debug("initial ZRW","func", "fetchZlsTaggedVersionMap", "url", z.Settings.ZlsReleaseWorkerBaseUrl)
+	log.Debug("initial ZRW", "func", "fetchZlsTaggedVersionMap", "url", z.Settings.ZlsReleaseWorkerUrl)
 
 	if err := z.loadSettings(); err != nil {
 		log.Warnf("could not load zls release worker base url from settings: %q", err)
-		log.Debug("zrw", z.Settings.ZlsReleaseWorkerBaseUrl)
+		log.Debug("zrw", z.Settings.ZlsReleaseWorkerUrl)
 	}
 
-	defaultZrwBaseUrl := "https://releases.zigtools.org"
+	versionMapUrl := z.Settings.ZlsReleaseWorkerUrl
 
-	zrwBaseUrl := z.Settings.ZlsReleaseWorkerBaseUrl
+	
 
-	log.Debug("setting's ZRW", "url", zrwBaseUrl)
+	log.Debug("setting's ZRW", "url", versionMapUrl)
 
-	if len(zrwBaseUrl) == 0 {
-		zrwBaseUrl = defaultZrwBaseUrl
+	if len(z.Settings.ZlsReleaseWorkerUrl) == 0 {
+		versionMapUrl = "https://releases.zigtools.org/v1/zls/index.json"
 	}
 
-	versionMapUrl := zrwBaseUrl + "/v1/zls/index.json"
 	req, err := http.NewRequest("GET", versionMapUrl, nil)
 	if err != nil {
 		return nil, err
@@ -131,16 +130,16 @@ func (z *ZVM) fetchZlsTaggedVersionMap() (zigVersionMap, error) {
 // note: the zls release-worker uses the same index format as zig, but without the latest master entry.
 // this function does not write the result to a file.
 func (z *ZVM) fetchZlsVersionByZigVersion(version string, compatMode string) (zigVersion, error) {
-	log.Debug("initial ZRW","func", "fetchZlsVersionByZigVersion", "url", z.Settings.ZlsReleaseWorkerBaseUrl)
+	log.Debug("initial ZRW", "func", "fetchZlsVersionByZigVersion", "url", z.Settings.ZlsReleaseWorkerUrl)
 
 	if err := z.loadSettings(); err != nil {
 		log.Warnf("could not load zls release worker base url from settings: %q", err)
-		log.Debug("zrw", z.Settings.ZlsReleaseWorkerBaseUrl)
+		log.Debug("zrw", z.Settings.ZlsReleaseWorkerUrl)
 	}
 
 	defaultZrwBaseUrl := "https://releases.zigtools.org"
 
-	zrwBaseUrl := z.Settings.ZlsReleaseWorkerBaseUrl
+	zrwBaseUrl := z.Settings.ZlsReleaseWorkerUrl
 
 	log.Debug("setting's ZRW", "url", zrwBaseUrl)
 

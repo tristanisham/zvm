@@ -21,7 +21,7 @@ import (
 )
 
 func (z *ZVM) fetchVersionMap() (zigVersionMap, error) {
-	log.Debug("inital VMU", "url", z.Settings.VersionMapUrl)
+	log.Debug("initial VMU", "url", z.Settings.VersionMapUrl)
 
 	if err := z.loadSettings(); err != nil {
 		log.Warnf("could not load version map from settings: %q", err)
@@ -75,7 +75,7 @@ func (z *ZVM) fetchVersionMap() (zigVersionMap, error) {
 
 // note: the zls release-worker uses the same index format as zig, but without the latest master entry.
 func (z *ZVM) fetchZlsTaggedVersionMap() (zigVersionMap, error) {
-	log.Debug("inital ZRW", "url", z.Settings.ZlsReleaseWorkerBaseUrl)
+	log.Debug("initial ZRW","func", "fetchZlsTaggedVersionMap", "url", z.Settings.ZlsReleaseWorkerBaseUrl)
 
 	if err := z.loadSettings(); err != nil {
 		log.Warnf("could not load zls release worker base url from settings: %q", err)
@@ -131,7 +131,7 @@ func (z *ZVM) fetchZlsTaggedVersionMap() (zigVersionMap, error) {
 // note: the zls release-worker uses the same index format as zig, but without the latest master entry.
 // this function does not write the result to a file.
 func (z *ZVM) fetchZlsVersionByZigVersion(version string, compatMode string) (zigVersion, error) {
-	log.Debug("inital ZRW", "url", z.Settings.ZlsReleaseWorkerBaseUrl)
+	log.Debug("initial ZRW","func", "fetchZlsVersionByZigVersion", "url", z.Settings.ZlsReleaseWorkerBaseUrl)
 
 	if err := z.loadSettings(); err != nil {
 		log.Warnf("could not load zls release worker base url from settings: %q", err)

@@ -50,7 +50,7 @@ func (z *ZVM) setBin(ver string) error {
 	// CreateFile C:\Users\gs\.zvm\bin: The system cannot find the file specified.
 	//
 	// which leads to evaluation of the else case (line 59) and to an early return
-	// therefore the the inital symbolic link is never created.
+	// therefore the the initial symbolic link is never created.
 	if stat != nil {
 		if err == nil {
 			log.Debugf("Removing old %s", bin_dir)

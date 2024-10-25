@@ -81,7 +81,7 @@ func (z *ZVM) Install(version string, force bool) error {
 
 	log.Debug("tarPath", "url", tarPath)
 
-	tarResp, err := reqZigDownload(tarPath)
+	tarResp, err := requestDownload(tarPath)
 	if err != nil {
 		return err
 	}
@@ -197,8 +197,8 @@ func (z *ZVM) Install(version string, force bool) error {
 	return nil
 }
 
-// reqZigDownload HTTP requests Zig downloads from the official site and mirrors
-func reqZigDownload(tarURL string) (*http.Response, error) {
+// requestDownload HTTP requests Zig downloads from the official site and mirrors
+func requestDownload(tarURL string) (*http.Response, error) {
 	log.Debug("requestWithMirror", "tarURL", tarURL)
 
 	tarResp, err := attemptDownload(tarURL)
@@ -395,7 +395,7 @@ func (z *ZVM) InstallZls(requestedVersion string, compatMode string, force bool)
 
 	log.Debug("tarPath", "url", tarPath)
 
-	tarResp, err := reqZigDownload(tarPath)
+	tarResp, err := requestDownload(tarPath)
 	if err != nil {
 		return err
 	}
@@ -418,14 +418,14 @@ func (z *ZVM) InstallZls(requestedVersion string, compatMode string, force bool)
 
 	var clr_opt_ver_str string
 	if z.Settings.UseColor {
-		clr_opt_ver_str = clr.Green(zigVersion)
+		clr_opt_ver_str = clr.Green(zlsVersion)
 	} else {
-		clr_opt_ver_str = zigVersion
+		clr_opt_ver_str = zlsVersion
 	}
 
 	pbar := progressbar.DefaultBytes(
 		int64(tarResp.ContentLength),
-		fmt.Sprintf("Downloading %s:", clr_opt_ver_str),
+		fmt.Sprintf("Downloading ZLS %s:", clr_opt_ver_str),
 	)
 
 	hash := sha256.New()

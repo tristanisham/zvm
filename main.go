@@ -302,7 +302,7 @@ To resolve this:
 2. Remove the 'zlsVersionMapUrl' key & value from the file (if present).
 
 What happens next: ZVM will automatically use the correct version map the next time you run it
-If the issue persists, please double-check your settings and try again.`)
+If the issue persists, please double-check your settings and try again, or create a GitHub Issue.`)
 		}
 
 		meta.CtaFatal(err)

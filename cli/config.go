@@ -47,7 +47,7 @@ func Initialize() *ZVM {
 				UseColor:           true,
 				VersionMapUrl:      "https://ziglang.org/download/index.json",
 				AlwaysForceInstall: false,
-				ZlsVMU:             "https://releases.zigtools.org/v1/zls/index.json",
+				ZlsVMU:             "https://releases.zigtools.org/",
 			}
 
 			out_settings, err := json.MarshalIndent(&zvm.Settings, "", "    ")

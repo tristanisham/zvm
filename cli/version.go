@@ -14,6 +14,7 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
+	"strings"
 
 	"github.com/tristanisham/zvm/cli/meta"
 
@@ -73,6 +74,25 @@ func (z *ZVM) fetchVersionMap() (zigVersionMap, error) {
 	return rawVersionStructure, nil
 }
 
+// cleanURL removes consecutive slashes from a URL while preserving the protocol.
+func cleanURL(url string) string {
+	// Split the URL into two parts: protocol (e.g., "https://") and the rest
+	var prefix string
+	if strings.HasPrefix(url, "https://") {
+		prefix = "https://"
+		url = strings.TrimPrefix(url, "https://")
+	} else if strings.HasPrefix(url, "http://") {
+		prefix = "http://"
+		url = strings.TrimPrefix(url, "http://")
+	}
+
+	// Replace multiple slashes with a single slash in the remaining part of the URL
+	cleanedPath := strings.ReplaceAll(url, "//", "/")
+
+	// Reconstruct the URL with the protocol prefix
+	return prefix + cleanedPath
+}
+
 // note: the zls release-worker uses the same index format as zig, but without the latest master entry.
 func (z *ZVM) fetchZlsTaggedVersionMap() (zigVersionMap, error) {
 	log.Debug("initial ZRW", "func", "fetchZlsTaggedVersionMap", "url", z.Settings.ZlsVMU)
@@ -87,10 +107,13 @@ func (z *ZVM) fetchZlsTaggedVersionMap() (zigVersionMap, error) {
 	log.Debug("setting's ZRW", "url", versionMapUrl)
 
 	if len(z.Settings.ZlsVMU) == 0 {
-		versionMapUrl = "https://releases.zigtools.org/v1/zls/index.json"
+		versionMapUrl = "https://releases.zigtools.org/"
 	}
 
-	req, err := http.NewRequest("GET", versionMapUrl, nil)
+	fullVersionMapAPI := cleanURL(versionMapUrl + "v1/zls/index.json")
+
+	log.Debug("Version Map Url (95)", "func", "fetchZlsTaggedVersionMap", "url", fullVersionMapAPI)
+	req, err := http.NewRequest("GET", fullVersionMapAPI, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -149,7 +172,7 @@ func (z *ZVM) fetchZlsVersionByZigVersion(version string, compatMode string) (zi
 	// The compatibility query parameter must be either only-runtime or full:
 	//   full: Request a ZLS build that can be built and used with the given Zig version.
 	//   only-runtime: Request a ZLS build that can be used at runtime with the given Zig version but may not be able to build ZLS from source.
-	selectVersionUrl := fmt.Sprintf("%s/v1/zls/select-version?zig_version=%s&compatibility=%s", zrwBaseUrl, url.QueryEscape(version), compatMode)
+	selectVersionUrl := cleanURL(fmt.Sprintf("%s/v1/zls/select-version?zig_version=%s&compatibility=%s", zrwBaseUrl, url.QueryEscape(version), compatMode))
 	log.Debug("fetching zls version", "zigVersion", version, "url", selectVersionUrl)
 	req, err := http.NewRequest("GET", selectVersionUrl, nil)
 	if err != nil {

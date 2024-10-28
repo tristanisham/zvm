@@ -47,7 +47,7 @@ func (s *Settings) ResetVersionMap() error {
 }
 
 func (s *Settings) ResetZlsVMU() error {
-	s.ZlsVMU = "https://releases.zigtools.org/v1/zls/index.json"
+	s.ZlsVMU = "https://releases.zigtools.org/"
 	if err := s.save(); err != nil {
 		return err
 	}

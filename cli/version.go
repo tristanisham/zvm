@@ -172,7 +172,7 @@ func (z *ZVM) fetchZlsVersionByZigVersion(version string, compatMode string) (zi
 	// The compatibility query parameter must be either only-runtime or full:
 	//   full: Request a ZLS build that can be built and used with the given Zig version.
 	//   only-runtime: Request a ZLS build that can be used at runtime with the given Zig version but may not be able to build ZLS from source.
-	selectVersionUrl := cleanURL(fmt.Sprintf("%s/v1/zls/select-version?zig_version=%s&compatibility=%s", zrwBaseUrl, url.QueryEscape(version), compatMode))
+	selectVersionUrl := (fmt.Sprintf("%s/v1/zls/select-version?zig_version=%s&compatibility=%s", zrwBaseUrl, url.QueryEscape(version), compatMode))
 	log.Debug("fetching zls version", "zigVersion", version, "url", selectVersionUrl)
 	req, err := http.NewRequest("GET", selectVersionUrl, nil)
 	if err != nil {

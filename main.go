@@ -137,6 +137,22 @@ var zvmApp = &opts.App{
 			},
 		},
 		{
+			Name:  "run",
+			Usage: "run a command with the given Zig version",
+			Args:  true,
+			Flags: []opts.Flag{
+				&opts.BoolFlag{
+					Name:  "sync",
+					Usage: "sync your current version of Zig with the repository",
+				},
+			},
+			Action: func(ctx *opts.Context) error {
+				versionArg := strings.TrimPrefix(ctx.Args().First(), "v")
+				cmd := ctx.Args().Tail()
+				return zvm.Run(versionArg, cmd)
+			},
+		},
+		{
 			Name:    "list",
 			Usage:   "list installed Zig versions. Flag `--all` to see remote options",
 			Aliases: []string{"ls"},
@@ -291,18 +307,18 @@ func main() {
 
 	// run and report errors
 	if err := zvmApp.Run(os.Args); err != nil {
-// 		if meta.VERSION == "v0.7.9" && errors.Is(err, cli.ErrInvalidVersionMap) {
-// 			meta.CtaGeneric("Help", `Encountered an issue while trying to install ZLS for Zig 'master'.
-			
-// Problem: ZVM v0.7.7 and v0.7.8 may have saved an invalid 'zlsVersionMapUrl' to your settings, 
-// which causes this error. The latest version, v0.7.9, can fix this issue by using the correct URL.
+		// 		if meta.VERSION == "v0.7.9" && errors.Is(err, cli.ErrInvalidVersionMap) {
+		// 			meta.CtaGeneric("Help", `Encountered an issue while trying to install ZLS for Zig 'master'.
 
-// To resolve this:
-// 1. Open your ZVM settings file: '~/.zvm/settings.json'
-// 2. Remove the 'zlsVersionMapUrl' key & value from the file (if present).
-// What happens next: ZVM will automatically use the correct version map the next time you run it
-// If the issue persists, please double-check your settings and try again, or create a GitHub Issue.`)
-// 		}
+		// Problem: ZVM v0.7.7 and v0.7.8 may have saved an invalid 'zlsVersionMapUrl' to your settings,
+		// which causes this error. The latest version, v0.7.9, can fix this issue by using the correct URL.
+
+		// To resolve this:
+		// 1. Open your ZVM settings file: '~/.zvm/settings.json'
+		// 2. Remove the 'zlsVersionMapUrl' key & value from the file (if present).
+		// What happens next: ZVM will automatically use the correct version map the next time you run it
+		// If the issue persists, please double-check your settings and try again, or create a GitHub Issue.`)
+		// 		}
 		meta.CtaFatal(err)
 	}
 

@@ -140,12 +140,6 @@ var zvmApp = &opts.App{
 			Name:  "run",
 			Usage: "run a command with the given Zig version",
 			Args:  true,
-			Flags: []opts.Flag{
-				&opts.BoolFlag{
-					Name:  "sync",
-					Usage: "sync your current version of Zig with the repository",
-				},
-			},
 			Action: func(ctx *opts.Context) error {
 				versionArg := strings.TrimPrefix(ctx.Args().First(), "v")
 				cmd := ctx.Args().Tail()

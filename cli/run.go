@@ -9,6 +9,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"slices"
 	"strings"
 
@@ -66,7 +67,12 @@ func (z *ZVM) Run(version string, cmd []string) error {
 }
 
 func (z *ZVM) runZig(version string, cmd []string) error {
-	bin := strings.TrimSpace(filepath.Join(z.baseDir, version, "zig"))
+	zigExe := "zig"
+	if runtime.GOOS == "windows" {
+		zigExe = "zig.exe"
+	}
+	
+	bin := strings.TrimSpace(filepath.Join(z.baseDir, version, zigExe))
 
 	log.Debug("runZig", "bin", bin)
 	if stat, err := os.Lstat(bin); err != nil {

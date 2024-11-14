@@ -7,46 +7,93 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
-
-	"github.com/tristanisham/zvm/cli/meta"
+	"slices"
+	"strings"
 )
 
 // Run the given Zig compiler with the provided arguments
-func (z *ZVM) Run(ver string, cmd []string) error {
-	if err := z.getVersion(ver); err != nil {
-		if errors.Is(err, os.ErrNotExist) {
+func (z *ZVM) Run(version string, cmd []string) error {
 
-			fmt.Printf("It looks like %s isn't installed. Would you like to install it first? [y/n]\n", ver)
+	if len(version) == 0 {
+		zig, err := z.zigPath()
+		if err != nil {
+			return fmt.Errorf("%w: no Zig version found", ErrMissingBundlePath)
+		}
 
-			if getConfirmation() {
-				if err = z.Install(ver, false); err != nil {
-					return err
-				}
+		return z.runZig(zig, cmd)
+	}
+
+	installedVersions, err := z.GetInstalledVersions()
+	if err != nil {
+		return err
+	}
+
+	if slices.Contains(installedVersions, version) {
+		return z.runZig(version, cmd)
+	} else {
+		rawVersionStructure, err := z.fetchVersionMap()
+		if err != nil {
+			return err
+		}
+
+		_, err = getTarPath(version, &rawVersionStructure)
+		if err != nil {
+			if errors.Is(err, ErrUnsupportedVersion) {
+				return fmt.Errorf("%s: %q", err, version)
 			} else {
-				return fmt.Errorf("version %s is not installed", ver)
+				return err
 			}
+		}
+
+		fmt.Printf("It looks like %s isn't installed. Would you like to install it first? [y/n]\n", version)
+
+		if getConfirmation() {
+			if err = z.Install(version, false); err != nil {
+				return err
+			}
+			return z.runZig(version, cmd)
+		} else {
+			return fmt.Errorf("version %s is not installed", version)
 		}
 	}
 
-	return z.runBin(ver, cmd)
 }
 
-func (z *ZVM) runBin(ver string, cmd []string) error {
-	// $ZVM_PATH/$VERSION/zig cmd
-	bin := filepath.Join(z.baseDir, ver, "zig")
+func (z *ZVM) runZig(version string, cmd []string) error {
+	bin := strings.TrimSpace(filepath.Join(z.baseDir, version, "zig"))
 
-	// Skip symlink checks, does this Zig binary exist?
-	stat, err := os.Stat(bin)
-	if err != nil {
+	if stat, err := os.Stat(bin); err != nil {
 		return fmt.Errorf("%w: %s", err, stat.Name())
 	}
 
 	// the logging here really muddies up the output of the Zig compiler
 	// and adds a lot of noise. For that reason this function exits with
 	// the zig compilers exit code
-	if err := meta.Exec(bin, cmd); err != nil {
+	if err := execute(bin, cmd); err != nil {
 		return err
+	}
+
+	return nil
+}
+
+// Execute the given Zig command with a specified compiler
+func execute(bin string, cmd []string) error {
+	// zvm run 0.14.0 build run --help
+	if len(bin) == 0 {
+		return fmt.Errorf("compiler binary cannot be empty")
+	}
+
+	zig := exec.Command(bin, cmd...)
+	zig.Stdin, zig.Stdout, zig.Stderr = os.Stdin, os.Stdout, os.Stderr
+
+	if err := zig.Run(); err != nil {
+		if err2, ok := err.(*exec.ExitError); ok {
+			os.Exit(err2.ExitCode())
+		} else {
+			return fmt.Errorf("error executing command '%s': %w", cmd, err2)
+		}
 	}
 
 	return nil

@@ -11,18 +11,22 @@ import (
 	"path/filepath"
 	"slices"
 	"strings"
+
+	"github.com/charmbracelet/log"
 )
 
 // Run the given Zig compiler with the provided arguments
 func (z *ZVM) Run(version string, cmd []string) error {
-
+	log.Debug("Run", "version", version, "cmds", strings.Join(cmd, ", "))
 	if len(version) == 0 {
-		zig, err := z.zigPath()
-		if err != nil {
-			return fmt.Errorf("%w: no Zig version found", ErrMissingBundlePath)
-		}
-
-		return z.runZig(zig, cmd)
+		return fmt.Errorf("no zig version provided. If you want to run your set version of Zig, please use 'zig'")
+		// zig, err := z.zigPath()
+		// log.Debug("Run", "zig path", zig)
+		// if err != nil {
+		// 	return fmt.Errorf("%w: no Zig version found; %w", ErrMissingBundlePath, err)
+		// }
+		
+		// return z.runZig("bin", cmd)
 	}
 
 	installedVersions, err := z.GetInstalledVersions()
@@ -47,7 +51,7 @@ func (z *ZVM) Run(version string, cmd []string) error {
 			}
 		}
 
-		fmt.Printf("It looks like %s isn't installed. Would you like to install it first? [y/n]\n", version)
+		fmt.Printf("It looks like %s isn't installed. Would you like to install it? [y/n]\n", version)
 
 		if getConfirmation() {
 			if err = z.Install(version, false); err != nil {
@@ -64,8 +68,14 @@ func (z *ZVM) Run(version string, cmd []string) error {
 func (z *ZVM) runZig(version string, cmd []string) error {
 	bin := strings.TrimSpace(filepath.Join(z.baseDir, version, "zig"))
 
-	if stat, err := os.Stat(bin); err != nil {
-		return fmt.Errorf("%w: %s", err, stat.Name())
+	log.Debug("runZig", "bin", bin)
+	if stat, err := os.Lstat(bin); err != nil {
+		
+		name := version
+		if stat != nil {
+			name = stat.Name()
+		}
+		return fmt.Errorf("%w: %s", err, name)
 	}
 
 	// the logging here really muddies up the output of the Zig compiler

@@ -142,8 +142,9 @@ var zvmApp = &opts.App{
 			Args:  true,
 			Action: func(ctx *opts.Context) error {
 				versionArg := strings.TrimPrefix(ctx.Args().First(), "v")
-				cmd := ctx.Args().Tail()
-				return zvm.Run(versionArg, cmd)
+				cmds := ctx.Args().Tail()
+				return zvm.Run(versionArg, cmds)
+
 			},
 		},
 		{

@@ -59,7 +59,7 @@ func (z *ZVM) GetInstalledVersions() ([]string, error) {
 	}
 	versions := make([]string, 0, len(dir))
 	for _, key := range dir {
-		if key.Type().IsDir() {
+		if key.IsDir() {
 			switch key.Name() {
 			case "bin", "self":
 				continue

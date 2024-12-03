@@ -59,11 +59,13 @@ func (z *ZVM) GetInstalledVersions() ([]string, error) {
 	}
 	versions := make([]string, 0, len(dir))
 	for _, key := range dir {
-		switch key.Name() {
-		case "settings.json", "bin", "versions.json", "versions-zls.json", "self":
-			continue
-		default:
-			versions = append(versions, key.Name())
+		if key.Type().IsDir() {
+			switch key.Name() {
+			case "bin", "self":
+				continue
+			default:
+				versions = append(versions, key.Name())
+			}
 		}
 	}
 	return versions, nil

@@ -95,6 +95,7 @@ for (const os of GOOS) {
     await tar.append("zvm", {
       filePath: `${zvm_str}/zvm`,
     });
+    
     const writer = await Deno.open(`./${zvm_str}.tar`, {
       write: true,
       create: true,

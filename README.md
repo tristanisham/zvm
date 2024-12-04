@@ -2,12 +2,13 @@
   <img width="400px"  src ="https://github.com/tristanisham/zvm/assets/23124818/be5c3713-8aaf-4419-a1ae-acb29da36eae"/>
 </p>
 
-Zig Version Manager (zvm) is a tool for managing your [Zig](https://ziglang.org/) installs. With std
-under heavy development and a large feature roadmap, Zig is bound to continue
-changing. Breaking existing builds, updating valid syntax, and introducing new
-features like a package manager. While this is great for developers, it also can
-lead to headaches when you need multiple versions of a language installed to
-compile your projects, or a language gets updated frequently.
+Zig Version Manager (zvm) is a tool for managing your
+[Zig](https://ziglang.org/) installs. With std under heavy development and a
+large feature roadmap, Zig is bound to continue changing. Breaking existing
+builds, updating valid syntax, and introducing new features like a package
+manager. While this is great for developers, it also can lead to headaches when
+you need multiple versions of a language installed to compile your projects, or
+a language gets updated frequently.
 
 ## Join our Community
 
@@ -15,7 +16,6 @@ compile your projects, or a language gets updated frequently.
 - [Twitter|X](https://twitter.com/atalocke)
 
 <a href="https://polar.sh/tristanisham"><picture><source media="(prefers-color-scheme: dark)" srcset="https://polar.sh/embed/subscribe.svg?org=tristanisham&label=Subscribe&darkmode"><img alt="Subscribe on Polar" src="https://polar.sh/embed/subscribe.svg?org=tristanisham&label=Subscribe"></picture></a>
- 
 
 # Installing ZVM
 
@@ -24,7 +24,8 @@ directory, ZVM will download new ZIG versions and symlink whichever version you
 specify with `zvm use` to `$HOME/.zvm/bin`. You should add this folder to your
 path. After ZVM 0.2.3, ZVM's installer will now add ZVM to `$HOME/.zvm/self`.
 You should also add this directory as the environment variable `ZVM_INSTALL`.
-The installer scripts should handle this for you automatically on *nix and Windows systems. 
+The installer scripts should handle this for you automatically on *nix and
+Windows systems.
 
 If you don't want to use `ZVM_INSTALL` (like you already have ZVM in a place you
 like), then ZVM will update the exact executable you've called `upgrade` from.
@@ -84,13 +85,16 @@ Append
 
 ## Configure ZVM path
 
-It is possible to overwrite the default behavior of ZVM to adhere to XDG specification on Linux. There's an environment variable `ZVM_PATH`. Setting it to `$XDG_DATA_HOME/zvm` will do the trick.
+It is possible to overwrite the default behavior of ZVM to adhere to XDG
+specification on Linux. There's an environment variable `ZVM_PATH`. Setting it
+to `$XDG_DATA_HOME/zvm` will do the trick.
 
 ## Community Package
 
 ### AUR
 
-`zvm` on the [Arch AUR](https://aur.archlinux.org/packages/zvm) is a community-maintained package, and may be out of date.
+`zvm` on the [Arch AUR](https://aur.archlinux.org/packages/zvm) is a
+community-maintained package, and may be out of date.
 
 # Why should I use ZVM?
 
@@ -133,14 +137,15 @@ zvm i master
 
 ### Force Install
 
-As of `v0.7.6` ZVM will now skip downloading a version if it is already installed. You can always force an install with the `--force` or `-f` flag.
+As of `v0.7.6` ZVM will now skip downloading a version if it is already
+installed. You can always force an install with the `--force` or `-f` flag.
 
 ```sh
 zvm i --force master
 ```
 
-You can also enable the old behavior by setting the new `alwaysForceInstall` field to `true` in
-`~/.zvm/settings.json`.
+You can also enable the old behavior by setting the new `alwaysForceInstall`
+field to `true` in `~/.zvm/settings.json`.
 
 ### Install ZLS with ZVM
 
@@ -153,10 +158,10 @@ zvm i --zls master
 
 #### Select ZLS compatibility mode
 
-By default, ZVM will install a ZLS build, which can be used with the given Zig version,
-but may not be able to build ZLS from source.
-If you want to use a ZLS build, which can be built using the selected Zig version, pass
-the `--full` flag with `zvm i --zls`. For example:
+By default, ZVM will install a ZLS build, which can be used with the given Zig
+version, but may not be able to build ZLS from source. If you want to use a ZLS
+build, which can be built using the selected Zig version, pass the `--full` flag
+with `zvm i --zls`. For example:
 
 ```sh
 zvm i --zls --full master
@@ -201,6 +206,7 @@ versions locally installed.
 ```sh
 zmv ls --vmu
 ```
+
 The `--vmu` flag will list set version maps for Zig and ZLS downloads.
 
 ## Uninstall a Zig version
@@ -236,7 +242,8 @@ Use `clean` to remove build artifacts (Good if you're on Windows).
 
 ## Run installed version of Zig without switching your default
 
-If you want to run a version of Zig without setting it as your default, the new `run` command is your friend.
+If you want to run a version of Zig without setting it as your default, the new
+`run` command is your friend.
 
 ```sh
 zig version
@@ -248,9 +255,12 @@ zvm run 0.11.0 version
 zig version
 # 0.13.0
 ```
-This can be helpful if you want to test your project on a newer version of Zig without having to switch between bins, or on alternative flavor of Zig.
+
+This can be helpful if you want to test your project on a newer version of Zig
+without having to switch between bins, or on alternative flavor of Zig.
 
 ## How to use with alternative VMUs
+
 Make sure you switch your VMU before using `run`.
 
 ```sh
@@ -259,11 +269,14 @@ run mach-latest version
 # 0.14.0-dev.1911+3bf89f55c
 ```
 
-If you would like to run the currently set Zig, please keep using the standard `zig` command.
+If you would like to run the currently set Zig, please keep using the standard
+`zig` command.
 
 ## Set Version Map Source
 
-ZVM lets choose your vendor for Zig and ZLS. This is great if your company hosts it's own internal fork of Zig, you prefer a different flavor of the language, like Mach.
+ZVM lets choose your vendor for Zig and ZLS. This is great if your company hosts
+it's own internal fork of Zig, you prefer a different flavor of the language,
+like Mach.
 
 ```sh
 zvm vmu zig "https://machengine.org/zig/index.json" # Change the source ZVM pulls Zig release information from.
@@ -279,15 +292,19 @@ zvm vmu zls default # Resets back to default ZLS releases.
 ```
 
 ## Print program help
+
 Print global help information by running:
+
 ```sh
 zvm --help
 ```
 
 Print help information about a specific command or subcommand.
+
 ```sh
 zvm list --help
 ```
+
 ```
 NAME:
    zvm list - list installed Zig versions. Flag `--all` to see remote options
@@ -306,6 +323,7 @@ OPTIONS:
 ```sh
 zvm --version
 ```
+
 Prints the version of ZVM you have installed.
 
 <hr>
@@ -317,6 +335,7 @@ Prints the version of ZVM you have installed.
 Enable or disable colored ZVM output. No value toggles colors.
 
 #### Enable
+
 - on
 - yes/y
 - enabled
@@ -329,7 +348,6 @@ Enable or disable colored ZVM output. No value toggles colors.
 - disabled
 - false
 
-
 ```sh
 --color # Toggle ANSI color printing on or off for ZVM's output, i.e. --color=true
 ```
@@ -340,10 +358,16 @@ Enable or disable colored ZVM output. No value toggles colors.
   contributors and developers.
 - `ZVM_SET_CU` Toggle the automatic upgrade checker. If you want to reenable the
   checker, just `uset ZVM_SET_CU`.
-- `ZVM_PATH` replaces the default install location for ZVM Set the environment variable to the parent directory of where you've placed the `.zvm` directory. 
+- `ZVM_PATH` replaces the default install location for ZVM Set the environment
+  variable to the parent directory of where you've placed the `.zvm` directory.
 
 ## Settings
-ZVM has additional setting stored in `~/.zvm/settings.json`. You can manually update version maps, toggle color support, and disable the automatic upgrade checker here. All settings are also exposed as flags or environment variables. This file is stateful, and ZVM will create it if it does not exist and utilizes it for its operation.
+
+ZVM has additional setting stored in `~/.zvm/settings.json`. You can manually
+update version maps, toggle color support, and disable the automatic upgrade
+checker here. All settings are also exposed as flags or environment variables.
+This file is stateful, and ZVM will create it if it does not exist and utilizes
+it for its operation.
 
 ## Please Consider Giving the Repo a Star ⭐
 

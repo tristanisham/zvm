@@ -5,30 +5,29 @@ name: Go
 
 on:
   push:
-    branches: [ "master" ]
+    branches: ["master"]
   pull_request:
-    branches: [ "master" ]
+    branches: ["master"]
 
 jobs:
-
   build:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
+      - uses: actions/checkout@v3
 
-    - name: Set up Go
-      uses: actions/setup-go@v3
-      with:
-        go-version: 1.22
-    - name: Install dependencies
-      run: |
-        go get .
+      - name: Set up Go
+        uses: actions/setup-go@v3
+        with:
+          go-version: 1.22
+      - name: Install dependencies
+        run: |
+          go get .
 
-    - name: Format
-      run: go fmt .
-         
-    - name: Build
-      run: go build -v .
+      - name: Format
+        run: go fmt .
 
-    - name: Test
-      run: go test -v .
+      - name: Build
+        run: go build -v .
+
+      - name: Test
+        run: go test -v .

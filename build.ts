@@ -55,10 +55,10 @@ for (const os of GOOS) {
       Deno.exit(1);
     }
 
-//    if (os == "windows") {
-//      await Deno.mkdir(zvm_str, { recursive: true });
-//
-//   }
+    //    if (os == "windows") {
+    //      await Deno.mkdir(zvm_str, { recursive: true });
+    //
+    //   }
 
     console.timeEnd(`Build zvm: ${zvm_str}`);
   }
@@ -79,7 +79,12 @@ for (const os of GOOS) {
     if (os === "windows") {
       console.time(`Compress zvm (zip): ${zvm_str}`);
       const zip = new Deno.Command(`zip`, {
-        args: [`${zvm_str}.zip`, `${zvm_str}/zvm.exe`, `${zvm_str}/elevate.cmd`, `${zvm_str}/elevate.vbs`],
+        args: [
+          `${zvm_str}.zip`,
+          `${zvm_str}/zvm.exe`,
+          `${zvm_str}/elevate.cmd`,
+          `${zvm_str}/elevate.vbs`,
+        ],
         stdin: "piped",
         stdout: "piped",
       });
@@ -95,7 +100,7 @@ for (const os of GOOS) {
     await tar.append("zvm", {
       filePath: `${zvm_str}/zvm`,
     });
-    
+
     const writer = await Deno.open(`./${zvm_str}.tar`, {
       write: true,
       create: true,

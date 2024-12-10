@@ -74,7 +74,7 @@ Please grab the
 ## Putting ZVM on your Path
 
 ZVM requires a few directories to be on your `$PATH`. If you don't know how to
-update your environment variables perminantly on Windows, you can follow
+update your environment variables permanently on Windows, you can follow
 [this guide](https://www.computerhope.com/issues/ch000549.htm). Once you're in
 the appropriate menu, add or append to the following environment variables:
 

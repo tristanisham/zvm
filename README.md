@@ -61,7 +61,7 @@ irm https://raw.githubusercontent.com/tristanisham/zvm/master/install.ps1 | iex
 powershell -c "irm https://raw.githubusercontent.com/tristanisham/zvm/master/install.ps1 | iex"
 ```
 
-## If You Have a Valid Version of Go Installed
+# If You Have a Valid Version of Go Installed
 ```sh
 go install -ldflags "-s -w" github.com/tristanisham/zvm@latest
 ```

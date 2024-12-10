@@ -34,8 +34,7 @@ like), then ZVM will update the exact executable you've called `upgrade` from.
 
 ```sh
 curl https://raw.githubusercontent.com/tristanisham/zvm/master/install.sh | bash
-# Or
-go install -ldflags "-s -w" github.com/tristanisham/zvm@latest
+
 ```
 
 <!-- This script will **automatically append** ZVM's required environment variables (see below) to `~/.profile` or `~/.bashrc`. -->
@@ -60,6 +59,11 @@ irm https://raw.githubusercontent.com/tristanisham/zvm/master/install.ps1 | iex
 
 ```cmd
 powershell -c "irm https://raw.githubusercontent.com/tristanisham/zvm/master/install.ps1 | iex"
+```
+
+## If You Have a Valid Version of Go Installed
+```sh
+go install -ldflags "-s -w" github.com/tristanisham/zvm@latest
 ```
 
 ## Manually

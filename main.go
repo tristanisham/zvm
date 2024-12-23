@@ -5,6 +5,7 @@
 package main
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"os"
@@ -12,7 +13,7 @@ import (
 
 	"github.com/tristanisham/zvm/cli"
 	"github.com/tristanisham/zvm/cli/meta"
-	opts "github.com/urfave/cli/v2"
+	opts "github.com/urfave/cli/v3"
 
 	"github.com/charmbracelet/log"
 )
@@ -22,17 +23,17 @@ var (
 	printUpgradeNotice bool = true
 )
 
-var zvmApp = &opts.App{
+var zvmApp = &opts.Command{
 	Name:        "ZVM",
 	Usage:       "Zig Version Manager",
 	Description: "zvm lets you easily install, upgrade, and switch between different versions of Zig.",
-	HelpName:    "zvm",
-	Version:     meta.VerCopy,
-	Copyright:   "Copyright © 2022 Tristan Isham",
-	Suggest:     true,
-	Before: func(ctx *opts.Context) error {
+	// HelpName:    "zvm",
+	Version:   meta.VerCopy,
+	Copyright: "Copyright © 2022 Tristan Isham",
+	Suggest:   true,
+	Before: func(ctx context.Context, cmd *opts.Command) (context.Context, error) {
 		zvm = *cli.Initialize()
-		return nil
+		return nil, nil
 	},
 	// app-global flags
 	Flags: []opts.Flag{
@@ -40,7 +41,7 @@ var zvmApp = &opts.App{
 			Name:  "color",
 			Usage: "enable (on, yes/y, enabled, true) or disable (off, no/n, disabled, false) colored ZVM output",
 			Value: "toggle",
-			Action: func(ctx *opts.Context, val string) error {
+			Action: func(ctx context.Context, cmd *opts.Command, val string) error {
 				switch val {
 				case "on", "yes", "enabled", "y", "true":
 					zvm.Settings.YesColor()
@@ -78,10 +79,10 @@ var zvmApp = &opts.App{
 				},
 			},
 			Description: "To install the latest version, use `master`",
-			Args:        true,
-			ArgsUsage:   " <ZIG VERSION>",
-			Action: func(ctx *opts.Context) error {
-				versionArg := strings.TrimPrefix(ctx.Args().First(), "v")
+			// Args:        true,
+			ArgsUsage: " <ZIG VERSION>",
+			Action: func(ctx context.Context, cmd *opts.Command) error {
+				versionArg := strings.TrimPrefix(cmd.Args().First(), "v")
 
 				if versionArg == "" {
 					return errors.New("no version provided")
@@ -92,12 +93,12 @@ var zvmApp = &opts.App{
 
 				force := zvm.Settings.AlwaysForceInstall
 
-				if ctx.Bool("force") {
-					force = ctx.Bool("force")
+				if cmd.Bool("force") {
+					force = cmd.Bool("force")
 				}
 
 				zlsCompat := "only-runtime"
-				if ctx.Bool("full") {
+				if cmd.Bool("full") {
 					zlsCompat = "full"
 				}
 
@@ -108,7 +109,7 @@ var zvmApp = &opts.App{
 				}
 
 				// Install ZLS (if requested)
-				if ctx.Bool("zls") {
+				if cmd.Bool("zls") {
 					if err := zvm.InstallZls(req.Package, zlsCompat, force); err != nil {
 						return err
 					}
@@ -120,18 +121,18 @@ var zvmApp = &opts.App{
 		{
 			Name:  "use",
 			Usage: "switch between versions of Zig",
-			Args:  true,
+			// Args:  true,
 			Flags: []opts.Flag{
 				&opts.BoolFlag{
 					Name:  "sync",
 					Usage: "sync your current version of Zig with the repository",
 				},
 			},
-			Action: func(ctx *opts.Context) error {
-				if ctx.Bool("sync") {
+			Action: func(ctx context.Context, cmd *opts.Command) error {
+				if cmd.Bool("sync") {
 					return zvm.Sync()
 				} else {
-					versionArg := strings.TrimPrefix(ctx.Args().First(), "v")
+					versionArg := strings.TrimPrefix(cmd.Args().First(), "v")
 					return zvm.Use(versionArg)
 				}
 			},
@@ -139,10 +140,10 @@ var zvmApp = &opts.App{
 		{
 			Name:  "run",
 			Usage: "run a command with the given Zig version",
-			Args:  true,
-			Action: func(ctx *opts.Context) error {
-				versionArg := strings.TrimPrefix(ctx.Args().First(), "v")
-				cmds := ctx.Args().Tail()
+			// Args:  true,
+			Action: func(ctx context.Context, cmd *opts.Command) error {
+				versionArg := strings.TrimPrefix(cmd.Args().First(), "v")
+				cmds := cmd.Args().Tail()
 				return zvm.Run(versionArg, cmds)
 
 			},
@@ -151,7 +152,7 @@ var zvmApp = &opts.App{
 			Name:    "list",
 			Usage:   "list installed Zig versions. Flag `--all` to see remote options",
 			Aliases: []string{"ls"},
-			Args:    true,
+			// Args:    true,
 			Flags: []opts.Flag{
 				&opts.BoolFlag{
 					Name:    "all",
@@ -163,11 +164,11 @@ var zvmApp = &opts.App{
 					Usage: "list set version maps",
 				},
 			},
-			Action: func(ctx *opts.Context) error {
+			Action: func(ctx context.Context, cmd *opts.Command) error {
 				log.Debug("Version Map", "url", zvm.Settings.VersionMapUrl, "cmd", "list/ls")
-				if ctx.Bool("all") {
+				if cmd.Bool("all") {
 					return zvm.ListRemoteAvailable()
-				} else if ctx.Bool("vmu") {
+				} else if cmd.Bool("vmu") {
 					if len(zvm.Settings.VersionMapUrl) == 0 {
 						if err := zvm.Settings.ResetVersionMap(); err != nil {
 							return err
@@ -194,23 +195,23 @@ var zvmApp = &opts.App{
 			Name:    "uninstall",
 			Usage:   "remove an installed version of Zig",
 			Aliases: []string{"rm"},
-			Args:    true,
-			Action: func(ctx *opts.Context) error {
-				versionArg := strings.TrimPrefix(ctx.Args().First(), "v")
+			// Args:    true,
+			Action: func(ctx context.Context, cmd *opts.Command) error {
+				versionArg := strings.TrimPrefix(cmd.Args().First(), "v")
 				return zvm.Uninstall(versionArg)
 			},
 		},
 		{
 			Name:  "clean",
 			Usage: "remove build artifacts (good if you're a scrub)",
-			Action: func(ctx *opts.Context) error {
+			Action: func(ctx context.Context, cmd *opts.Command) error {
 				return zvm.Clean()
 			},
 		},
 		{
 			Name:  "upgrade",
 			Usage: "self-upgrade ZVM",
-			Action: func(ctx *opts.Context) error {
+			Action: func(ctx context.Context, cmd *opts.Command) error {
 				printUpgradeNotice = false
 				return zvm.Upgrade()
 			},
@@ -218,16 +219,16 @@ var zvmApp = &opts.App{
 		{
 			Name:  "vmu",
 			Usage: "set ZVM's version map URL for custom Zig distribution servers",
-			Args:  true,
-			Subcommands: []*opts.Command{
+			// Args:  true,
+			Commands: []*opts.Command{
 				{
-					Name:      "zig",
-					Usage:     "set ZVM's version map URL for custom Zig distribution servers",
-					Args:      true,
+					Name:  "zig",
+					Usage: "set ZVM's version map URL for custom Zig distribution servers",
+					// Args:      true,
 					ArgsUsage: "",
 
-					Action: func(ctx *opts.Context) error {
-						url := ctx.Args().First()
+					Action: func(ctx context.Context, cmd *opts.Command) error {
+						url := cmd.Args().First()
 						log.Debug("user passed VMU", "url", url)
 
 						switch url {
@@ -253,9 +254,9 @@ var zvmApp = &opts.App{
 				{
 					Name:  "zls",
 					Usage: "set ZVM's version map URL for custom ZLS Release Workers",
-					Args:  true,
-					Action: func(ctx *opts.Context) error {
-						url := ctx.Args().First()
+					// Args:  true,
+					Action: func(ctx context.Context, cmd *opts.Command) error {
+						url := cmd.Args().First()
 						log.Debug("user passed zrw", "url", url)
 
 						switch url {
@@ -301,7 +302,7 @@ func main() {
 	}
 
 	// run and report errors
-	if err := zvmApp.Run(os.Args); err != nil {
+	if err := zvmApp.Run(context.Background(), os.Args); err != nil {
 		// 		if meta.VERSION == "v0.7.9" && errors.Is(err, cli.ErrInvalidVersionMap) {
 		// 			meta.CtaGeneric("Help", `Encountered an issue while trying to install ZLS for Zig 'master'.
 

@@ -208,7 +208,7 @@ versions locally installed.
 ### List set version maps
 
 ```sh
-zmv ls --vmu
+zvm ls --vmu
 ```
 
 The `--vmu` flag will list set version maps for Zig and ZLS downloads.

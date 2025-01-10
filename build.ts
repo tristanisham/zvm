@@ -10,6 +10,8 @@ import { copy } from "https://deno.land/std@0.184.0/streams/copy.ts";
 const GOARCH = [
   "amd64",
   "arm64",
+  "loong64",
+  "ppc64le",
 ];
 
 const GOOS = [
@@ -31,7 +33,12 @@ Deno.env.set("CGO_ENABLED", "0");
 // Compile step
 for (const os of GOOS) {
   for (const ar of GOARCH) {
-    if (os == "solaris" && ar == "arm64" || os == "plan9" && ar == "arm64") {
+    if (
+      os == "solaris" && ar == "arm64" ||
+      os == "plan9" && ar == "arm64" ||
+      os != "linux" && ar == "loong64" ||
+      os != "linux" && ar == "ppc64le"
+    ) {
       continue;
     }
     Deno.env.set("GOOS", os);
@@ -68,7 +75,12 @@ for (const os of GOOS) {
 Deno.chdir("build");
 for (const os of GOOS) {
   for (const ar of GOARCH) {
-    if (os == "solaris" && ar == "arm64" || os == "plan9" && ar == "arm64") {
+    if (
+      os == "solaris" && ar == "arm64" ||
+      os == "plan9" && ar == "arm64" ||
+      os != "linux" && ar == "loong64" ||
+      os != "linux" && ar == "ppc64le"
+    ) {
       continue;
     }
     const zvm_str = `zvm-${os}-${ar}`;

@@ -24,10 +24,10 @@ jobs:
           go get .
 
       - name: Format
-        run: go fmt .
+        run: go fmt ./...
 
       - name: Build
         run: go build -v .
 
       - name: Test
-        run: go test -v .
+        run: go test -v ./...

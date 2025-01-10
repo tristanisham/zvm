@@ -270,19 +270,21 @@ func createDownloadReq(tarURL string) (*http.Request, error) {
 // mirrorReplace takes official Zig VMU download links and replaces them with an alternative download url.
 func mirrorReplace(url, mirror string) (string, error) {
 	var downloadToggle bool = false
-	if !strings.HasPrefix(url, "https://ziglang.org/builds/") && !strings.HasPrefix(url, "https://ziglang.org/download/") {
-		return "", fmt.Errorf("%w: expected a url that started with https://ziglang.org/builds/ or https://ziglang.org/download/. Recieved %q", ErrInvalidInput, url)
+	dlBuild := "https://ziglang.org/builds/"
+	dlDownload := "https://ziglang.org/download/"
+	if !strings.HasPrefix(url, dlBuild) && !strings.HasPrefix(url, dlDownload) {
+		return "", fmt.Errorf("%w: expected a url that started with %s or %s. Recieved %q", ErrInvalidInput, dlBuild, dlDownload, url)
 	}
 
-	if strings.HasPrefix(url, "https://ziglang.org/download/") {
+	if strings.HasPrefix(url, dlDownload) {
 		downloadToggle = true
 	}
 
 	if downloadToggle {
-		return strings.Replace(url, "https://ziglang.org/download/", mirror, 1), nil
+		return strings.Replace(url, dlDownload, mirror, 1), nil
 	}
 
-	return strings.Replace(url, "https://ziglang.org/builds/", mirror, 1), nil
+	return strings.Replace(url, dlBuild, mirror, 1), nil
 }
 
 // mirrorHryx returns the Hryx mirror url equivilant for a Zig Build tarball URL.

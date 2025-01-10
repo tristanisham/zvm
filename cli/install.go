@@ -267,22 +267,32 @@ func createDownloadReq(tarURL string) (*http.Request, error) {
 	return zigDownloadReq, nil
 }
 
-// mirrorHryx returns the Hryx mirror url equivilant for a Zig Build tarball URL.
-func mirrorHryx(url string) (string, error) {
-	if !strings.HasPrefix(url, "https://ziglang.org/builds/") {
-		return "", fmt.Errorf("%w: expected a url that started with https://ziglang.org/builds/. Recieved %q", ErrInvalidInput, url)
+// mirrorReplace takes official Zig VMU download links and replaces them with an alternative download url.
+func mirrorReplace(url, mirror string) (string, error) {
+	var downloadToggle bool = false
+	if !strings.HasPrefix(url, "https://ziglang.org/builds/") && !strings.HasPrefix(url, "https://ziglang.org/download/") {
+		return "", fmt.Errorf("%w: expected a url that started with https://ziglang.org/builds/ or https://ziglang.org/download/. Recieved %q", ErrInvalidInput, url)
 	}
 
-	return strings.Replace(url, "https://ziglang.org/builds/", "https://zigmirror.hryx.net/zig/", 1), nil
+	if strings.HasPrefix(url, "https://ziglang.org/download/") {
+		downloadToggle = true
+	}
+
+	if downloadToggle {
+		return strings.Replace(url, "https://ziglang.org/download/", mirror, 1), nil
+	}
+
+	return strings.Replace(url, "https://ziglang.org/builds/", mirror, 1), nil
+}
+
+// mirrorHryx returns the Hryx mirror url equivilant for a Zig Build tarball URL.
+func mirrorHryx(url string) (string, error) {
+	return mirrorReplace(url, "https://zigmirror.hryx.net/zig/")
 }
 
 // mirrorMachEngine returns the Mach Engine mirror url equivilant for a Zig Build tarball URL.
 func mirrorMachEngine(url string) (string, error) {
-	if !strings.HasPrefix(url, "https://ziglang.org/builds/") {
-		return "", fmt.Errorf("%w: expected a url that started with https://ziglang.org/builds/. Recieved %q", ErrInvalidInput, url)
-	}
-
-	return strings.Replace(url, "https://ziglang.org/builds/", "https://pkg.machengine.org/zig/", 1), nil
+	return mirrorReplace(url, "https://pkg.machengine.org/zig/")
 }
 
 func (z *ZVM) SelectZlsVersion(version string, compatMode string) (string, string, string, error) {

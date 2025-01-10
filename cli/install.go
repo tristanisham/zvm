@@ -591,6 +591,8 @@ func zigStyleSysInfo() (arch string, os string) {
 		arch = "aarch64"
 	case "loong64":
 		arch = "loongarch64"
+	case "ppc64le":
+		arch = "powerpc64le"
 	}
 
 	switch os {

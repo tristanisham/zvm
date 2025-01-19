@@ -19,7 +19,7 @@ a language gets updated frequently.
 
 # Installing ZVM
 
-ZVM lives entirely in `$HOME/.zvm` on all platforms it supports. Inside of the
+On macOS and Windows, ZVM lives entirely in `$HOME/.zvm`. Inside of the
 directory, ZVM will download new ZIG versions and symlink whichever version you
 specify with `zvm use` to `$HOME/.zvm/bin`. You should add this folder to your
 path. After ZVM 0.2.3, ZVM's installer will now add ZVM to `$HOME/.zvm/self`.
@@ -29,6 +29,11 @@ Windows systems.
 
 If you don't want to use `ZVM_INSTALL` (like you already have ZVM in a place you
 like), then ZVM will update the exact executable you've called `upgrade` from.
+
+On other Unix operating systems, ZVM will use the [XDG Directory Specification](https://specifications.freedesktop.org/basedir-spec/latest/) by default.
+To match the behavior of MacOS and Windows, set ZVM_PATH to `$HOME/.zvm`.
+Installing zvm is done by copying the binary into `$XDG_DATA_HOME/zvm/self/` and
+creating a symlink from `~/.local/bin/zvm` to the zvm binary.
 
 # Linux, BSD, MacOS, *nix
 

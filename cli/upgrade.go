@@ -10,6 +10,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"io/fs"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -52,6 +53,11 @@ func (z *ZVM) Upgrade() error {
 	}
 
 	log.Debug("exe dir", "path", zvmInstallDirENV)
+	if _, err := os.Stat(zvmInstallDirENV); errors.Is(err, fs.ErrNotExist) {
+		if err := os.MkdirAll(zvmInstallDirENV, 0775); err != nil {
+			log.Fatal(err)
+		}
+	}
 	zvmBinaryName := "zvm"
 	archive := "tar"
 	if runtime.GOOS == "windows" {
@@ -69,7 +75,7 @@ func (z *ZVM) Upgrade() error {
 	}
 	defer resp.Body.Close()
 
-	tempDownload, err := os.CreateTemp(z.baseDir, fmt.Sprintf("*.%s", archive))
+	tempDownload, err := os.CreateTemp(z.cacheDir, fmt.Sprintf("*.%s", archive))
 	if err != nil {
 		return err
 	}
@@ -98,7 +104,7 @@ func (z *ZVM) Upgrade() error {
 
 	log.Debug("zvmPath", "path", zvmPath)
 
-	newTemp, err := os.MkdirTemp(z.baseDir, "zvm-upgrade-*")
+	newTemp, err := os.MkdirTemp(z.cacheDir, "zvm-upgrade-*")
 	if err != nil {
 		log.Debugf("Failed to create temp direcory: %s", newTemp)
 		return errors.Join(ErrFailedUpgrade, err)
@@ -143,6 +149,12 @@ func (z *ZVM) Upgrade() error {
 		return errors.Join(ErrFailedUpgrade, err)
 	}
 
+	if _, err := os.Lstat(filepath.Join(z.binDir, zvmBinaryName)); err != nil {
+		if err := meta.Symlink(zvmPath, filepath.Join(z.binDir, zvmBinaryName)); err != nil {
+			log.Fatal(err)
+		}
+	}
+
 	return nil
 }
 
@@ -185,19 +197,19 @@ func (z ZVM) getInstallDir() (string, error) {
 	if !ok {
 		this, err := os.Executable()
 		if err != nil {
-			return filepath.Join(z.baseDir, "self"), nil
+			return filepath.Join(z.dataDir, "self"), nil
 		}
 
 		itIsASymlink, err := isSymlink(this)
 		if err != nil {
-			return filepath.Join(z.baseDir, "self"), nil
+			return filepath.Join(z.dataDir, "self"), nil
 		}
 
 		var finalPath string
 		if !itIsASymlink {
 			finalPath, err = resolveSymlink(this)
 			if err != nil {
-				return filepath.Join(z.baseDir, "self"), nil
+				return filepath.Join(z.dataDir, "self"), nil
 			}
 		} else {
 			finalPath = this

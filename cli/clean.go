@@ -9,14 +9,14 @@ import (
 )
 
 func (z *ZVM) Clean() error {
-	dir, err := os.ReadDir(z.baseDir)
+	dir, err := os.ReadDir(z.cacheDir)
 	if err != nil {
 		return err
 	}
 
 	for _, entry := range dir {
 		if filepath.Ext(entry.Name()) == ".zip" || filepath.Ext(entry.Name()) == ".xz" || filepath.Ext(entry.Name()) == ".tar" {
-			if err := os.Remove(filepath.Join(z.baseDir, entry.Name())); err != nil {
+			if err := os.Remove(filepath.Join(z.cacheDir, entry.Name())); err != nil {
 				return err
 			}
 		}

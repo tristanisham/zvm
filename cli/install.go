@@ -246,7 +246,7 @@ func attemptDownload(url string) (*http.Response, error) {
 
 	client := http.DefaultClient
 
-	// Checks the ZVM_SKIP_TLS_VERIFY environment variable and 
+	// Checks the ZVM_SKIP_TLS_VERIFY environment variable and
 	// toggles verifying a secure connection.
 	if kind, is := os.LookupEnv("ZVM_SKIP_TLS_VERIFY"); is {
 

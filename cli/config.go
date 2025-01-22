@@ -61,8 +61,6 @@ func Initialize() *ZVM {
 		}
 	}
 
-	
-
 	return zvm
 }
 
@@ -155,8 +153,6 @@ func (z *ZVM) loadSettings() error {
 
 	return json.Unmarshal(data, &z.Settings)
 }
-
-
 
 // func (z *ZVM) AlertIfUpgradable() {
 // 	if !z.Settings.StartupCheckUpgrade {

@@ -24,10 +24,9 @@ var (
 )
 
 var zvmApp = &opts.Command{
-	Name:        "ZVM",
+	Name:        "zvm",
 	Usage:       "Zig Version Manager",
 	Description: "zvm lets you easily install, upgrade, and switch between different versions of Zig.",
-	// HelpName:    "zvm",
 	Version:   meta.VerCopy,
 	Copyright: "Copyright © 2025 Tristan Isham",
 	Suggest:   true,

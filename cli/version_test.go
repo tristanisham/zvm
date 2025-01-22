@@ -2,7 +2,6 @@ package cli
 
 import "testing"
 
-
 func TestStripExcessSlashes(t *testing.T) {
 	old := "https://releases.zigtools.org//v1/zls/select-version"
 	new := cleanURL(old)

@@ -267,22 +267,34 @@ func createDownloadReq(tarURL string) (*http.Request, error) {
 	return zigDownloadReq, nil
 }
 
-// mirrorHryx returns the Hryx mirror url equivilant for a Zig Build tarball URL.
-func mirrorHryx(url string) (string, error) {
-	if !strings.HasPrefix(url, "https://ziglang.org/builds/") {
-		return "", fmt.Errorf("%w: expected a url that started with https://ziglang.org/builds/. Recieved %q", ErrInvalidInput, url)
+// mirrorReplace takes official Zig VMU download links and replaces them with an alternative download url.
+func mirrorReplace(url, mirror string) (string, error) {
+	var downloadToggle bool = false
+	dlBuild := "https://ziglang.org/builds/"
+	dlDownload := "https://ziglang.org/download/"
+	if !strings.HasPrefix(url, dlBuild) && !strings.HasPrefix(url, dlDownload) {
+		return "", fmt.Errorf("%w: expected a url that started with %s or %s. Recieved %q", ErrInvalidInput, dlBuild, dlDownload, url)
 	}
 
-	return strings.Replace(url, "https://ziglang.org/builds/", "https://zigmirror.hryx.net/zig/", 1), nil
+	if strings.HasPrefix(url, dlDownload) {
+		downloadToggle = true
+	}
+
+	if downloadToggle {
+		return strings.Replace(url, dlDownload, mirror, 1), nil
+	}
+
+	return strings.Replace(url, dlBuild, mirror, 1), nil
+}
+
+// mirrorHryx returns the Hryx mirror url equivilant for a Zig Build tarball URL.
+func mirrorHryx(url string) (string, error) {
+	return mirrorReplace(url, "https://zigmirror.hryx.net/zig/")
 }
 
 // mirrorMachEngine returns the Mach Engine mirror url equivilant for a Zig Build tarball URL.
 func mirrorMachEngine(url string) (string, error) {
-	if !strings.HasPrefix(url, "https://ziglang.org/builds/") {
-		return "", fmt.Errorf("%w: expected a url that started with https://ziglang.org/builds/. Recieved %q", ErrInvalidInput, url)
-	}
-
-	return strings.Replace(url, "https://ziglang.org/builds/", "https://pkg.machengine.org/zig/", 1), nil
+	return mirrorReplace(url, "https://pkg.machengine.org/zig/")
 }
 
 func (z *ZVM) SelectZlsVersion(version string, compatMode string) (string, string, string, error) {
@@ -589,6 +601,10 @@ func zigStyleSysInfo() (arch string, os string) {
 		arch = "x86_64"
 	case "arm64":
 		arch = "aarch64"
+	case "loong64":
+		arch = "loongarch64"
+	case "ppc64le":
+		arch = "powerpc64le"
 	}
 
 	switch os {

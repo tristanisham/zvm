@@ -66,6 +66,7 @@ func (z *ZVM) setBin(ver string) error {
 		return err
 	}
 
+	log.Debug("Use", "version", ver)
 	return nil
 }
 

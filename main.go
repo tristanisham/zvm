@@ -28,7 +28,7 @@ var zvmApp = &opts.App{
 	Description: "zvm lets you easily install, upgrade, and switch between different versions of Zig.",
 	HelpName:    "zvm",
 	Version:     meta.VerCopy,
-	Copyright:   "Copyright © 2022 Tristan Isham",
+	Copyright:   "Copyright © 2025 Tristan Isham",
 	Suggest:     true,
 	Before: func(ctx *opts.Context) error {
 		zvm = *cli.Initialize()

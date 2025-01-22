@@ -31,7 +31,12 @@ func (z *ZVM) Use(ver string) error {
 		}
 	}
 
-	return z.setBin(ver)
+	if err := z.setBin(ver); err != nil {
+		return err
+	}
+
+	fmt.Printf("Now using Zig %s\n", ver)
+	return nil
 }
 
 func (z *ZVM) setBin(ver string) error {
@@ -66,6 +71,7 @@ func (z *ZVM) setBin(ver string) error {
 		return err
 	}
 
+	log.Debug("Use", "version", ver)
 	return nil
 }
 

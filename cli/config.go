@@ -44,10 +44,10 @@ func Initialize() *ZVM {
 	if err := zvm.loadSettings(); err != nil {
 		if errors.Is(err, ErrNoSettings) {
 			zvm.Settings = Settings{
-				UseColor:           true,
 				VersionMapUrl:      "https://ziglang.org/download/index.json",
-				AlwaysForceInstall: false,
 				ZlsVMU:             "https://releases.zigtools.org/",
+				UseColor:           true,
+				AlwaysForceInstall: false,
 			}
 
 			out_settings, err := json.MarshalIndent(&zvm.Settings, "", "    ")
@@ -60,6 +60,8 @@ func Initialize() *ZVM {
 			}
 		}
 	}
+
+	
 
 	return zvm
 }
@@ -153,6 +155,8 @@ func (z *ZVM) loadSettings() error {
 
 	return json.Unmarshal(data, &z.Settings)
 }
+
+
 
 // func (z *ZVM) AlertIfUpgradable() {
 // 	if !z.Settings.StartupCheckUpgrade {

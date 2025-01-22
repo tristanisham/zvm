@@ -7,6 +7,7 @@ package cli
 import (
 	"archive/zip"
 	"crypto/sha256"
+	"crypto/tls"
 	"encoding/hex"
 	"errors"
 	"fmt"
@@ -236,18 +237,40 @@ func requestDownload(tarURL string) (*http.Response, error) {
 	return nil, errors.Join(err, fmt.Errorf("all download attempts failed"))
 }
 
+// attemptDownlaod creates a generic http request for ZVM.
 func attemptDownload(url string) (*http.Response, error) {
 	req, err := createDownloadReq(url)
 	if err != nil {
 		return nil, err
 	}
 
-	resp, err := http.DefaultClient.Do(req)
+	client := http.DefaultClient
+
+	// Checks the ZVM_SKIP_TLS_VERIFY environment variable and 
+	// toggles verifying a secure connection.
+	if kind, is := os.LookupEnv("ZVM_SKIP_TLS_VERIFY"); is {
+
+		if kind != "no-warn" {
+			log.Warnf("ZVM_SKIP_TLS_VERIFY enabled")
+		}
+
+		log.Debug("ZVM_SKIP_TLS_VERIFY", "enabled", true)
+		client = &http.Client{
+			Transport: &http.Transport{
+				TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+			},
+		}
+	} else {
+		// Yeah, yeah. Just an easy way to do the call.
+		log.Debug("ZVM_SKIP_TLS_VERIFY", "enabled", false)
+	}
+
+	resp, err := client.Do(req)
 	if err != nil {
 		return nil, err
 	}
 
-	log.Debug("requestWithMirror", "status code", resp.StatusCode)
+	log.Debug("attemptDownload", "status code", resp.StatusCode)
 
 	return resp, nil
 }

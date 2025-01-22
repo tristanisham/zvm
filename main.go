@@ -27,9 +27,9 @@ var zvmApp = &opts.Command{
 	Name:        "zvm",
 	Usage:       "Zig Version Manager",
 	Description: "zvm lets you easily install, upgrade, and switch between different versions of Zig.",
-	Version:   meta.VerCopy,
-	Copyright: "Copyright © 2025 Tristan Isham",
-	Suggest:   true,
+	Version:     meta.VerCopy,
+	Copyright:   "Copyright © 2025 Tristan Isham",
+	Suggest:     true,
 	Before: func(ctx context.Context, cmd *opts.Command) (context.Context, error) {
 		zvm = *cli.Initialize()
 		return nil, nil
@@ -132,7 +132,12 @@ var zvmApp = &opts.Command{
 					return zvm.Sync()
 				} else {
 					versionArg := strings.TrimPrefix(cmd.Args().First(), "v")
-					return zvm.Use(versionArg)
+					if err := zvm.Use(versionArg); err != nil {
+						return err
+					}
+
+					fmt.Printf("Now using Zig %s\n", versionArg)
+					return nil
 				}
 			},
 		},

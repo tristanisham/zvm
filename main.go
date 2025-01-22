@@ -1,4 +1,4 @@
-// Copyright 2022 Tristan Isham. All rights reserved.
+// Copyright 2025 Tristan Isham. All rights reserved.
 // Use of this source code is governed by the MIT
 // license that can be found in the LICENSE file.
 
@@ -29,7 +29,7 @@ var zvmApp = &opts.Command{
 	Description: "zvm lets you easily install, upgrade, and switch between different versions of Zig.",
 	// HelpName:    "zvm",
 	Version:   meta.VerCopy,
-	Copyright: "Copyright © 2022 Tristan Isham",
+	Copyright: "Copyright © 2025 Tristan Isham",
 	Suggest:   true,
 	Before: func(ctx context.Context, cmd *opts.Command) (context.Context, error) {
 		zvm = *cli.Initialize()

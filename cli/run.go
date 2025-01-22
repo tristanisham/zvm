@@ -1,4 +1,4 @@
-// Copyright 2022 Tristan Isham. All rights reserved.
+// Copyright 2025 Tristan Isham. All rights reserved.
 // Use of this source code is governed by the MIT
 // license that can be found in the LICENSE file.
 package cli
@@ -26,7 +26,7 @@ func (z *ZVM) Run(version string, cmd []string) error {
 		// if err != nil {
 		// 	return fmt.Errorf("%w: no Zig version found; %w", ErrMissingBundlePath, err)
 		// }
-		
+
 		// return z.runZig("bin", cmd)
 	}
 
@@ -71,12 +71,12 @@ func (z *ZVM) runZig(version string, cmd []string) error {
 	if runtime.GOOS == "windows" {
 		zigExe = "zig.exe"
 	}
-	
+
 	bin := strings.TrimSpace(filepath.Join(z.baseDir, version, zigExe))
 
 	log.Debug("runZig", "bin", bin)
 	if stat, err := os.Lstat(bin); err != nil {
-		
+
 		name := version
 		if stat != nil {
 			name = stat.Name()

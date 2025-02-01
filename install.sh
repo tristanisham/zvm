@@ -101,7 +101,7 @@ if [ -n "$TARGET_FILE" ]; then
     echo "Run 'zvm i master' to install Zig"
 else
     echo
-    echo "No ~/.profile or ~/.bashrc file found."
+    echo "No ~/.profile, ~/.bashrc, ~/.zshenv or ~/.zshrc file found."
     echo "Run the following commands to set up ZVM environment variables in this session or append them to your shell's startup script:"
     echo
     if [[ "$TERM" == "xterm"* || "$TERM" == "screen"* || "$TERM" == "tmux"* ]]; then

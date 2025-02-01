@@ -17,8 +17,8 @@ P.R.'s to follow.
    important to me that you know that this is a very actively developed
    repository and all P.R.s will be reviewed within a month of submission.
    Probably sooner. If you would like to talk to me about your P.R. feel free to
-   [email](mailto:tristan.isham@hey.com) me or reach out on Discord or Twitter. I
-   check all regularly.
+   [email](mailto:tristan.isham@hey.com) me or reach out on Discord or Twitter.
+   I check all regularly.
 
 I hope you feel comfortable contributing to ZVM and know that I greatly
 appreaciate every contribution. I'm just one person so seeing community members

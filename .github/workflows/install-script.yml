@@ -1,0 +1,74 @@
+name: Test ZVM Install Script
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test-install:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        shell: [bash, zsh, fish]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Install additional shell (if needed)
+        run: |
+          sudo apt-get update
+          if [ "${{ matrix.shell }}" = "zsh" ]; then
+            sudo apt-get install -y zsh
+          elif [ "${{ matrix.shell }}" = "fish" ]; then
+            sudo apt-get install -y fish
+          fi
+
+      - name: Test install script in ${{ matrix.shell }}
+        shell: bash
+        run: |
+          set -euxo pipefail
+
+          # Create a temporary home directory for testing.
+          TEST_HOME=$(mktemp -d)
+          echo "Using temporary home directory: $TEST_HOME"
+          export HOME="$TEST_HOME"
+
+          # Create the appropriate shell configuration file and set $SHELL accordingly.
+          if [ "${{ matrix.shell }}" = "bash" ]; then
+            touch "$HOME/.bashrc"
+            echo "Using Bash startup file: $HOME/.bashrc"
+            export SHELL="/bin/bash"
+          elif [ "${{ matrix.shell }}" = "zsh" ]; then
+            touch "$HOME/.zshrc"
+            echo "Using Zsh startup file: $HOME/.zshrc"
+            export SHELL="/bin/zsh"
+          elif [ "${{ matrix.shell }}" = "fish" ]; then
+            mkdir -p "$HOME/.config/fish"
+            touch "$HOME/.config/fish/config.fish"
+            echo "Using Fish startup file: $HOME/.config/fish/config.fish"
+            export SHELL="/usr/bin/fish"
+          fi
+
+          # Stub out the download part of the install script to avoid network calls.
+          # This replaces the install_latest function definition with a stub.
+          sed -i 's/install_latest() {/install_latest() {\n  echo "Skipping download in test";\n  return 0;/' install.sh
+
+          # Run the install script.
+          bash install.sh
+
+          # Determine which configuration file should have been updated and verify the expected content.
+          if [ "${{ matrix.shell }}" = "fish" ]; then
+            CONFIG_FILE="$HOME/.config/fish/config.fish"
+            grep -q 'set -gx ZVM_INSTALL "$HOME/.zvm/self"' "$CONFIG_FILE"
+            echo "Fish configuration updated successfully."
+          elif [ "${{ matrix.shell }}" = "zsh" ]; then
+            CONFIG_FILE="$HOME/.zshrc"
+            grep -q 'export ZVM_INSTALL="$HOME/.zvm/self"' "$CONFIG_FILE"
+            echo "Zsh configuration updated successfully."
+          else
+            CONFIG_FILE="$HOME/.bashrc"
+            grep -q 'export ZVM_INSTALL="$HOME/.zvm/self"' "$CONFIG_FILE"
+            echo "Bash configuration updated successfully."
+          fi

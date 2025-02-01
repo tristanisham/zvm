@@ -74,6 +74,10 @@ if [ -f "$HOME/.profile" ]; then
     TARGET_FILE="$HOME/.profile"
 elif [ -f "$HOME/.bashrc" ]; then
     TARGET_FILE="$HOME/.bashrc"
+elif [ -f "$HOME/.zshenv" ]; then
+    TARGET_FILE="$HOME/.zshenv"
+elif [ -f "$HOME/.zshrc" ]; then
+    TARGET_FILE="$HOME/.zshrc"
 else
     TARGET_FILE=""
 fi

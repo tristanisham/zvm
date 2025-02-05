@@ -27,7 +27,7 @@ func (z *ZVM) Use(ver string) error {
 		}
 	}
 
-	z.CreateSymlinks(ver)
+	z.createSymlinks(ver)
 	return nil
 }
 

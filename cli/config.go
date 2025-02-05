@@ -63,10 +63,10 @@ func Initialize() *ZVM {
 			// default settings out
 			settings_path := zvm.Settings.path
 			zvm.Settings = Settings{
-				UseColor:           true,
 				VersionMapUrl:      "https://ziglang.org/download/index.json",
-				AlwaysForceInstall: false,
 				ZlsVMU:             "https://releases.zigtools.org/",
+				UseColor:           true,
+				AlwaysForceInstall: false,
 			}
 
 			out_settings, err := json.MarshalIndent(&zvm.Settings, "", "    ")

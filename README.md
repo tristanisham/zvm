@@ -369,6 +369,10 @@ Enable or disable colored ZVM output. No value toggles colors.
   checker, just `uset ZVM_SET_CU`.
 - `ZVM_PATH` replaces the default install location for ZVM Set the environment
   variable to the parent directory of where you've placed the `.zvm` directory.
+- `ZVM_SKIP_TLS_VERIFY` Do you have problems using TLS in your evironment?
+  Toggle off verifying TLS by setting this environment variable.
+  - By default when this is enabled ZVM will print a warning. Set this variable
+    to `no-warn` to silence this warning.
 
 ## Settings
 

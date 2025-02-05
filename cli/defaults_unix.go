@@ -1,4 +1,4 @@
-// +build aix dragonfly freebsd js,wasm linux nacl netbsd openbsd solaris
+//go:build aix || dragonfly || freebsd || (js && wasm) || linux || nacl || netbsd || openbsd || solaris
 
 package cli
 
@@ -47,7 +47,7 @@ func ZvmBinDirPath(home string) string {
 		if zvm_path == "" {
 			zvm_path = filepath.Join(home, ".local", "bin")
 		}
-	}else {
+	} else {
 		zvm_path = filepath.Join(zvm_path, "bin")
 	}
 	return zvm_path

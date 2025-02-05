@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 )
 
-func ZvmDataDirPath(home string) string {
+func zvmDataDirPath(home string) string {
 	zvm_path := os.Getenv("ZVM_PATH")
 	if zvm_path == "" {
 		zvm_path = os.Getenv("XDG_DATA_HOME")
@@ -18,7 +18,7 @@ func ZvmDataDirPath(home string) string {
 	}
 	return zvm_path
 }
-func ZvmConfigDirPath(home string) string {
+func zvmConfigDirPath(home string) string {
 	zvm_path := os.Getenv("ZVM_PATH")
 	if zvm_path == "" {
 		zvm_path = os.Getenv("XDG_CONFIG_HOME")
@@ -29,7 +29,7 @@ func ZvmConfigDirPath(home string) string {
 	}
 	return zvm_path
 }
-func ZvmStateDirPath(home string) string {
+func zvmStateDirPath(home string) string {
 	zvm_path := os.Getenv("ZVM_PATH")
 	if zvm_path == "" {
 		zvm_path = os.Getenv("XDG_STATE_HOME")
@@ -40,7 +40,7 @@ func ZvmStateDirPath(home string) string {
 	}
 	return zvm_path
 }
-func ZvmBinDirPath(home string) string {
+func zvmBinDirPath(home string) string {
 	zvm_path := os.Getenv("ZVM_PATH")
 	if zvm_path == "" {
 		zvm_path = os.Getenv("XDG_BIN_HOME")
@@ -52,7 +52,7 @@ func ZvmBinDirPath(home string) string {
 	}
 	return zvm_path
 }
-func ZvmCacheDirPath(home string) string {
+func zvmCacheDirPath(home string) string {
 	zvm_path := os.Getenv("ZVM_PATH")
 	if zvm_path == "" {
 		zvm_path = os.Getenv("XDG_CACHE_HOME")

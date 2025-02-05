@@ -26,11 +26,11 @@ func Initialize() *ZVM {
 	}
 
 	zvm := &ZVM{
-		dataDir:   ZvmDataDirPath(home),
-		stateDir:  ZvmStateDirPath(home),
-		configDir: ZvmConfigDirPath(home),
-		binDir:    ZvmBinDirPath(home),
-		cacheDir:  ZvmCacheDirPath(home),
+		dataDir:   zvmDataDirPath(home),
+		stateDir:  zvmStateDirPath(home),
+		configDir: zvmConfigDirPath(home),
+		binDir:    zvmBinDirPath(home),
+		cacheDir:  zvmCacheDirPath(home),
 	}
 
 	// Loop through the zvm fields and make the directories if they don't exist
@@ -133,15 +133,15 @@ func validVmuAlis(version string) bool {
 	return version == "default" || version == "mach"
 }
 
-func (z ZVM) zigPath() (string, error) {
-	zig := filepath.Join(z.binDir, "zig")
-	log.Debug("zigPath", "zig", zig)
-	if _, err := os.Stat(zig); err != nil {
-		return "", err
-	}
+// func (z ZVM) zigPath() (string, error) {
+// 	zig := filepath.Join(z.binDir, "zig")
+// 	log.Debug("zigPath", "zig", zig)
+// 	if _, err := os.Stat(zig); err != nil {
+// 		return "", err
+// 	}
 
-	return zig, nil
-}
+// 	return zig, nil
+// }
 
 func (z ZVM) getVersion(version string) error {
 	if _, err := os.Stat(filepath.Join(z.stateDir, version)); err != nil {

@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 )
 
-func ZvmDataDirPath(home string) string {
+func zvmDataDirPath(home string) string {
 	zvm_path := os.Getenv("ZVM_PATH")
 	if zvm_path == "" {
 		zvm_path = filepath.Join(home, ".zvm")
@@ -15,15 +15,15 @@ func ZvmDataDirPath(home string) string {
 	return zvm_path
 }
 
-func ZvmStateDirPath(home string) string {
-	return ZvmDataDirPath(home)
+func zvmStateDirPath(home string) string {
+	return zvmDataDirPath(home)
 }
-func ZvmConfigDirPath(home string) string {
-	return ZvmDataDirPath(home)
+func zvmConfigDirPath(home string) string {
+	return zvmDataDirPath(home)
 }
-func ZvmBinDirPath(home string) string {
-	return ZvmDataDirPath(home)
+func zvmBinDirPath(home string) string {
+	return zvmDataDirPath(home)
 }
-func ZvmCacheDirPath(home string) string {
-	return ZvmDataDirPath(home)
+func zvmCacheDirPath(home string) string {
+	return zvmDataDirPath(home)
 }

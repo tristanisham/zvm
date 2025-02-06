@@ -91,6 +91,9 @@ func TestMirrors(t *testing.T) {
 }
 
 func TestXDGInstall(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping download test in short mode")
+	}
 	// Create temporary directory structure for XDG paths
 	tmpDir, err := os.MkdirTemp("", "zvm-test-*")
 	if err != nil {

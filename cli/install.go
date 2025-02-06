@@ -32,6 +32,10 @@ import (
 
 func (z *ZVM) Install(version string, force bool) error {
 	os.Mkdir(z.stateDir, 0755)
+	os.Mkdir(z.cacheDir, 0755)
+	os.Mkdir(z.configDir, 0755)
+	os.Mkdir(z.dataDir, 0755)
+	os.Mkdir(z.binDir, 0755)
 	rawVersionStructure, err := z.fetchVersionMap()
 	if err != nil {
 		return err

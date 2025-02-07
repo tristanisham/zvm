@@ -26,15 +26,11 @@ func Initialize() *ZVM {
 	}
 
 	zvm := &ZVM{
-		dataDir:   zvmDataDirPath(home),
-		stateDir:  zvmStateDirPath(home),
-		configDir: zvmConfigDirPath(home),
-		binDir:    zvmBinDirPath(home),
-		cacheDir:  zvmCacheDirPath(home),
+		Directories: zvmDirectories(home, true),
 	}
 
 	// Loop through the zvm fields and make the directories if they don't exist
-	for _, dir := range []string{zvm.dataDir, zvm.stateDir, zvm.configDir, zvm.binDir, zvm.cacheDir} {
+	for _, dir := range []string{zvm.Directories.data, zvm.Directories.state, zvm.Directories.config, zvm.Directories.bin, zvm.Directories.cache} {
 		if _, err := os.Stat(dir); errors.Is(err, fs.ErrNotExist) {
 			if err := os.MkdirAll(dir, 0775); err != nil {
 				log.Fatal(err)
@@ -42,19 +38,19 @@ func Initialize() *ZVM {
 		}
 	}
 
-	log.Debug("Initialize:", "dataDir", zvm.dataDir)
-	log.Debug("Initialize:", "stateDir", zvm.stateDir)
-	log.Debug("Initialize:", "configDir", zvm.configDir)
-	log.Debug("Initialize:", "binDir", zvm.binDir)
-	log.Debug("Initialize:", "cacheDir", zvm.cacheDir)
+	log.Debug("Initialize:", "dataDir", zvm.Directories.data)
+	log.Debug("Initialize:", "stateDir", zvm.Directories.state)
+	log.Debug("Initialize:", "configDir", zvm.Directories.config)
+	log.Debug("Initialize:", "binDir", zvm.Directories.bin)
+	log.Debug("Initialize:", "cacheDir", zvm.Directories.cache)
 
-	if _, err := os.Stat(zvm.dataDir); errors.Is(err, fs.ErrNotExist) {
-		if err := os.MkdirAll(filepath.Join(zvm.dataDir, "self"), 0775); err != nil {
+	if _, err := os.Stat(zvm.Directories.data); errors.Is(err, fs.ErrNotExist) {
+		if err := os.MkdirAll(filepath.Join(zvm.Directories.data, "self"), 0775); err != nil {
 			log.Fatal(err)
 		}
 	}
 
-	zvm.Settings.path = filepath.Join(zvm.configDir, "settings.json")
+	zvm.Settings.path = filepath.Join(zvm.Directories.config, "settings.json")
 	log.Debug("Initialize:", "Settings path", zvm.Settings.path)
 
 	if err := zvm.loadSettings(); err != nil {
@@ -84,20 +80,23 @@ func Initialize() *ZVM {
 	return zvm
 }
 
-type ZVM struct {
+type Directories struct {
 	// We place ourselves in the data directory
 	// The installer should make a symlink from the bin directory to the data
 	// directory
-	dataDir string
+	data string
 	// This is where settings.json lives
-	configDir string
+	config string
 	// We place zig versions under the state directory
-	stateDir string
+	state string
 	// We place current zig/zls in here
-	binDir string
+	bin string
 	// Used for storage of temporary downloads, etc
-	cacheDir string
-	Settings Settings
+	cache string
+}
+type ZVM struct {
+	Directories Directories
+	Settings    Settings
 }
 
 // A representaiton of the offical json schema for Zig versions
@@ -144,11 +143,11 @@ func validVmuAlis(version string) bool {
 // }
 
 func (z ZVM) getVersion(version string) error {
-	if _, err := os.Stat(filepath.Join(z.stateDir, version)); err != nil {
+	if _, err := os.Stat(filepath.Join(z.Directories.state, version)); err != nil {
 		return err
 	}
 
-	targetZig := strings.TrimSpace(filepath.Join(z.stateDir, version, "zig"))
+	targetZig := strings.TrimSpace(filepath.Join(z.Directories.state, version, "zig"))
 	cmd := exec.Command(targetZig, "version")
 	var zigVersion strings.Builder
 	cmd.Stdout = &zigVersion

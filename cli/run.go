@@ -72,7 +72,7 @@ func (z *ZVM) runZig(version string, cmd []string) error {
 		zigExe = "zig.exe"
 	}
 
-	bin := strings.TrimSpace(filepath.Join(z.stateDir, version, zigExe))
+	bin := strings.TrimSpace(filepath.Join(z.Directories.state, version, zigExe))
 
 	log.Debug("runZig", "bin", bin)
 	if stat, err := os.Lstat(bin); err != nil {

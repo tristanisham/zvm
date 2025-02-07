@@ -93,7 +93,7 @@ func TestMirrors(t *testing.T) {
 // verification for XDG and ZVM_PATH install checks
 func verifyInstallation(t *testing.T, zvm *ZVM) {
 	// Verify zig binary exists in state directory
-	zigPath := filepath.Join(zvm.stateDir, "0.13.0", "zig")
+	zigPath := filepath.Join(zvm.Directories.state, "0.13.0", "zig")
 	if runtime.GOOS == "windows" {
 		zigPath += ".exe"
 	}
@@ -102,7 +102,7 @@ func verifyInstallation(t *testing.T, zvm *ZVM) {
 	}
 
 	// Verify zls binary exists in state directory
-	zlsPath := filepath.Join(zvm.stateDir, "0.13.0", "zls")
+	zlsPath := filepath.Join(zvm.Directories.state, "0.13.0", "zls")
 	if runtime.GOOS == "windows" {
 		zlsPath += ".exe"
 	}
@@ -111,7 +111,7 @@ func verifyInstallation(t *testing.T, zvm *ZVM) {
 	}
 
 	// Verify symlinks in bin directory
-	zigLink := filepath.Join(zvm.binDir, "zig")
+	zigLink := filepath.Join(zvm.Directories.bin, "zig")
 	if runtime.GOOS == "windows" {
 		zigLink += ".exe"
 	}
@@ -119,7 +119,7 @@ func verifyInstallation(t *testing.T, zvm *ZVM) {
 		t.Errorf("Zig symlink not found at expected location: %s", zigLink)
 	}
 
-	zlsLink := filepath.Join(zvm.binDir, "zls")
+	zlsLink := filepath.Join(zvm.Directories.bin, "zls")
 	if runtime.GOOS == "windows" {
 		zlsLink += ".exe"
 	}
@@ -185,10 +185,12 @@ func TestXDGInstall(t *testing.T) {
 
 	// Initialize ZVM
 	zvm := &ZVM{
-		dataDir:  filepath.Join(xdgDataHome, "zvm"),
-		stateDir: filepath.Join(xdgStateHome, "zvm"),
-		binDir:   xdgBinHome,
-		cacheDir: filepath.Join(xdgCacheHome, "zvm"),
+		Directories: Directories{
+			data:  filepath.Join(xdgDataHome, "zvm"),
+			state: filepath.Join(xdgStateHome, "zvm"),
+			bin:   xdgBinHome,
+			cache: filepath.Join(xdgCacheHome, "zvm"),
+		},
 	}
 
 	performInstallation(t, zvm)
@@ -215,17 +217,12 @@ func TestZVMPathInstall(t *testing.T) {
 
 	// Initialize ZVM
 	zvm := &ZVM{
-		dataDir:  filepath.Join(tmpDir, "data"),
-		stateDir: filepath.Join(tmpDir, "state"),
-		binDir:   filepath.Join(tmpDir, "bin"),
-		cacheDir: filepath.Join(tmpDir, "cache"),
-	}
-
-	// Create directories
-	for _, dir := range []string{zvm.dataDir, zvm.stateDir, zvm.binDir, zvm.cacheDir} {
-		if err := os.MkdirAll(dir, 0755); err != nil {
-			t.Fatal(err)
-		}
+		Directories: Directories{
+			data:  filepath.Join(tmpDir, "data"),
+			state: filepath.Join(tmpDir, "state"),
+			bin:   filepath.Join(tmpDir, "bin"),
+			cache: filepath.Join(tmpDir, "cache"),
+		},
 	}
 
 	performInstallation(t, zvm)

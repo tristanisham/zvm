@@ -117,6 +117,8 @@ func verifyInstallation(t *testing.T, zvm *ZVM) {
 	}
 	if _, err := os.Stat(zigLink); os.IsNotExist(err) {
 		t.Errorf("Zig symlink not found at expected location: %s", zigLink)
+		t.Error("Bin directory contents:");
+		listFiles(t, zvm.Directories.bin, "\t")
 	}
 
 	zlsLink := filepath.Join(zvm.Directories.bin, "zls")
@@ -126,6 +128,41 @@ func verifyInstallation(t *testing.T, zvm *ZVM) {
 	if _, err := os.Stat(zlsLink); os.IsNotExist(err) {
 		t.Errorf("ZLS symlink not found at expected location: %s", zlsLink)
 	}
+}
+
+func listFiles(t *testing.T, path string, indent string) error {
+	files, err := os.ReadDir(path)
+	if err != nil {
+		return err
+	}
+
+	for _, file := range files {
+		fullPath := filepath.Join(path, file.Name())
+
+		// Get file info to check if it's a symlink
+		info, err := file.Info()
+		if err != nil {
+			t.Errorf("error getting file info for %s: %v", fullPath, err)
+		}
+		switch {
+		case file.IsDir():
+			t.Errorf("%s📁 %s\n", indent, file.Name())
+			err := listFiles(t, fullPath, indent+"  ")
+			if err != nil {
+				return err
+			}
+		case info.Mode() & os.ModeSymlink != 0:
+			target, err := os.Readlink(fullPath)
+			if err != nil {
+				t.Errorf("%s🔗 %s (unable to read target)\n", indent, file.Name())
+			} else {
+				t.Errorf("%s🔗 %s -> %s\n", indent, file.Name(), target)
+			}
+		default:
+			t.Errorf("%s📄 %s\n", indent, file.Name())
+		}
+	}
+	return nil
 }
 
 // used for XDG and ZVM_PATH

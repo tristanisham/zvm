@@ -49,6 +49,7 @@ func zvmPathDirectories() (Directories, bool) {
 			bin:    zvmPath,
 		}, true
 	}
+	// This is where we can look for an existing installation and return that...
 	return Directories{}, false
 }
 func darwinDirectories(home string) Directories {

@@ -39,7 +39,15 @@ func zvmDirectories(home string, useRuntime bool) Directories {
 		}
 	}
 }
-func zvmPathDirectories() (Directories, bool) {
+
+type PathType int
+const (
+    NativePathing   PathType = 0
+    ZvmPath         PathType = 1
+    ExistingInstall PathType = 2
+)
+
+func zvmPathDirectories(home string) (Directories, PathType) {
 	if zvmPath := os.Getenv("ZVM_PATH"); zvmPath != "" {
 		return Directories{
 			data:   zvmPath,
@@ -47,25 +55,38 @@ func zvmPathDirectories() (Directories, bool) {
 			state:  zvmPath,
 			cache:  zvmPath,
 			bin:    zvmPath,
-		}, true
+		}, ZvmPath
 	}
-	// This is where we can look for an existing installation and return that...
-	return Directories{}, false
+	// Look for an existing installation and return that...
+	existingPath := filepath.Join(home, ".zvm")
+	if info, err := os.Stat(existingPath); err == nil && info.IsDir() {
+		log.Debugf("Using existing zvm installation in %s", existingPath)
+		return Directories{
+			data:   existingPath,
+			config: existingPath,
+			state:  existingPath,
+			cache:  existingPath,
+			bin:    existingPath,
+		}, ExistingInstall
+	}
+	return Directories{}, NativePathing
 }
 func darwinDirectories(home string) Directories {
-	rc, ok := Directories{}, false
-	if rc, ok = zvmPathDirectories(); !ok {
+	rc, pathType := Directories{}, NativePathing
+	if rc, pathType = zvmPathDirectories(home); pathType == NativePathing {
 		rc.data = filepath.Join(home, "Library", "Application Support", "zvm")
 		rc.config = filepath.Join(home, "Library", "Preferences", "zvm")
 		rc.state = rc.data
 		rc.cache = filepath.Join(home, "Library", "Caches", "zvm")
 	}
-	rc.bin = filepath.Join(home, ".local", "bin")
+	if pathType != ExistingInstall {
+		rc.bin = filepath.Join(home, ".local", "bin")
+	}
 	return rc
 }
 
 func windowsDirectories(home string) Directories {
-	if rc, ok := zvmPathDirectories(); ok {
+	if rc, pathType := zvmPathDirectories(home); pathType != NativePathing {
 		return rc
 	}
 
@@ -88,20 +109,22 @@ func windowsDirectories(home string) Directories {
 }
 
 func plan9Directories(home string) Directories {
-	rc, ok := Directories{}, false
-	if rc, ok = zvmPathDirectories(); !ok {
+	rc, pathType := Directories{}, NativePathing
+	if rc, pathType = zvmPathDirectories(home); pathType == NativePathing {
 		rc.data = filepath.Join(home, ".zvm")
 		rc.config = rc.data
 		rc.state = rc.data
 		rc.cache = filepath.Join(rc.data, "cache")
 	}
-	rc.bin = filepath.Join(home, "bin")
+	if pathType != ExistingInstall {
+		rc.bin = filepath.Join(home, "bin")
+	}
 	return rc
 }
 
 func unixDirectories(home string) Directories {
-	rc, ok := Directories{}, false
-	if rc, ok = zvmPathDirectories(); !ok {
+	rc, pathType := Directories{}, NativePathing
+	if rc, pathType = zvmPathDirectories(home); pathType == NativePathing {
 		if xdgDataHome := os.Getenv("XDG_DATA_HOME"); xdgDataHome != "" {
 			rc.data = filepath.Join(xdgDataHome, "zvm")
 		} else {
@@ -127,10 +150,12 @@ func unixDirectories(home string) Directories {
 		}
 	}
 
-	if xdgBinHome := os.Getenv("XDG_BIN_HOME"); xdgBinHome != "" {
-		rc.bin = xdgBinHome
-	} else {
-		rc.bin = filepath.Join(home, ".local", "bin")
+	if pathType != ExistingInstall {
+		if xdgBinHome := os.Getenv("XDG_BIN_HOME"); xdgBinHome != "" {
+			rc.bin = xdgBinHome
+		} else {
+			rc.bin = filepath.Join(home, ".local", "bin")
+		}
 	}
 	return rc
 }

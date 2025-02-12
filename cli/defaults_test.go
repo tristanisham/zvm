@@ -19,6 +19,48 @@ type pathTest struct {
 	cleanupEnv     func()
 }
 
+func TestOriginalPaths(t *testing.T) {
+	// We want to avoid disturbing installations that use the original $HOME/.zvm style
+	// so we will test to make sure this works
+
+	// Create temporary directory
+	tmpDir, err := os.MkdirTemp("", "zvm-test-*")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.RemoveAll(tmpDir)
+
+	// Set HOME environment variable
+	os.Setenv("HOME", tmpDir)
+	defer os.Unsetenv("HOME")
+
+	if err := os.Mkdir(filepath.Join(tmpDir, ".zvm"), 0755); err != nil {
+		t.Fatal(err)
+	}
+
+	t.Logf("HOME %s", tmpDir)
+
+	// Since this is a test, we will not complicate matters by using runtime OS
+	// comile time OS here is fine, and since original behavior was identical
+	// between systems, we only need one set of test expectations
+	directories := zvmDirectories(tmpDir, false)
+	expected := filepath.Join(tmpDir, ".zvm")
+	if directories.data != expected {
+		t.Errorf("data path = %v, want %v", directories.data, expected)
+	}
+	if directories.config != expected {
+		t.Errorf("config path = %v, want %v", directories.config, expected)
+	}
+	if directories.state != expected {
+		t.Errorf("state path = %v, want %v", directories.state, expected)
+	}
+	if directories.bin != expected {
+		t.Errorf("bin path = %v, want %v", filepath.Join(tmpDir, ".zvm", "bin"), expected)
+	}
+	if directories.cache != expected {
+		t.Errorf("cache path = %v, want %v", directories.cache, expected)
+	}
+}
 func TestAllDefaultPaths(t *testing.T) {
 	// Save original env vars and restore after test
 	originalEnv := map[string]string{

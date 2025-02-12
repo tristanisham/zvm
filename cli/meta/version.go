@@ -10,9 +10,8 @@ import (
 
 const (
 	VERSION = "v0.8.5"
-
-	// VERSION = "v0.0.0" // For testing zvm upgrade
-
 )
+
+var ForceUpgrade = false // for testing Upgrade command
 
 var VerCopy = fmt.Sprintf("%s %s/%s", VERSION, runtime.GOOS, runtime.GOARCH)

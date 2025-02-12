@@ -576,6 +576,9 @@ func (z *ZVM) createSymlinks(version string) {
 	// Note that we unconditionally create a link for zls here. Unixes will
 	// just know it's broken. If that's bothersome, code a check please
 	for _, link := range links {
+		if runtime.GOOS == "windows" {
+			link += ".exe"
+		}
 		if _, err := os.Lstat(filepath.Join(z.Directories.bin, link)); err == nil {
 			log.Debug("CreateSymLinks", "Removing old symlink", link)
 			if err := os.RemoveAll(filepath.Join(z.Directories.bin, link)); err != nil {

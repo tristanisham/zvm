@@ -48,26 +48,34 @@ const (
 )
 
 func zvmPathDirectories(home string) (Directories, PathType) {
+	zvmInstallPath := os.Getenv("ZVM_INSTALL")
 	if zvmPath := os.Getenv("ZVM_PATH"); zvmPath != "" {
+		if zvmInstallPath == "" {
+			zvmInstallPath = filepath.Join(zvmPath, "self")
+		}
 		return Directories{
 			data:   zvmPath,
 			config: zvmPath,
 			state:  zvmPath,
 			cache:  zvmPath,
 			bin:    zvmPath,
+			self:   zvmInstallPath,
 		}, ZvmPath
 	}
 	// Look for an existing installation and return that...
 	existingPath := filepath.Join(home, ".zvm")
 	if info, err := os.Stat(existingPath); err == nil && info.IsDir() {
 		log.Debugf("Using existing zvm installation in %s", existingPath)
+		if zvmInstallPath == "" {
+			zvmInstallPath = filepath.Join(existingPath, "self")
+		}
 		return Directories{
 			data:   existingPath,
 			config: existingPath,
 			state:  existingPath,
 			cache:  existingPath,
 			bin:    filepath.Join(existingPath, "bin"),
-			self:   filepath.Join(existingPath, "self"),
+			self:   zvmInstallPath,
 		}, ExistingInstall
 	}
 	return Directories{}, NativePathing

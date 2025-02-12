@@ -40,6 +40,14 @@ func TestOriginalPaths(t *testing.T) {
 
 	t.Logf("HOME %s", tmpDir)
 
+	zvmInstall := os.Getenv("ZVM_INSTALL")
+	if zvmInstall != "" {
+		os.Unsetenv("ZVM_INSTALL")
+		defer func() {
+			os.Setenv("ZVM_INSTALL", zvmInstall)
+		}()
+	}
+
 	// Since this is a test, we will not complicate matters by using runtime OS
 	// comile time OS here is fine, and since original behavior was identical
 	// between systems, we only need one set of test expectations

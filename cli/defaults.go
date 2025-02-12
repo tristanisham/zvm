@@ -66,7 +66,8 @@ func zvmPathDirectories(home string) (Directories, PathType) {
 			config: existingPath,
 			state:  existingPath,
 			cache:  existingPath,
-			bin:    existingPath,
+			bin:    filepath.Join(existingPath, "bin"),
+			self:   filepath.Join(existingPath, "self"),
 		}, ExistingInstall
 	}
 	return Directories{}, NativePathing
@@ -81,6 +82,7 @@ func darwinDirectories(home string) Directories {
 	}
 	if pathType != ExistingInstall {
 		rc.bin = filepath.Join(home, ".local", "bin")
+		rc.self = rc.bin
 	}
 	return rc
 }
@@ -105,6 +107,7 @@ func windowsDirectories(home string) Directories {
 		state:  filepath.Join(localAppData, "zvm"),
 		cache:  filepath.Join(localAppData, "zvm", "cache"),
 		bin:    filepath.Join(localAppData, "bin"),
+		self:   filepath.Join(localAppData, "bin"),
 	}
 }
 
@@ -118,6 +121,7 @@ func plan9Directories(home string) Directories {
 	}
 	if pathType != ExistingInstall {
 		rc.bin = filepath.Join(home, "bin")
+		rc.self = rc.bin
 	}
 	return rc
 }
@@ -156,6 +160,7 @@ func unixDirectories(home string) Directories {
 		} else {
 			rc.bin = filepath.Join(home, ".local", "bin")
 		}
+		rc.self = rc.bin
 	}
 	return rc
 }

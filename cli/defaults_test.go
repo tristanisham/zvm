@@ -45,6 +45,8 @@ func TestOriginalPaths(t *testing.T) {
 	// between systems, we only need one set of test expectations
 	directories := zvmDirectories(tmpDir, false)
 	expected := filepath.Join(tmpDir, ".zvm")
+	expectedBin := filepath.Join(tmpDir, ".zvm", "bin")
+	expectedSelf := filepath.Join(tmpDir, ".zvm", "self")
 	if directories.data != expected {
 		t.Errorf("data path = %v, want %v", directories.data, expected)
 	}
@@ -54,8 +56,11 @@ func TestOriginalPaths(t *testing.T) {
 	if directories.state != expected {
 		t.Errorf("state path = %v, want %v", directories.state, expected)
 	}
-	if directories.bin != expected {
-		t.Errorf("bin path = %v, want %v", filepath.Join(tmpDir, ".zvm", "bin"), expected)
+	if directories.bin != expectedBin {
+		t.Errorf("bin path = %v, want %v", directories.bin, expectedBin)
+	}
+	if directories.self != expectedSelf {
+		t.Errorf("self path = %v, want %v", directories.self, expectedSelf)
 	}
 	if directories.cache != expected {
 		t.Errorf("cache path = %v, want %v", directories.cache, expected)
@@ -184,6 +189,9 @@ func TestAllDefaultPaths(t *testing.T) {
 			}
 			if directories.bin != tt.expectedBin {
 				t.Errorf("bin path = %v, want %v", directories.bin, tt.expectedBin)
+			}
+			if directories.self != tt.expectedBin {
+				t.Errorf("self path = %v, want %v", directories.self, tt.expectedBin)
 			}
 			if directories.cache != tt.expectedCache {
 				t.Errorf("cache path = %v, want %v", directories.cache, tt.expectedCache)

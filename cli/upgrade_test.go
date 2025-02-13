@@ -15,9 +15,10 @@ func TestUpgrade(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping upgrade test in short mode")
 	}
-	if runtime.GOOS == "darwin" {
-		t.Skip("skipping upgrade test temporarily on macos")
-	}
+	// This seems to fail in github actions but works on real hardware?
+	// if runtime.GOOS == "darwin" {
+	// 	t.Skip("skipping upgrade test temporarily on macos")
+	// }
 
 	// Create temporary directory structure for XDG paths
 	tmpDir, err := os.MkdirTemp("", "zvm-upgrade-test-*")

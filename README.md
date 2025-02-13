@@ -19,21 +19,24 @@ a language gets updated frequently.
 
 # Installing ZVM
 
-On macOS and Windows, ZVM lives entirely in `$HOME/.zvm`. Inside of the
-directory, ZVM will download new ZIG versions and symlink whichever version you
-specify with `zvm use` to `$HOME/.zvm/bin`. You should add this folder to your
-path. After ZVM 0.2.3, ZVM's installer will now add ZVM to `$HOME/.zvm/self`.
-You should also add this directory as the environment variable `ZVM_INSTALL`.
-The installer scripts should handle this for you automatically on *nix and
-Windows systems.
+By default, ZVM will install to the following places:
 
-If you don't want to use `ZVM_INSTALL` (like you already have ZVM in a place you
-like), then ZVM will update the exact executable you've called `upgrade` from.
+macOS and Linux or other POSIX operating systems: `$HOME/.local/bin`
+Windows: `%LOCALAPPDATA%\bin` (typically, this is something like `C:\Users\Username\AppData\Local`
 
-On other Unix operating systems, ZVM will use the [XDG Directory Specification](https://specifications.freedesktop.org/basedir-spec/latest/) by default.
-To match the behavior of MacOS and Windows, set ZVM_PATH to `$HOME/.zvm`.
-Installing zvm is done by copying the binary into `$XDG_DATA_HOME/zvm/self/` and
-creating a symlink from `~/.local/bin/zvm` to the zvm binary.
+In POSIX operating systems (Linux, FreeBSD, etc), the [XDG Base Directory Specification](https://specifications.freedesktop.org/basedir-spec/latest/)
+is honored, including the non-standard `XDG_BIN_HOME`. On all operating systems,
+the installation path can be overridden specifically for ZVM using the
+`ZVM_INSTALL` environment variable, which points directly to an installation
+directory, or the `ZVM_PATH` environment variable, which will point to a directory
+that zvm will use for all operations.
+
+If you use `ZVM_PATH` to point to a directory, ZVM will download new ZIG versions
+and symlink whichever version you specify with `zvm use` to `$ZVM_PATH/bin`.
+You should add this folder to your path. After ZVM 0.2.3, when `ZVM_PATH` is
+set, ZVM's installer will add ZVM to `$HOME/.zvm/self`.
+
+Upgrades for ZVM will use the same logic to update itself
 
 # Linux, BSD, MacOS, *nix
 
@@ -78,25 +81,13 @@ Please grab the
 
 ## Putting ZVM on your Path
 
-ZVM requires a few directories to be on your `$PATH`. If you don't know how to
+ZVM requires a few directories to be on your `$PATH`. First, run `zvm env`, and
+note the settings for `bin` and `self`. They will be the same directory in most
+circumstances, but may be different. These are the directories to add to your
+`$PATH` if they do not exist there already. If you don't know how to
 update your environment variables permanently on Windows, you can follow
 [this guide](https://www.computerhope.com/issues/ch000549.htm). Once you're in
-the appropriate menu, add or append to the following environment variables:
-
-Add
-
-- ZVM_INSTALL: `%USERPROFILE%\.zvm\self`
-
-Append
-
-- PATH: `%USERPROFILE%\.zvm\bin`
-- PATH: `%ZVM_INSTALL%`
-
-## Configure ZVM path
-
-It is possible to overwrite the default behavior of ZVM to adhere to XDG
-specification on Linux. There's an environment variable `ZVM_PATH`. Setting it
-to `$XDG_DATA_HOME/zvm` will do the trick.
+the appropriate menu, add or append these directories to `$PATH`.
 
 ## Community Package
 
@@ -237,8 +228,13 @@ zvm upgrade
 ```
 
 The latest version of ZVM should install on your machine, regardless of where
-your binary lives (though if you have your binary in a privaledged folder, you
+your binary lives (though if you have your binary in a privileged folder, you
 may have to run this command with `sudo`).
+
+Upgrades will honor the original installed directories. If you want to change
+from a single directory in `$HOME/.zvm` to the platform-specific directory
+scheme introduced in 0.8.6, the best path is to remove your existing zvm directory,
+`ZVM_PATH`/`ZVM_INSTALL` environment variables, and reinstall.
 
 ## Clean up build artifacts
 

@@ -28,11 +28,11 @@ func zvmDirectories(home string, useRuntime bool) Directories {
 		return plan9Directories(home)
 	default:
 		// we are on a weird OS. Back up to what we were compiled with
-		if (useRuntime) {
+		if useRuntime {
 			log.Infof("Unknown runtime operating system %s. Will determine paths based on compiled os %s", os, compiledOs)
 			// Call ourselves based on compiled OS
 			return zvmDirectories(home, false)
-		}else {
+		} else {
 			// Well now we have no idea...home?
 			log.Warnf("Unknown operating system %s. Assuming Unix derivative for install paths", os)
 			return unixDirectories(home)
@@ -41,10 +41,11 @@ func zvmDirectories(home string, useRuntime bool) Directories {
 }
 
 type PathType int
+
 const (
-    NativePathing   PathType = 0
-    ZvmPath         PathType = 1
-    ExistingInstall PathType = 2
+	NativePathing   PathType = 0
+	ZvmPath         PathType = 1
+	ExistingInstall PathType = 2
 )
 
 func zvmPathDirectories(home string) (Directories, PathType) {

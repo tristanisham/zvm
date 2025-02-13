@@ -243,7 +243,7 @@ func (z ZVM) getInstallDir() (string, error) {
 	}
 
 	finalPath := filepath.Dir(this)
-	if (finalPath != z.Directories.self) {
+	if finalPath != z.Directories.self {
 		log.Warnf("We are upgrading zvm in a different directory (%s) than where zvm is currently running (%s)", z.Directories.self, finalPath)
 	}
 	return z.Directories.self, nil

@@ -152,7 +152,7 @@ func listFiles(t *testing.T, path string, indent string) error {
 			if err != nil {
 				return err
 			}
-		case info.Mode() & os.ModeSymlink != 0:
+		case info.Mode()&os.ModeSymlink != 0:
 			target, err := os.Readlink(fullPath)
 			if err != nil {
 				t.Errorf("%s🔗 %s (unable to read target)\n", indent, file.Name())

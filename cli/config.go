@@ -93,7 +93,7 @@ type Directories struct {
 	bin string
 	// Used for storage of temporary downloads, etc
 	cache string
-	
+
 	// This is the bin directory except in the case of existing install
 	// We need this for upgrades
 	self string

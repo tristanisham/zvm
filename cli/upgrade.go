@@ -169,9 +169,25 @@ func (z *ZVM) Upgrade() error {
 func replaceExe(from, to string) error {
 	if runtime.GOOS == "windows" {
 		if err := os.Rename(to, fmt.Sprintf("%s.old", to)); err != nil {
-			return err
+			ret := true
+			if errors.Is(err, os.ErrNotExist) {
+				path, execErr := os.Executable()
+				if execErr != nil {
+					// we have a dumpster fire...bail now
+					return errors.Join(err, execErr)
+				}
+				if path != to {
+					log.Infof("Could not rename existing zvm.exe, but it appears you are not upgrading in place. Running zvm %s, upgrading zvm in %s", path, to)
+					ret = false
+				}
+			}
+			if ret {
+				return err
+			}
 		}
 	} else {
+		// This logic is not correct, but this function is only being called
+		// when runtime.GOOS == "windows"
 		if err := os.Remove(to); err != nil {
 			return err
 		}

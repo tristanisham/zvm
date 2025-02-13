@@ -15,10 +15,6 @@ func TestUpgrade(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping upgrade test in short mode")
 	}
-	// This seems to fail in github actions but works on real hardware?
-	// if runtime.GOOS == "darwin" {
-	// 	t.Skip("skipping upgrade test temporarily on macos")
-	// }
 
 	// Create temporary directory structure for XDG paths
 	tmpDir, err := os.MkdirTemp("", "zvm-upgrade-test-*")
@@ -95,12 +91,13 @@ func TestUpgrade(t *testing.T) {
 
 	// Verify the response matches expected format
 	if tagName == "" {
-		t.Error("Expected non-empty tag name from CanIUpgrade")
+		t.Fatal("Expected non-empty tag name from CanIUpgrade. Cannot proceed without an upgrade tag")
 	}
 
 	t.Logf("Testing upgrade into %s", zvm.Directories.self)
 	// Test the actual upgrade process
 	if err := zvm.Upgrade(); err != nil {
+		t.Log("Upgrade failed")
 		t.Fatal(err)
 	}
 

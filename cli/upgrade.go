@@ -6,6 +6,7 @@ package cli
 
 import (
 	"archive/tar"
+	//"bytes" // Needed if API debug is necessary
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -161,7 +162,7 @@ func (z *ZVM) Upgrade() error {
 			log.Fatal(err)
 		}
 	}
-
+	log.Debug("upgrade complete")
 	return nil
 }
 
@@ -334,8 +335,26 @@ func isSymlink(path string) (bool, error) {
 // 2. A boolean to indicate if upgrade is possible
 // 3. Error value
 func CanIUpgrade() (string, bool, error) {
+	// Now that API rate limit problem has been addressed, it's unlikely we
+	// need the retry loop, but it doesn't hurt
+	for i := 0; i < 5; i++ {
+		tagName, forceUpgrade, err := canIUpgrade()
+		if err == nil && tagName == "" {
+			log.Infof("Empty release tag returned from GitHub: Initiating retry %d of 5", i+1)
+			time.Sleep(1000 * time.Millisecond) // Delay between retries
+			continue
+		}
+		return tagName, forceUpgrade, err
+	}
+
+	return "", false, fmt.Errorf("Retried 5 times but have not gotten a suitable response from GitHub")
+}
+
+// internal implementation - single shot
+func canIUpgrade() (string, bool, error) {
 	release, err := getLatestGitHubRelease("tristanisham", "zvm")
 	if err != nil {
+		log.Errorf("Error getting latest GitHub Release: %v", err)
 		return "", false, err
 	}
 
@@ -365,12 +384,49 @@ func CanIUpgrade() (string, bool, error) {
 
 func getLatestGitHubRelease(owner, repo string) (*GithubRelease, error) {
 	url := fmt.Sprintf("https://api.github.com/repos/%s/%s/releases/latest", owner, repo)
-	resp, err := http.Get(url)
+
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	// Add authentication header if GITHUB_TOKEN is set
+	// This will provide higher rate limits, which should stabilize
+	// GitHub actions
+	if token := os.Getenv("GITHUB_TOKEN"); token != "" {
+		log.Debug("Adding GITHUB_TOKEN as authorization header")
+		req.Header.Set("Authorization", "Bearer "+token)
+	}
+
+	// Make the request
+	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return nil, err
 	}
 	defer resp.Body.Close()
 
+	if resp.StatusCode == 403 || resp.StatusCode == 429 {
+		return nil, fmt.Errorf("GitHub API rate limit exceeded. Please set GITHUB_TOKEN environment variable with a valid GitHub token.")
+	}
+
+	// Use this code if further debug is necessary
+	// bodyBytes, err := io.ReadAll(resp.Body)
+	// if err != nil {
+	// 	return nil, err
+	// }
+	// // Print the body as string
+	// log.Debugf("GitHub GET request body: %s", string(bodyBytes))
+
+	// // Create a new reader with the body bytes for the JSON decoder
+	// body := io.NopCloser(bytes.NewBuffer(bodyBytes))
+
+	// var release GithubRelease
+	// err = json.NewDecoder(body).Decode(&release)
+	// if err != nil {
+	// 	return nil, err
+	// }
+
+	// Comment this block if further debug is necessary
 	var release GithubRelease
 	err = json.NewDecoder(resp.Body).Decode(&release)
 	if err != nil {

@@ -65,8 +65,8 @@ function Install-ZVM {
     $ZVMBin = New-Item -ItemType Directory -Force -Path $EnvJson.bin
     Move-Item "${TempDir}\$UnzippedPath\zvm.exe" "$($EnvJson.self)\zvm.exe" -Force
 
-    Remove-Item "${ZVMSelf}\$Target" -Recurse -Force
-    Remove-Item ${ZVMSelf}\$UnzippedPath -Force
+    Remove-Item "${ZipPath}" -Recurse -Force
+    Remove-Item ${TempDir}\$UnzippedPath -Force
 
     $null = "$(& "${ZVMSelf}\zvm.exe")"
     if ($LASTEXITCODE -eq 1073741795) {

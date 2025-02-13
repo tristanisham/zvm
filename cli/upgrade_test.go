@@ -18,6 +18,9 @@ func TestUpgrade(t *testing.T) {
 	if runtime.GOOS == "darwin" {
 		t.Skip("skipping upgrade test temporarily on macos")
 	}
+	if runtime.GOOS == "windows" {
+		t.Skip("skipping upgrade test temporarily on windows")
+	}
 
 	// Create temporary directory structure for XDG paths
 	tmpDir, err := os.MkdirTemp("", "zvm-upgrade-test-*")

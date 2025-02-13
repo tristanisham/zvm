@@ -6,6 +6,7 @@ package cli
 
 import (
 	"os"
+	"os/exec"
 	"path/filepath"
 	"runtime"
 	"testing"
@@ -117,7 +118,7 @@ func verifyInstallation(t *testing.T, zvm *ZVM) {
 	}
 	if _, err := os.Stat(zigLink); os.IsNotExist(err) {
 		t.Errorf("Zig symlink not found at expected location: %s", zigLink)
-		t.Error("Bin directory contents:");
+		t.Error("Bin directory contents:")
 		listFiles(t, zvm.Directories.bin, "\t")
 	}
 
@@ -183,6 +184,13 @@ func TestXDGInstall(t *testing.T) {
 		t.Skip("skipping download test in short mode")
 	}
 
+	zvmInstall := os.Getenv("ZVM_INSTALL")
+	if zvmInstall != "" {
+		os.Unsetenv("ZVM_INSTALL")
+		defer func() {
+			os.Setenv("ZVM_INSTALL", zvmInstall)
+		}()
+	}
 	// Create temporary directory structure for XDG paths
 	tmpDir, err := os.MkdirTemp("", "zvm-test-*")
 	if err != nil {
@@ -239,6 +247,13 @@ func TestZVMPathInstall(t *testing.T) {
 		t.Skip("skipping download test in short mode")
 	}
 
+	zvmInstall := os.Getenv("ZVM_INSTALL")
+	if zvmInstall != "" {
+		os.Unsetenv("ZVM_INSTALL")
+		defer func() {
+			os.Setenv("ZVM_INSTALL", zvmInstall)
+		}()
+	}
 	// Create temporary directory
 	tmpDir, err := os.MkdirTemp("", "zvm-test-*")
 	if err != nil {
@@ -264,4 +279,124 @@ func TestZVMPathInstall(t *testing.T) {
 
 	performInstallation(t, zvm)
 	verifyInstallation(t, zvm)
+}
+func TestInstallationScript(t *testing.T) {
+	_, currentFile, _, _ := runtime.Caller(0)
+	repoRoot := filepath.Dir(filepath.Dir(currentFile))
+	var script struct {
+		name     string
+		path     string
+		executor string
+	}
+
+	switch runtime.GOOS {
+	case "windows":
+		script = struct {
+			name     string
+			path     string
+			executor string
+		}{"install.ps1", filepath.Join(repoRoot, "install.ps1"), "powershell"}
+	default:
+		script = struct {
+			name     string
+			path     string
+			executor string
+		}{"install.sh", filepath.Join(repoRoot, "install.sh"), "/bin/bash"}
+	}
+
+	zvmInstall := os.Getenv("ZVM_INSTALL")
+	if zvmInstall != "" {
+		os.Unsetenv("ZVM_INSTALL")
+		defer func() {
+			os.Setenv("ZVM_INSTALL", zvmInstall)
+		}()
+	}
+	// Create a temporary directory for testing
+	tmpDir, err := os.MkdirTemp("", "zvm-test-*")
+	if err != nil {
+		t.Fatalf("failed to create temp dir: %v", err)
+	}
+	defer os.RemoveAll(tmpDir)
+
+	// Set HOME environment variable to our temp directory for testing
+	originalHome := os.Getenv("HOME")
+	os.Setenv("HOME", tmpDir)
+	defer os.Setenv("HOME", originalHome)
+
+	// Set up XDG directory structure
+	xdgDataHome := filepath.Join(tmpDir, "data")
+	xdgStateHome := filepath.Join(tmpDir, "state")
+	xdgBinHome := filepath.Join(tmpDir, "bin")
+	xdgCacheHome := filepath.Join(tmpDir, "cache")
+
+	// Create directories
+	for _, dir := range []string{xdgDataHome, xdgStateHome, xdgBinHome, xdgCacheHome} {
+		if err := os.MkdirAll(dir, 0755); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	// Compile the code, so we have a binary...
+	zvmBinary := filepath.Join(repoRoot, "zvm")
+	if runtime.GOOS == "windows" {
+		zvmBinary += ".exe"
+	}
+	os.Remove(zvmBinary)
+	cmd := exec.Command("go", "build", "-o", zvmBinary)
+	cmd.Dir = repoRoot
+	if output, err := cmd.CombinedOutput(); err != nil {
+		t.Fatalf("failed to build zvm: %v\nOutput: %s", err, output)
+	}
+	defer os.Remove(zvmBinary)
+
+	// Set XDG environment variables
+	os.Setenv("XDG_DATA_HOME", xdgDataHome)
+	os.Setenv("XDG_STATE_HOME", xdgStateHome)
+	os.Setenv("XDG_BIN_HOME", xdgBinHome)
+	os.Setenv("XDG_CACHE_HOME", xdgCacheHome)
+	os.Setenv("ZVM_BINARY_ON_DISK_LOCATION", filepath.Dir(zvmBinary))
+	// Append XDG_BIN_HOME to PATH
+	originalPath := os.Getenv("PATH")
+	newPath := originalPath + string(os.PathListSeparator) + xdgBinHome
+	os.Setenv("PATH", newPath)
+
+	defer func() {
+		os.Unsetenv("XDG_DATA_HOME")
+		os.Unsetenv("XDG_STATE_HOME")
+		os.Unsetenv("XDG_BIN_HOME")
+		os.Unsetenv("XDG_CACHE_HOME")
+		os.Unsetenv("ZVM_BINARY_ON_DISK_LOCATION")
+		os.Setenv("PATH", originalPath)
+	}()
+
+	t.Logf("HOME  %s", os.Getenv("HOME"))
+	t.Logf("XDG_DATA_HOME  %s", xdgDataHome)
+	t.Logf("XDG_STATE_HOME %s", xdgStateHome)
+	t.Logf("XDG_BIN_HOME   %s", xdgBinHome)
+	t.Logf("XDG_CACHE_HOME %s", xdgCacheHome)
+
+	// Run the installation script
+	cmd = exec.Command(script.executor, script.path)
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		t.Fatalf("installation failed: %v\nOutput: %s", err, output)
+	}
+	t.Logf("Output: %s", output)
+
+	// Create a ZVM instance to get expected paths
+	zvmDirectories := zvmDirectories(tmpDir, true)
+
+	// Verify only the self directory exists and contains the zvm binary
+	selfDir := zvmDirectories.self
+	if _, err := os.Stat(selfDir); os.IsNotExist(err) {
+		t.Errorf("self directory not found: %s", selfDir)
+	}
+
+	binaryName := "zvm"
+	if runtime.GOOS == "windows" {
+		binaryName += ".exe"
+	}
+	if _, err := os.Stat(filepath.Join(selfDir, binaryName)); os.IsNotExist(err) {
+		t.Errorf("%s binary not found in self directory", binaryName)
+	}
 }

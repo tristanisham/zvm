@@ -279,6 +279,13 @@ var zvmApp = &opts.Command{
 				},
 			},
 		},
+		{
+			Name:  "env",
+			Usage: "display ZVM environment paths",
+			Action: func(c context.Context, cmd *opts.Command) error {
+				return zvm.Env()
+			},
+		},
 	},
 }
 

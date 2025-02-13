@@ -66,9 +66,10 @@ func (z *ZVM) fetchVersionMap() (zigVersionMap, error) {
 
 		return nil, err
 	}
-
-	if err := os.WriteFile(filepath.Join(z.baseDir, "versions.json"), versions, 0755); err != nil {
-		return nil, err
+	versionFile := filepath.Join(z.Directories.cache, "versions.json")
+	if err := os.WriteFile(versionFile, versions, 0755); err != nil {
+		log.Warn("Could not write version data", "path", versionFile, "error", err)
+		return rawVersionStructure, nil
 	}
 
 	return rawVersionStructure, nil
@@ -141,7 +142,7 @@ func (z *ZVM) fetchZlsTaggedVersionMap() (zigVersionMap, error) {
 		return nil, err
 	}
 
-	if err := os.WriteFile(filepath.Join(z.baseDir, "versions-zls.json"), versions, 0755); err != nil {
+	if err := os.WriteFile(filepath.Join(z.Directories.cache, "versions-zls.json"), versions, 0755); err != nil {
 		return nil, err
 	}
 

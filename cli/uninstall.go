@@ -11,7 +11,7 @@ import (
 )
 
 func (z *ZVM) Uninstall(ver string) error {
-	version := filepath.Join(z.baseDir, ver)
+	version := filepath.Join(z.Directories.state, ver)
 
 	if _, err := os.Stat(version); err == nil {
 		if err := os.RemoveAll(version); err != nil {

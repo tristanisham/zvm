@@ -53,7 +53,7 @@ func (z *ZVM) ListVersions() error {
 }
 
 func (z *ZVM) GetInstalledVersions() ([]string, error) {
-	dir, err := os.ReadDir(z.baseDir)
+	dir, err := os.ReadDir(z.Directories.state)
 	if err != nil {
 		return nil, err
 	}

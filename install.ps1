@@ -4,22 +4,39 @@ function Install-ZVM {
         [string]$urlSuffix
     );
 
-    $ZVMRoot = "${Home}\.zvm"
-    $ZVMSelf = mkdir -Force "${ZVMRoot}\self"
-    $ZVMBin = mkdir -Force "${ZVMRoot}\bin"
+    $TempDir = Join-Path $env:TEMP "zvm-install"
+    New-Item -ItemType Directory -Force -Path $TempDir | Out-Null
+    Remove-Item -Path $TempDir -Force -Recurse -ErrorAction SilentlyContinue
     $Target = $urlSuffix
     $URL = "https://github.com/tristanisham/zvm/releases/latest/download/$urlSuffix"
-    $ZipPath = "${ZVMSelf}\$Target"
+    $ZipPath = Join-Path $TempDir $Target
 
-    $null = mkdir -Force $ZVMSelf
-    # curl.exe "-#SfLo" "$ZVMSelf/elevate.cmd" "https://raw.githubusercontent.com/tristanisham/zvm/master/bin/elevate.cmd" -s
-    #curl.exe "-#SfLo" "$ZVMSelf/elevate.vbs" "https://raw.githubusercontent.com/tristanisham/zvm/master/bin/elevate.vbs" -s
-    Remove-Item -Force $ZipPath -ErrorAction SilentlyContinue
-    curl.exe "-#SfLo" "$ZipPath" "$URL" 
-    if ($LASTEXITCODE -ne 0) {
-        Write-Output "Install Failed - could not download $URL"
-        Write-Output "The command 'curl.exe $URL -o $ZipPath' exited with code ${LASTEXITCODE}`n"
-        exit 1
+    New-Item -ItemType Directory -Force -Path $TempDir | Out-Null
+    # Check if ZVM_BINARY_ON_DISK_LOCATION is set
+    if ($env:ZVM_BINARY_ON_DISK_LOCATION) {
+        # Create a zip file from the existing binary
+        $sourceExe = Join-Path $env:ZVM_BINARY_ON_DISK_LOCATION "zvm.exe"
+        if (Test-Path $sourceExe) {
+            $tempZipDir = Join-Path $TempDir "zvm-windows-$PROCESSOR_ARCH"
+            New-Item -ItemType Directory -Force -Path $tempZipDir | Out-Null
+            Copy-Item $sourceExe -Destination $tempZipDir
+            Compress-Archive -Path $tempZipDir -DestinationPath $ZipPath -Force
+        }
+        else {
+            Write-Output "ZVM_BINARY_ON_DISK_LOCATION is set but zvm.exe not found at $sourceExe"
+            exit 1
+        }
+    }
+    else {
+        # Original download logic
+        $URL = "https://github.com/tristanisham/zvm/releases/latest/download/$urlSuffix"
+        Remove-Item -Force $ZipPath -ErrorAction SilentlyContinue
+        curl.exe "-#SfLo" "$ZipPath" "$URL"
+        if ($LASTEXITCODE -ne 0) {
+            Write-Output "Install Failed - could not download $URL"
+            Write-Output "The command 'curl.exe $URL -o $ZipPath' exited with code ${LASTEXITCODE}`n"
+            exit 1
+        }
     }
     if (!(Test-Path $ZipPath)) {
         Write-Output "Install Failed - could not download $URL"
@@ -30,10 +47,10 @@ function Install-ZVM {
     try {
         $lastProgressPreference = $global:ProgressPreference
         $global:ProgressPreference = 'SilentlyContinue';
-        Expand-Archive "$ZipPath" "$ZVMSelf" -Force
+        Expand-Archive "$ZipPath" "$TempDir" -Force
         $global:ProgressPreference = $lastProgressPreference
-        if (!(Test-Path "${ZVMSelf}\$UnzippedPath\zvm.exe")) {
-            throw "The file '${ZVMSelf}\$UnzippedPath\zvm.exe' does not exist. Download is corrupt / Antivirus intercepted?`n"
+        if (!(Test-Path "${TempDir}\$UnzippedPath\zvm.exe")) {
+            throw "The file '${TempDir}\$UnzippedPath\zvm.exe' does not exist. Download is corrupt / Antivirus intercepted?`n"
         }
     }
     catch {
@@ -42,10 +59,14 @@ function Install-ZVM {
         exit 1
     }
     Remove-Item "${ZVMSelf}\zvm.exe" -ErrorAction SilentlyContinue
-    Move-Item "${ZVMSelf}\$UnzippedPath\zvm.exe" "${ZVMSelf}\zvm.exe" -Force
+    # Run the temporary binary to get installation paths
+    $EnvJson = & "${TempDir}\$UnzippedPath\zvm.exe" env | ConvertFrom-Json
+    $ZVMSelf = New-Item -ItemType Directory -Force -Path $EnvJson.self
+    $ZVMBin = New-Item -ItemType Directory -Force -Path $EnvJson.bin
+    Move-Item "${TempDir}\$UnzippedPath\zvm.exe" "$($EnvJson.self)\zvm.exe" -Force
 
-    Remove-Item "${ZVMSelf}\$Target" -Recurse -Force
-    Remove-Item ${ZVMSelf}\$UnzippedPath -Force
+    Remove-Item "${ZipPath}" -Recurse -Force
+    Remove-Item ${TempDir}\$UnzippedPath -Force
 
     $null = "$(& "${ZVMSelf}\zvm.exe")"
     if ($LASTEXITCODE -eq 1073741795) {
@@ -63,7 +84,7 @@ function Install-ZVM {
     $C_GREEN = [char]27 + "[1;32m"
 
     Write-Output "${C_GREEN}ZVM${DisplayVersion} was installed successfully!${C_RESET}"
-    Write-Output "The binary is located at ${ZVMSelf}\zvm.exe`n"
+    Write-Output "The binary is located at $($EnvJson.self)\zvm.exe`n"
 
     $User = [System.EnvironmentVariableTarget]::User
     $Path = [System.Environment]::GetEnvironmentVariable('Path', $User) -split ';'

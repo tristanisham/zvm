@@ -24,25 +24,40 @@ func Initialize() *ZVM {
 	if err != nil {
 		home = "~"
 	}
-	zvm_path := os.Getenv("ZVM_PATH")
-	if zvm_path == "" {
-		zvm_path = filepath.Join(home, ".zvm")
+
+	zvm := &ZVM{
+		Directories: zvmDirectories(home, true),
 	}
 
-	if _, err := os.Stat(zvm_path); errors.Is(err, fs.ErrNotExist) {
-		if err := os.MkdirAll(filepath.Join(zvm_path, "self"), 0775); err != nil {
+	// Loop through the zvm fields and make the directories if they don't exist
+	for _, dir := range []string{zvm.Directories.data, zvm.Directories.state, zvm.Directories.config, zvm.Directories.bin, zvm.Directories.cache} {
+		if _, err := os.Stat(dir); errors.Is(err, fs.ErrNotExist) {
+			if err := os.MkdirAll(dir, 0775); err != nil {
+				log.Fatal(err)
+			}
+		}
+	}
+
+	log.Debug("Initialize:", "dataDir", zvm.Directories.data)
+	log.Debug("Initialize:", "stateDir", zvm.Directories.state)
+	log.Debug("Initialize:", "configDir", zvm.Directories.config)
+	log.Debug("Initialize:", "binDir", zvm.Directories.bin)
+	log.Debug("Initialize:", "cacheDir", zvm.Directories.cache)
+
+	if _, err := os.Stat(zvm.Directories.data); errors.Is(err, fs.ErrNotExist) {
+		if err := os.MkdirAll(filepath.Join(zvm.Directories.data, "self"), 0775); err != nil {
 			log.Fatal(err)
 		}
 	}
 
-	zvm := &ZVM{
-		baseDir: zvm_path,
-	}
-
-	zvm.Settings.path = filepath.Join(zvm_path, "settings.json")
+	zvm.Settings.path = filepath.Join(zvm.Directories.config, "settings.json")
+	log.Debug("Initialize:", "Settings path", zvm.Settings.path)
 
 	if err := zvm.loadSettings(); err != nil {
 		if errors.Is(err, ErrNoSettings) {
+			// We need to get a copy of this path, then restore it after writing
+			// default settings out
+			settings_path := zvm.Settings.path
 			zvm.Settings = Settings{
 				VersionMapUrl:      "https://ziglang.org/download/index.json",
 				ZlsVMU:             "https://releases.zigtools.org/",
@@ -55,18 +70,37 @@ func Initialize() *ZVM {
 				log.Warn("Unable to generate settings.json file", err)
 			}
 
-			if err := os.WriteFile(filepath.Join(zvm_path, "settings.json"), out_settings, 0755); err != nil {
+			if err := os.WriteFile(settings_path, out_settings, 0755); err != nil {
 				log.Warn("Unable to create settings.json file", err)
 			}
+			zvm.Settings.path = settings_path
 		}
 	}
 
 	return zvm
 }
 
+type Directories struct {
+	// We place ourselves in the data directory
+	// The installer should make a symlink from the bin directory to the data
+	// directory
+	data string
+	// This is where settings.json lives
+	config string
+	// We place zig versions under the state directory
+	state string
+	// We place current zig/zls in here
+	bin string
+	// Used for storage of temporary downloads, etc
+	cache string
+
+	// This is the bin directory except in the case of existing install
+	// We need this for upgrades
+	self string
+}
 type ZVM struct {
-	baseDir  string
-	Settings Settings
+	Directories Directories
+	Settings    Settings
 }
 
 // A representaiton of the offical json schema for Zig versions
@@ -102,22 +136,22 @@ func validVmuAlis(version string) bool {
 	return version == "default" || version == "mach"
 }
 
-func (z ZVM) zigPath() (string, error) {
-	zig := filepath.Join(z.baseDir, "bin", "zig")
-	log.Debug("zigPath", "zig", zig)
-	if _, err := os.Stat(zig); err != nil {
-		return "", err
-	}
+// func (z ZVM) zigPath() (string, error) {
+// 	zig := filepath.Join(z.binDir, "zig")
+// 	log.Debug("zigPath", "zig", zig)
+// 	if _, err := os.Stat(zig); err != nil {
+// 		return "", err
+// 	}
 
-	return zig, nil
-}
+// 	return zig, nil
+// }
 
 func (z ZVM) getVersion(version string) error {
-	if _, err := os.Stat(filepath.Join(z.baseDir, version)); err != nil {
+	if _, err := os.Stat(filepath.Join(z.Directories.state, version)); err != nil {
 		return err
 	}
 
-	targetZig := strings.TrimSpace(filepath.Join(z.baseDir, version, "zig"))
+	targetZig := strings.TrimSpace(filepath.Join(z.Directories.state, version, "zig"))
 	cmd := exec.Command(targetZig, "version")
 	var zigVersion strings.Builder
 	cmd.Stdout = &zigVersion

@@ -145,6 +145,7 @@ var zvmApp = &opts.Command{
 			Name:  "run",
 			Usage: "run a command with the given Zig version",
 			// Args:  true,
+			SkipFlagParsing: true,
 			Action: func(ctx context.Context, cmd *opts.Command) error {
 				versionArg := strings.TrimPrefix(cmd.Args().First(), "v")
 				cmds := cmd.Args().Tail()

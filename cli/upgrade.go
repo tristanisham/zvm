@@ -6,10 +6,12 @@ package cli
 
 import (
 	"archive/tar"
+	//"bytes" // Needed if API debug is necessary
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
+	"io/fs"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -41,7 +43,7 @@ func (z *ZVM) Upgrade() error {
 
 	if !upgradable {
 		fmt.Printf("You are already on the latest release (%s) of ZVM :) \n", clr.Blue(meta.VERSION))
-		os.Exit(0)
+		return nil
 	} else {
 		fmt.Printf("You are on ZVM %s... upgrading to (%s)", meta.VERSION, tagName)
 	}
@@ -52,6 +54,11 @@ func (z *ZVM) Upgrade() error {
 	}
 
 	log.Debug("exe dir", "path", zvmInstallDirENV)
+	if _, err := os.Stat(zvmInstallDirENV); errors.Is(err, fs.ErrNotExist) {
+		if err := os.MkdirAll(zvmInstallDirENV, 0775); err != nil {
+			log.Fatal(err)
+		}
+	}
 	zvmBinaryName := "zvm"
 	archive := "tar"
 	if runtime.GOOS == "windows" {
@@ -62,14 +69,21 @@ func (z *ZVM) Upgrade() error {
 	download := fmt.Sprintf("zvm-%s-%s.%s", runtime.GOOS, runtime.GOARCH, archive)
 
 	downloadUrl := fmt.Sprintf("https://github.com/tristanisham/zvm/releases/latest/download/%s", download)
-
+	log.Debugf("Downloading latest release from %s", downloadUrl)
 	resp, err := http.Get(downloadUrl)
 	if err != nil {
-		errors.Join(ErrFailedUpgrade, err)
+		return errors.Join(ErrFailedUpgrade, err)
 	}
 	defer resp.Body.Close()
+	log.Debugf("done")
 
-	tempDownload, err := os.CreateTemp(z.baseDir, fmt.Sprintf("*.%s", archive))
+	if err = os.MkdirAll(z.Directories.cache, 0755); err != nil {
+		return err
+	}
+	if err = os.MkdirAll(zvmInstallDirENV, 0755); err != nil {
+		return err
+	}
+	tempDownload, err := os.CreateTemp(z.Directories.cache, fmt.Sprintf("*.%s", archive))
 	if err != nil {
 		return err
 	}
@@ -98,7 +112,7 @@ func (z *ZVM) Upgrade() error {
 
 	log.Debug("zvmPath", "path", zvmPath)
 
-	newTemp, err := os.MkdirTemp(z.baseDir, "zvm-upgrade-*")
+	newTemp, err := os.MkdirTemp(z.Directories.cache, "zvm-upgrade-*")
 	if err != nil {
 		log.Debugf("Failed to create temp direcory: %s", newTemp)
 		return errors.Join(ErrFailedUpgrade, err)
@@ -143,6 +157,12 @@ func (z *ZVM) Upgrade() error {
 		return errors.Join(ErrFailedUpgrade, err)
 	}
 
+	if _, err := os.Lstat(filepath.Join(z.Directories.bin, zvmBinaryName)); err != nil {
+		if err := meta.Symlink(zvmPath, filepath.Join(z.Directories.bin, zvmBinaryName)); err != nil {
+			log.Fatal(err)
+		}
+	}
+	log.Debug("upgrade complete")
 	return nil
 }
 
@@ -150,9 +170,25 @@ func (z *ZVM) Upgrade() error {
 func replaceExe(from, to string) error {
 	if runtime.GOOS == "windows" {
 		if err := os.Rename(to, fmt.Sprintf("%s.old", to)); err != nil {
-			return err
+			ret := true
+			if errors.Is(err, os.ErrNotExist) {
+				path, execErr := os.Executable()
+				if execErr != nil {
+					// we have a dumpster fire...bail now
+					return errors.Join(err, execErr)
+				}
+				if path != to {
+					log.Infof("Could not rename existing zvm.exe, but it appears you are not upgrading in place. Running zvm %s, upgrading zvm in %s", path, to)
+					ret = false
+				}
+			}
+			if ret {
+				return err
+			}
 		}
 	} else {
+		// This logic is not correct, but this function is only being called
+		// when runtime.GOOS == "windows"
 		if err := os.Remove(to); err != nil {
 			return err
 		}
@@ -181,41 +217,53 @@ func replaceExe(from, to string) error {
 
 // getInstallDir finds the directory this executabile is in.
 func (z ZVM) getInstallDir() (string, error) {
-	zvmInstallDirENV, ok := os.LookupEnv("ZVM_INSTALL")
-	if !ok {
-		this, err := os.Executable()
-		if err != nil {
-			return filepath.Join(z.baseDir, "self"), nil
-		}
-
-		itIsASymlink, err := isSymlink(this)
-		if err != nil {
-			return filepath.Join(z.baseDir, "self"), nil
-		}
-
-		var finalPath string
-		if !itIsASymlink {
-			finalPath, err = resolveSymlink(this)
-			if err != nil {
-				return filepath.Join(z.baseDir, "self"), nil
-			}
-		} else {
-			finalPath = this
-		}
-
-		modifyable, err := canModifyFile(finalPath)
-		if err != nil {
-			return "", fmt.Errorf("%q, couldn't determine permissions to modify zvm install", ErrFailedUpgrade)
-		}
-
-		if modifyable {
-			return filepath.Dir(this), nil
-		}
-
-		return "", fmt.Errorf("%q, didn't have permissions to modify zvm install", ErrFailedUpgrade)
+	// It is a bit unclear what we should do here depending on the exact environment
+	// We have three paths to choose from:
+	// 1. Native install pathing
+	// 2. ZVM_INSTALL
+	// 3. Location of our current running executable
+	//
+	// In the case that ZVM_INSTALL is set, we should use that and ignore
+	// anything else
+	//
+	// If ZVM_INSTALL is unset and the current executable is not at the path
+	// of the native install pathing, then what?
+	//
+	// Current documentation states that the current executable location wins,
+	// but that documentation had no concept of native pathing. We can't use
+	// current executable location for the upgrade test either...
+	//
+	// The most reasonable thing may be to use native pathing, and in the case
+	// that there is a discrepancy between where the current executable is
+	// and where the upgrade happens, we use native pathing and warn the user
+	if zvmInstallDir, ok := os.LookupEnv("ZVM_INSTALL"); ok {
+		return zvmInstallDir, nil
 	}
 
-	return zvmInstallDirENV, nil
+	this, err := os.Executable()
+	if err != nil {
+		return "", fmt.Errorf("%q: failed to determine executable path: %w", ErrFailedUpgrade, err)
+	}
+
+	this, err = filepath.EvalSymlinks(this)
+	if err != nil {
+		return "", fmt.Errorf("%q: failed to resolve symlinks: %w", ErrFailedUpgrade, err)
+	}
+
+	modifyable, err := canModifyFile(this)
+	if err != nil {
+		return "", fmt.Errorf("%q, couldn't determine permissions to modify zvm install: %w", ErrFailedUpgrade, err)
+	}
+
+	if !modifyable {
+		return "", fmt.Errorf("%q, zvm executable cannot be upgraded because is not modifyable", ErrFailedUpgrade)
+	}
+
+	finalPath := filepath.Dir(this)
+	if finalPath != z.Directories.self {
+		log.Warnf("We are upgrading zvm in a different directory (%s) than where zvm is currently running (%s)", z.Directories.self, finalPath)
+	}
+	return z.Directories.self, nil
 }
 
 func resolveSymlink(symlink string) (string, error) {
@@ -282,9 +330,31 @@ func isSymlink(path string) (bool, error) {
 	return fileInfo.Mode()&os.ModeSymlink != 0, nil
 }
 
+// CanIUpgrade returns 3 values:
+// 1. The tag name for the target version (the version to upgrade *TO*
+// 2. A boolean to indicate if upgrade is possible
+// 3. Error value
 func CanIUpgrade() (string, bool, error) {
+	// Now that API rate limit problem has been addressed, it's unlikely we
+	// need the retry loop, but it doesn't hurt
+	for i := 0; i < 5; i++ {
+		tagName, forceUpgrade, err := canIUpgrade()
+		if err == nil && tagName == "" {
+			log.Infof("Empty release tag returned from GitHub: Initiating retry %d of 5", i+1)
+			time.Sleep(1000 * time.Millisecond) // Delay between retries
+			continue
+		}
+		return tagName, forceUpgrade, err
+	}
+
+	return "", false, fmt.Errorf("Retried 5 times but have not gotten a suitable response from GitHub")
+}
+
+// internal implementation - single shot
+func canIUpgrade() (string, bool, error) {
 	release, err := getLatestGitHubRelease("tristanisham", "zvm")
 	if err != nil {
+		log.Errorf("Error getting latest GitHub Release: %v", err)
 		return "", false, err
 	}
 
@@ -292,7 +362,7 @@ func CanIUpgrade() (string, bool, error) {
 		return release.TagName, true, nil
 	}
 
-	return release.TagName, false, nil
+	return release.TagName, meta.ForceUpgrade, nil
 }
 
 // func getGitHubReleases(owner, repo string) ([]GithubRelease, error) {
@@ -314,12 +384,49 @@ func CanIUpgrade() (string, bool, error) {
 
 func getLatestGitHubRelease(owner, repo string) (*GithubRelease, error) {
 	url := fmt.Sprintf("https://api.github.com/repos/%s/%s/releases/latest", owner, repo)
-	resp, err := http.Get(url)
+
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	// Add authentication header if GITHUB_TOKEN is set
+	// This will provide higher rate limits, which should stabilize
+	// GitHub actions
+	if token := os.Getenv("GITHUB_TOKEN"); token != "" {
+		log.Debug("Adding GITHUB_TOKEN as authorization header")
+		req.Header.Set("Authorization", "Bearer "+token)
+	}
+
+	// Make the request
+	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return nil, err
 	}
 	defer resp.Body.Close()
 
+	if resp.StatusCode == 403 || resp.StatusCode == 429 {
+		return nil, fmt.Errorf("GitHub API rate limit exceeded. Please set GITHUB_TOKEN environment variable with a valid GitHub token.")
+	}
+
+	// Use this code if further debug is necessary
+	// bodyBytes, err := io.ReadAll(resp.Body)
+	// if err != nil {
+	// 	return nil, err
+	// }
+	// // Print the body as string
+	// log.Debugf("GitHub GET request body: %s", string(bodyBytes))
+
+	// // Create a new reader with the body bytes for the JSON decoder
+	// body := io.NopCloser(bytes.NewBuffer(bodyBytes))
+
+	// var release GithubRelease
+	// err = json.NewDecoder(body).Decode(&release)
+	// if err != nil {
+	// 	return nil, err
+	// }
+
+	// Comment this block if further debug is necessary
 	var release GithubRelease
 	err = json.NewDecoder(resp.Body).Decode(&release)
 	if err != nil {

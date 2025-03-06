@@ -13,39 +13,36 @@ if [ "$ARCH" = "x86_64" ]; then
 fi
 
 # echo "Installing zvm-$OS-$ARCH"
-
+zvm_installed_location=""
 install_latest() {
-    echo -e "Downloading $1 in $(pwd)"
-    if [ "$(uname)" = "Darwin" ]; then
-        # Do something under MacOS platform
-        if command -v wget >/dev/null 2>&1; then
-            echo "wget is installed. Using wget..."
-            wget -q --show-progress --max-redirect 5 -O zvm.tar "https://github.com/tristanisham/zvm/releases/latest/download/$1"
-        else
-            echo "wget is not installed. Using curl..."
-            curl -L --max-redirs 5 "https://github.com/tristanisham/zvm/releases/latest/download/$1" -o zvm.tar
-        fi
-
-        mkdir -p "$HOME/.zvm/self"
-        tar -xf zvm.tar -C "$HOME/.zvm/self"
-        rm "zvm.tar"
-
-    elif [ "$OS" = "Linux" ]; then
-        # Do something under GNU/Linux platform
-        if command -v wget2 >/dev/null 2>&1; then
+    tmp_dir="$(mktemp -d)"
+    echo "Downloading $1 to ${tmp_dir}"
+    if [ "$(uname)" = "Darwin" ] || [ "$OS" = "Linux" ]; then
+        if [ -x "$ZVM_BINARY_ON_DISK_LOCATION" ]; then # used for testing installs
+            tar -cf "${tmp_dir}/zvm.tar" -C "${ZVM_BINARY_ON_DISK_LOCATION}" zvm
+        elif command -v wget2 >/dev/null 2>&1; then
             echo "wget2 is installed. Using wget2..."
             wget2 -q --force-progress --max-redirect 5 -O zvm.tar "https://github.com/tristanisham/zvm/releases/latest/download/$1"
         elif command -v wget >/dev/null 2>&1; then
             echo "wget is installed. Using wget..."
-            wget -q --show-progress --max-redirect 5 -O zvm.tar "https://github.com/tristanisham/zvm/releases/latest/download/$1"
+            wget -q --show-progress --max-redirect 5 -O "${tmp_dir}/zvm.tar" "https://github.com/tristanisham/zvm/releases/latest/download/$1"
         else
             echo "wget is not installed. Using curl..."
-            curl -L --max-redirs 5 "https://github.com/tristanisham/zvm/releases/latest/download/$1" -o zvm.tar
+            curl -L --max-redirs 5 "https://github.com/tristanisham/zvm/releases/latest/download/$1" -o "${tmp_dir}/zvm.tar"
         fi
 
-        mkdir -p "$HOME/.zvm/self"
-        tar -xf zvm.tar -C "$HOME/.zvm/self"
-        rm "zvm.tar"
+        # Extract to temp dir and get installation paths
+        tar -xf "${tmp_dir}/zvm.tar" -C "${tmp_dir}"
+        chmod +x "${tmp_dir}/zvm"
+
+        # Get installation paths from zvm env command
+        env_output=$("$tmp_dir/zvm" env)
+        self_dir=$(echo "$env_output" | grep -o '"self": "[^"]*"' | cut -d'"' -f4)
+        echo "Installing zvm to ${self_dir}"
+        mkdir -p "$self_dir"
+        mv "${tmp_dir}/zvm" "${self_dir}/zvm"
+        rm -rf "${tmp_dir}"
+        zvm_installed_location="${self_dir}/zvm"
     elif [ "$OS" = "MINGW32_NT" ] || [ "$OS" = "MINGW64_NT" ]; then
         curl -L --max-redirs 5 "https://github.com/tristanisham/zvm/releases/latest/download/$1" -o zvm.zip
         # Additional extraction steps for Windows can be added here
@@ -91,30 +88,38 @@ fi
 ###############################
 # Append the ZVM environment variables if they are not already present.
 if [ -n "$TARGET_FILE" ]; then
-    if grep -q 'ZVM_INSTALL' "$TARGET_FILE"; then
-        echo "ZVM environment variables are already present in $TARGET_FILE"
-        exit 0
+    # Get ZVM environment variables
+    zvm_env=$("$zvm_installed_location" env)
+    if [ $? -ne 0 ]; then
+        echo "Failed to get ZVM environment variables"
+        exit 1
     fi
-    echo "Adding ZVM environment variables to $TARGET_FILE"
+
+    # Parse JSON output
+    zvm_self=$(echo "$zvm_env" | grep -o '"self": "[^"]*' | cut -d'"' -f4)
 
     if [[ "$SHELL" == */fish ]]; then
-        {
-            echo
-            echo "# ZVM"
-            echo 'set -gx ZVM_INSTALL "$HOME/.zvm/self"'
-            echo 'set -gx PATH $PATH "$HOME/.zvm/bin"'
-            echo 'set -gx PATH $PATH "$ZVM_INSTALL/"'
-        } >>"$TARGET_FILE"
-        echo "Restart fish or run 'source $TARGET_FILE' to start using ZVM in this shell!"
+        if ! fish -c "contains \"$zvm_self\" \$PATH"; then
+            {
+                echo
+                echo "# ZVM"
+                echo "set -gx PATH \$PATH \"$zvm_self\""
+            } >>"$TARGET_FILE"
+            echo "Restart fish or run 'source $TARGET_FILE' to start using ZVM in this shell!"
+        else
+            echo "zvm installed to a directory already in your PATH"
+        fi
     else
-        {
-            echo
-            echo "# ZVM"
-            echo 'export ZVM_INSTALL="$HOME/.zvm/self"'
-            echo 'export PATH="$PATH:$HOME/.zvm/bin"'
-            echo 'export PATH="$PATH:$ZVM_INSTALL/"'
-        } >>"$TARGET_FILE"
-        echo "Run 'source $TARGET_FILE' to start using ZVM in this shell!"
+        if ! [[ ":$PATH:" == *":${zvm_self}:"* ]]; then
+            {
+                echo
+                echo "# ZVM"
+                echo "export PATH=\"\$PATH:$zvm_self\""
+            } >>"$TARGET_FILE"
+            echo "Run 'source $TARGET_FILE' to start using ZVM in this shell!"
+        else
+            echo "zvm installed to a directory already in your PATH"
+        fi
     fi
     echo "Run 'zvm i master' to install Zig"
 else
@@ -128,24 +133,20 @@ else
         BLUE='\033[0;34m'
         NC='\033[0m'
         if [[ "$SHELL" == */fish ]]; then
-            echo -e "${GREEN}set -gx${NC} ${BLUE}ZVM_INSTALL${NC}${GREEN} ${NC}${RED}\"\$HOME/.zvm/self\"${NC}"
-            echo -e "${GREEN}set -gx${NC} ${BLUE}PATH${NC}${GREEN} ${NC}${RED}\"\$PATH:\$HOME/.zvm/bin\"${NC}"
-            echo -e "${GREEN}set -gx${NC} ${BLUE}PATH${NC}${GREEN} ${NC}${RED}\"\$PATH:\$ZVM_INSTALL/\"${NC}"
+            echo -e "${GREEN}set -gx${NC} ${BLUE}PATH${NC}${GREEN} ${NC}${RED}\"\$PATH:${zvm_self}\"${NC}"
         else
-            echo -e "${GREEN}export${NC} ${BLUE}ZVM_INSTALL${NC}${GREEN}=${NC}${RED}\"\$HOME/.zvm/self\"${NC}"
-            echo -e "${GREEN}export${NC} ${BLUE}PATH${NC}${GREEN}=${NC}${RED}\"\$PATH:\$HOME/.zvm/bin\"${NC}"
-            echo -e "${GREEN}export${NC} ${BLUE}PATH${NC}${GREEN}=${NC}${RED}\"\$PATH:\$ZVM_INSTALL/\"${NC}"
+            echo -e "${GREEN}export${NC} ${BLUE}PATH${NC}${GREEN}=${NC}${RED}\"\$PATH:${zvm_self}\"${NC}"
         fi
     else
         if [[ "$SHELL" == */fish ]]; then
-            echo 'set -gx ZVM_INSTALL "$HOME/.zvm/self"'
-            echo 'set -gx PATH $PATH "$HOME/.zvm/bin"'
-            echo 'set -gx PATH $PATH "$ZVM_INSTALL/"'
-        else
-            echo 'export ZVM_INSTALL="$HOME/.zvm/self"'
-            echo 'export PATH="$PATH:$HOME/.zvm/bin"'
-            echo 'export PATH="$PATH:$ZVM_INSTALL/"'
-        fi
+        echo 'if not contains "$self_dir" $PATH'
+        echo '    set -gx PATH $PATH "$self_dir"'
+        echo 'end'
+    else
+        echo 'if [[ ":$PATH:" != *":$self_dir:"* ]]; then'
+        echo '    export PATH="$PATH:$self_dir"'
+        echo 'fi'
+    fi
     fi
     echo "Run 'zvm i master' to install Zig"
 fi

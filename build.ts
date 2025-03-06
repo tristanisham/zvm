@@ -7,6 +7,19 @@ import { copy } from "https://deno.land/std@0.184.0/streams/copy.ts";
 // Command to count final build results
 //  find ./build -type f \( -name "*.tar" -o -name "*.zip" \) | wc -l
 
+const git = new Deno.Command("git", { args: ['rev-parse', '--abbrev-ref', 'HEAD'], stdout: "piped" });
+const { code, stderr, stdout } = await git.output();
+if (code !== 0) {
+  console.error(new TextDecoder().decode(stderr));
+  Deno.exit(1);
+}
+
+const branchName = new TextDecoder().decode(stdout);
+if (branchName !== "master") {
+  console.error("Watch out! You're not building on branch: %cmaster", "color:yellow;")
+  Deno.exit(1);
+}
+
 const GOARCH = [
   "amd64",
   "arm64",

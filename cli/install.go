@@ -30,7 +30,7 @@ import (
 	"github.com/tristanisham/clr"
 )
 
-func (z *ZVM) Install(version string, force bool) error {
+func (z *ZVM) Install(version string, force bool, sha bool) error {
 	os.Mkdir(z.baseDir, 0755)
 	rawVersionStructure, err := z.fetchVersionMap()
 	if err != nil {
@@ -115,34 +115,40 @@ func (z *ZVM) Install(version string, force bool) error {
 		fmt.Sprintf("Downloading %s:", clr_opt_ver_str),
 	)
 
-	hash := sha256.New()
-	_, err = io.Copy(io.MultiWriter(tempDir, pbar, hash), tarResp.Body)
-	if err != nil {
-		return err
-	}
+    if !sha {
+        log.Warnf("Skipping shasum verification is an unsafe operation")
+    }
 
-	var shasum string
+    hash := sha256.New()
+    _, err = io.Copy(io.MultiWriter(tempDir, pbar, hash), tarResp.Body)
+    if err != nil {
+        return err
+    }
 
-	shasum, err = getVersionShasum(version, &rawVersionStructure)
-	if err != nil {
-		return err
-	}
+    if sha {
+        var shasum string
 
-	fmt.Println("Checking shasum...")
-	if len(shasum) > 0 {
-		ourHexHash := hex.EncodeToString(hash.Sum(nil))
-		log.Debug("shasum check:", "theirs", shasum, "ours", ourHexHash)
-		if ourHexHash != shasum {
-			// TODO (tristan)
-			// Why is my sha256 identical on the server and sha256sum,
-			// but not when I download it in ZVM? Oh shit.
-			// It's because it's a compressed download.
-			return fmt.Errorf("shasum for %v does not match expected value", version)
-		}
-		fmt.Println("Shasums match! 🎉")
-	} else {
-		log.Warnf("No shasum provided by host")
-	}
+        shasum, err = getVersionShasum(version, &rawVersionStructure)
+        if err != nil {
+            return err
+        }
+
+        fmt.Println("Checking shasum...")
+        if len(shasum) > 0 {
+            ourHexHash := hex.EncodeToString(hash.Sum(nil))
+            log.Debug("shasum check:", "theirs", shasum, "ours", ourHexHash)
+            if ourHexHash != shasum {
+                // TODO (tristan)
+                // Why is my sha256 identical on the server and sha256sum,
+                // but not when I download it in ZVM? Oh shit.
+                // It's because it's a compressed download.
+                return fmt.Errorf("shasum for %v does not match expected value", version)
+            }
+            fmt.Println("Shasums match! 🎉")
+        } else {
+            log.Warnf("No shasum provided by host")
+        }
+    }
 
 	// The base directory where all Zig files for the appropriate version are installed
 	// installedVersionPath := filepath.Join(z.zvmBaseDir, version)

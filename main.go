@@ -73,6 +73,10 @@ var zvmApp = &opts.Command{
 					Usage:   "force installation even if the version is already installed",
 				},
 				&opts.BoolFlag{
+					Name:    "no-sha",
+					Usage:   "skip SHA256 verification of the downloaded Zig binary",
+				},
+				&opts.BoolFlag{
 					Name:  "full",
 					Usage: "use the 'full' zls compatibility mode",
 				},
@@ -96,13 +100,15 @@ var zvmApp = &opts.Command{
 					force = cmd.Bool("force")
 				}
 
+                var sha = !cmd.Bool("no-sha")
+
 				zlsCompat := "only-runtime"
 				if cmd.Bool("full") {
 					zlsCompat = "full"
 				}
 
 				// Install Zig
-				err := zvm.Install(req.Package, force)
+				err := zvm.Install(req.Package, force, sha)
 				if err != nil {
 					return err
 				}

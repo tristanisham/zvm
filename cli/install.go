@@ -686,6 +686,7 @@ func unzipSource(source, destination string) error {
 	if err != nil {
 		return err
 	}
+
 	defer reader.Close()
 
 	// 2. Get the absolute destination path
@@ -694,57 +695,62 @@ func unzipSource(source, destination string) error {
 		return err
 	}
 
-	// 3. Iterate over zip files inside the archive and unzip each of them
-	for _, f := range reader.File {
+	os.MkdirAll(destination, 0755)
 
-		err := unzipFile(f, destination)
+	extractAndWriteFile := func(f *zip.File) error {
+		rc, err := f.Open()
 		if err != nil {
-			meta.CtaFatal(err)
-		}
-
-	}
-
-	return nil
-}
-
-func unzipFile(f *zip.File, destination string) error {
-	// 4. Check if file paths are not vulnerable to Zip Slip
-	filePath := filepath.Join(destination, f.Name)
-	if !strings.HasPrefix(filePath, filepath.Clean(destination)+string(os.PathSeparator)) {
-		return fmt.Errorf("invalid file path: %s", filePath)
-	}
-
-	// 5. Create directory tree
-	if f.FileInfo().IsDir() {
-		if err := os.MkdirAll(filePath, os.ModePerm); err != nil {
 			return err
 		}
+
+		defer func() {
+            if err := rc.Close(); err != nil {
+                panic(err)
+            }
+        }()
+
+		path := filepath.Join(destination, f.Name)
+		if !strings.HasPrefix(path, filepath.Clean(destination)+string(os.PathSeparator)) {
+			return fmt.Errorf("illegal file path: %s", path)
+		}
+
+		if f.FileInfo().IsDir() {
+			os.MkdirAll(path, f.Mode())
+		} else {
+			os.MkdirAll(filepath.Dir(path), f.Mode())
+			f, err := os.OpenFile(path, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, f.Mode())
+			if err != nil {
+				return err
+			}
+
+			defer func() {
+                if err := f.Close(); err != nil {
+                    panic(err)
+                }
+            }()
+
+			_, err = io.Copy(f, rc)
+			if err != nil {
+				return err
+			}
+		}
+
 		return nil
 	}
+	
 
-	if err := os.MkdirAll(filepath.Dir(filePath), os.ModePerm); err != nil {
-		return err
+	// 3. Iterate over zip files inside the archive and unzip each of them
+	for _, f := range reader.File {
+		err := extractAndWriteFile(f)
+		if err != nil {
+			return err
+		}
+
 	}
 
-	// 6. Create a destination file for unzipped content
-	destinationFile, err := os.OpenFile(filePath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, f.Mode())
-	if err != nil {
-		return err
-	}
-	defer destinationFile.Close()
-
-	// 7. Unzip the content of a file and copy it to the destination file
-	zippedFile, err := f.Open()
-	if err != nil {
-		return err
-	}
-	defer zippedFile.Close()
-
-	if _, err := io.Copy(destinationFile, zippedFile); err != nil {
-		return err
-	}
 	return nil
 }
+
 
 type installRequest struct {
 	Site, Package, Version string

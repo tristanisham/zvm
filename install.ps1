@@ -97,4 +97,10 @@ function Install-ZVM {
 
 $PROCESSOR_ARCH = $env:PROCESSOR_ARCHITECTURE.ToLower()
 
+if ($PROCESSOR_ARCH -eq "x86") {
+  Write-Output "Install Failed - ZVM requires a 64-bit environment."
+  Write-Output "Please ensure that you are running the 64-bit version of PowerShell or that your system is 64-bit.`n"
+  exit 1
+}
+
 Install-ZVM "zvm-windows-$PROCESSOR_ARCH.zip"

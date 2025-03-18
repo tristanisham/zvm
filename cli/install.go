@@ -561,7 +561,7 @@ func (z *ZVM) createSymlink(version string) {
 	// See zvm.Use() for an explanation.
 	if stat != nil {
 		if err == nil {
-			fmt.Println("Removing old symlink")
+			fmt.Printf("Removing old %s", binDir)
 			if err := os.RemoveAll(binDir); err != nil {
 				log.Fatal("could not remove bin", "err", err, "dir", binDir)
 			}
@@ -570,7 +570,7 @@ func (z *ZVM) createSymlink(version string) {
 	}
 
 	if err := meta.Link(versionPath, binDir); err != nil {
-		log.Fatal("symlink error", err)
+		log.Fatal("meta.Link error", err)
 	}
 
 }

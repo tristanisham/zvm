@@ -102,15 +102,7 @@ func validVmuAlis(version string) bool {
 	return version == "default" || version == "mach"
 }
 
-func (z ZVM) zigPath() (string, error) {
-	zig := filepath.Join(z.baseDir, "bin", "zig")
-	log.Debug("zigPath", "zig", zig)
-	if _, err := os.Stat(zig); err != nil {
-		return "", err
-	}
 
-	return zig, nil
-}
 
 func (z ZVM) getVersion(version string) error {
 	if _, err := os.Stat(filepath.Join(z.baseDir, version)); err != nil {

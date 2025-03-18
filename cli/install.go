@@ -552,15 +552,24 @@ func findZlsExecutable(dir string) (string, error) {
 }
 
 func (z *ZVM) createSymlink(version string) {
-	if _, err := os.Lstat(filepath.Join(z.baseDir, "bin")); err == nil {
-		fmt.Println("Removing old symlink")
-		if err := os.RemoveAll(filepath.Join(z.baseDir, "bin")); err != nil {
-			log.Fatal("could not remove bin", err)
-		}
+	// .zvm/master
+	versionPath := filepath.Join(z.baseDir, version)
+	binDir := filepath.Join(z.baseDir, "bin")
 
+	stat, err := os.Lstat(binDir)
+
+	// See zvm.Use() for an explanation.
+	if stat != nil {
+		if err == nil {
+			fmt.Println("Removing old symlink")
+			if err := os.RemoveAll(binDir); err != nil {
+				log.Fatal("could not remove bin", "err", err, "dir", binDir)
+			}
+
+		}
 	}
 
-	if err := meta.Symlink(filepath.Join(z.baseDir, version), filepath.Join(z.baseDir, "bin")); err != nil {
+	if err := meta.Symlink(versionPath, binDir); err != nil {
 		log.Fatal(err)
 	}
 }

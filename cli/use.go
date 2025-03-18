@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+
 	"strings"
 
 	"github.com/charmbracelet/log"
@@ -62,7 +63,7 @@ func (z *ZVM) setBin(ver string) error {
 		}
 	}
 
-	if err := meta.Symlink(version_path, binDir); err != nil {
+	if err := meta.Link(version_path, binDir); err != nil {
 		return err
 	}
 

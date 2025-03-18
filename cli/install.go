@@ -569,9 +569,10 @@ func (z *ZVM) createSymlink(version string) {
 		}
 	}
 
-	if err := meta.Symlink(versionPath, binDir); err != nil {
-		log.Fatal(err)
+	if err := meta.Link(versionPath, binDir); err != nil {
+		log.Fatal("symlink error", err)
 	}
+
 }
 
 func getTarPath(version string, data *map[string]map[string]any) (string, error) {

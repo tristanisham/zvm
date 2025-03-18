@@ -561,7 +561,7 @@ func (z *ZVM) createSymlink(version string) {
 	// See zvm.Use() for an explanation.
 	if stat != nil {
 		if err == nil {
-			fmt.Printf("Removing old %s", binDir)
+			fmt.Println("Removing old inode link")
 			if err := os.RemoveAll(binDir); err != nil {
 				log.Fatal("could not remove bin", "err", err, "dir", binDir)
 			}

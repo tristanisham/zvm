@@ -15,6 +15,7 @@ import (
 	"syscall"
 
 	// "github.com/charmbracelet/log"
+	"github.com/charmbracelet/log"
 	"golang.org/x/sys/windows"
 )
 
@@ -51,25 +52,32 @@ func isAdmin() bool {
 func Link(oldname, newname string) error {
 	// Attempt to do a regular symlink if allowed by user's permissions
 	if err := os.Symlink(oldname, newname); err != nil {
-
-		if err := os.Link(oldname, newname); err != nil {
-			return errors.Join(ErrEscalatedSymlink, errors.New("cannot create hardlink"))
-		} else {
-			// Check if already admin first
-			if isAdmin() {
-				if err := os.Symlink(oldname, newname); err != nil {
-					return errors.Join(ErrEscalatedSymlink, err)
-				}
-				return nil
-			} else {
-				// If not already admin, try to become admin
-				if err := becomeAdmin(); err != nil {
-					if err := os.Symlink(oldname, newname); err != nil {
-						return errors.Join(ErrEscalatedSymlink, err)
-					}
-				}
-			}
+		// If that fails, try to create an old hardlink.
+		if err := os.Link(oldname, newname); err == nil {
+			return nil
 		}
+		// If creating a hardlink fails, check to see if the user is an admin.
+		// If they're not an admin, try to become an admin and retry making a symlink.
+		if !isAdmin() {
+			log.Error("Symlink & Hardlink failed", "admin", false)
+
+			// If not already admin, try to become admin
+			if adminErr := becomeAdmin(); adminErr != nil {
+				return errors.Join(ErrWinEscToAdmin, adminErr, err)
+			}
+
+			if err := os.Symlink(oldname, newname); err != nil {
+				if err := os.Link(oldname, newname); err == nil {
+					return nil
+				}
+
+				return errors.Join(ErrEscalatedSymlink, ErrEscalatedHardlink, err)
+			}
+
+			return nil
+		}
+
+		return errors.Join(ErrEscalatedSymlink, ErrEscalatedHardlink, err)
 
 	}
 

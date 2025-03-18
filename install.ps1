@@ -96,4 +96,5 @@ function Install-ZVM {
 
 
 $PROCESSOR_ARCH = $env:PROCESSOR_ARCHITECTURE.ToLower()
+
 Install-ZVM "zvm-windows-$PROCESSOR_ARCH.zip"

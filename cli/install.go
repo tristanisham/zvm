@@ -704,10 +704,10 @@ func unzipSource(source, destination string) error {
 		}
 
 		defer func() {
-            if err := rc.Close(); err != nil {
-                panic(err)
-            }
-        }()
+			if err := rc.Close(); err != nil {
+				panic(err)
+			}
+		}()
 
 		path := filepath.Join(destination, f.Name)
 		if !strings.HasPrefix(path, filepath.Clean(destination)+string(os.PathSeparator)) {
@@ -724,10 +724,10 @@ func unzipSource(source, destination string) error {
 			}
 
 			defer func() {
-                if err := f.Close(); err != nil {
-                    panic(err)
-                }
-            }()
+				if err := f.Close(); err != nil {
+					panic(err)
+				}
+			}()
 
 			_, err = io.Copy(f, rc)
 			if err != nil {
@@ -737,7 +737,6 @@ func unzipSource(source, destination string) error {
 
 		return nil
 	}
-	
 
 	// 3. Iterate over zip files inside the archive and unzip each of them
 	for _, f := range reader.File {
@@ -750,7 +749,6 @@ func unzipSource(source, destination string) error {
 
 	return nil
 }
-
 
 type installRequest struct {
 	Site, Package, Version string

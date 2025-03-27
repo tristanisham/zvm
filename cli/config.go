@@ -102,8 +102,6 @@ func validVmuAlis(version string) bool {
 	return version == "default" || version == "mach"
 }
 
-
-
 func (z ZVM) getVersion(version string) error {
 	if _, err := os.Stat(filepath.Join(z.baseDir, version)); err != nil {
 		return err

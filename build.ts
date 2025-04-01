@@ -21,7 +21,7 @@ const GOOS = [
   "freebsd",
   "netbsd",
   "openbsd",
-  "plan9",
+  // "plan9",
   "solaris",
 ];
 

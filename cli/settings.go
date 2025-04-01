@@ -21,6 +21,7 @@ type Settings struct {
 	ZlsVMU             string `json:"zlsVersionMapUrl,omitempty"` // ZLS's version map URL
 	UseColor           bool   `json:"useColor"`
 	AlwaysForceInstall bool   `json:"alwaysForceInstall"`
+	AutomaticReports   bool   `json:"automaticReports"`
 }
 
 func (s *Settings) ToggleColor() {

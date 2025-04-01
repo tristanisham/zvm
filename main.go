@@ -308,18 +308,7 @@ func main() {
 
 	// run and report errors
 	if err := zvmApp.Run(context.Background(), os.Args); err != nil {
-		// 		if meta.VERSION == "v0.7.9" && errors.Is(err, cli.ErrInvalidVersionMap) {
-		// 			meta.CtaGeneric("Help", `Encountered an issue while trying to install ZLS for Zig 'master'.
-
-		// Problem: ZVM v0.7.7 and v0.7.8 may have saved an invalid 'zlsVersionMapUrl' to your settings,
-		// which causes this error. The latest version, v0.7.9, can fix this issue by using the correct URL.
-
-		// To resolve this:
-		// 1. Open your ZVM settings file: '~/.zvm/settings.json'
-		// 2. Remove the 'zlsVersionMapUrl' key & value from the file (if present).
-		// What happens next: ZVM will automatically use the correct version map the next time you run it
-		// If the issue persists, please double-check your settings and try again, or create a GitHub Issue.`)
-		// 		}
+		
 		meta.CtaFatal(err)
 	}
 

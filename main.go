@@ -81,6 +81,7 @@ var zvmApp = &opts.Command{
 			// Args:        true,
 			ArgsUsage: " <ZIG VERSION>",
 			Action: func(ctx context.Context, cmd *opts.Command) error {
+				zvm.StartReport("install", cmd.Args().Slice(), cmd.FlagNames())
 				versionArg := strings.TrimPrefix(cmd.Args().First(), "v")
 
 				if versionArg == "" {
@@ -308,7 +309,7 @@ func main() {
 
 	// run and report errors
 	if err := zvmApp.Run(context.Background(), os.Args); err != nil {
-		
+
 		meta.CtaFatal(err)
 	}
 

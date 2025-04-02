@@ -37,6 +37,7 @@ func Initialize() *ZVM {
 
 	zvm := &ZVM{
 		baseDir: zvm_path,
+		report:  Report{},
 	}
 
 	zvm.Settings.path = filepath.Join(zvm_path, "settings.json")
@@ -67,6 +68,7 @@ func Initialize() *ZVM {
 
 type ZVM struct {
 	baseDir  string
+	report   Report
 	Settings Settings
 }
 

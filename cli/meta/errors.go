@@ -3,7 +3,9 @@
 // license that can be found in the LICENSE file.
 package meta
 
-import "errors"
+import (
+	"errors"
+)
 
 var (
 	ErrWinEscToAdmin     = errors.New("unable to rerun as Windows Administrator")

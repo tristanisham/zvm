@@ -6,6 +6,9 @@ package cli
 
 import (
 	"errors"
+	"fmt"
+	"strings"
+	"time"
 )
 
 var (
@@ -22,3 +25,18 @@ var (
 	ErrMissingVersionInfo = errors.New("version info not found")
 	ErrMissingShasum      = errors.New("shasum not found")
 )
+
+type Report struct {
+	CreatedAt   time.Time
+	Args, Flags []string
+	Command     string
+	Err         error
+}
+
+func (r *Report) Error() string {
+	return fmt.Sprintf("cmd=%s; args='%s'; err=%s", r.Command, strings.Join(r.Args, " "), r.Err)
+}
+
+func (r *Report) Unwrap() error {
+	return r.Err
+}

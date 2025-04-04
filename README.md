@@ -10,6 +10,10 @@ manager. While this is great for developers, it also can lead to headaches when
 you need multiple versions of a language installed to compile your projects, or
 a language gets updated frequently.
 
+## Donate
+
+- [Paypal](https://www.paypal.com/donate/?hosted_button_id=HFTFEFXP2A388)
+
 ## Join our Community
 
 - [Twitch](https://twitch.tv/atalocke)

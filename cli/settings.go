@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"net/url"
 	"os"
+	"path/filepath"
 
 	"github.com/charmbracelet/log"
 
@@ -136,8 +137,12 @@ func (s Settings) save() error {
 		return fmt.Errorf("unable to generate settings.json file %v", err)
 	}
 
+	if err := os.MkdirAll(filepath.Dir(s.path), 0755); err != nil {	
+		return fmt.Errorf("unable to create settings directory: %w", err)
+	}
+
 	if err := os.WriteFile(s.path, out_settings, 0755); err != nil {
-		return fmt.Errorf("unable to create settings.json file %v", err)
+		return fmt.Errorf("unable to create settings.json file %w", err)
 	}
 
 	return nil

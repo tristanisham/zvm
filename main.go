@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/tristanisham/zvm/cli"
 	"github.com/tristanisham/zvm/cli/meta"
@@ -28,7 +29,7 @@ var zvmApp = &opts.Command{
 	Usage:       "Zig Version Manager",
 	Description: "zvm lets you easily install, upgrade, and switch between different versions of Zig.",
 	Version:     meta.VerCopy,
-	Copyright:   "Copyright © 2025 Tristan Isham",
+	Copyright:   fmt.Sprintf("Copyright © %d Tristan Isham", time.Now().Year()),
 	Suggest:     true,
 	Before: func(ctx context.Context, cmd *opts.Command) (context.Context, error) {
 		zvm = *cli.Initialize()

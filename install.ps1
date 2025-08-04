@@ -1,7 +1,8 @@
 
 function Install-ZVM {
     param(
-        [string]$urlSuffix
+        [string]$urlSuffix,
+        [switch]$NoEnv
     );
 
     $ZVMRoot = "${Home}\.zvm"
@@ -65,30 +66,34 @@ function Install-ZVM {
     Write-Output "${C_GREEN}ZVM${DisplayVersion} was installed successfully!${C_RESET}"
     Write-Output "The binary is located at ${ZVMSelf}\zvm.exe`n"
 
-    $User = [System.EnvironmentVariableTarget]::User
-    $Path = [System.Environment]::GetEnvironmentVariable('Path', $User) -split ';'
-    $ZVMInstall = 'ZVM_INSTALL'
+    if (-not $NoEnv) {
+        $User = [System.EnvironmentVariableTarget]::User
+        $Path = [System.Environment]::GetEnvironmentVariable('Path', $User) -split ';'
+        $ZVMInstall = 'ZVM_INSTALL'
 
-    $ZVMInstallValue = [System.Environment]::GetEnvironmentVariable($ZVMInstall, [System.EnvironmentVariableTarget]::User)
+        $ZVMInstallValue = [System.Environment]::GetEnvironmentVariable($ZVMInstall, [System.EnvironmentVariableTarget]::User)
 
-    if ($null -eq $ZVMInstallValue) {
-        [System.Environment]::SetEnvironmentVariable($ZVMInstall, $ZVMSelf, [System.EnvironmentVariableTarget]::User)
-    }
+        if ($null -eq $ZVMInstallValue) {
+            [System.Environment]::SetEnvironmentVariable($ZVMInstall, $ZVMSelf, [System.EnvironmentVariableTarget]::User)
+        }
 
-    if ($Path -notcontains $ZVMSelf) {
-        $Path += $ZVMSelf
-        [System.Environment]::SetEnvironmentVariable('Path', $Path -join ';', $User)
-    } 
-    if ($env:PATH -notcontains ";${ZVMSelf}") {
-        $env:PATH = "${env:Path};${ZVMSelf}"
-    }
+        if ($Path -notcontains $ZVMSelf) {
+            $Path += $ZVMSelf
+            [System.Environment]::SetEnvironmentVariable('Path', $Path -join ';', $User)
+        } 
+        if ($env:PATH -notcontains ";${ZVMSelf}") {
+            $env:PATH = "${env:Path};${ZVMSelf}"
+        }
 
-    if ($Path -notcontains $ZVMBin) {
-        $Path += $ZVMBin
-        [System.Environment]::SetEnvironmentVariable('Path', $Path -join ';', $User)
-    }
-    if ($env:PATH -notcontains ";${ZVMBin}") {
-        $env:PATH = "${env:Path};${ZVMBin}"
+        if ($Path -notcontains $ZVMBin) {
+            $Path += $ZVMBin
+            [System.Environment]::SetEnvironmentVariable('Path', $Path -join ';', $User)
+        }
+        if ($env:PATH -notcontains ";${ZVMBin}") {
+            $env:PATH = "${env:Path};${ZVMBin}"
+        }
+    } else {
+        Write-Output "Skipping environment variable setup due to --no-env flag.`n"
     }
 
     Write-Output "To get started, restart your terminal/editor, then type `"zvm`"`n"
@@ -103,4 +108,10 @@ if ($PROCESSOR_ARCH -eq "x86") {
   exit 1
 }
 
-Install-ZVM "zvm-windows-$PROCESSOR_ARCH.zip"
+# Parse --no-env flag if present
+$NoEnv = $false
+if ($args -contains '--no-env') {
+    $NoEnv = $true
+}
+
+Install-ZVM "zvm-windows-$PROCESSOR_ARCH.zip" -NoEnv:$NoEnv

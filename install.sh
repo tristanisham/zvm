@@ -89,63 +89,76 @@ else
 fi
 
 ###############################
-# Append the ZVM environment variables if they are not already present.
-if [ -n "$TARGET_FILE" ]; then
-    if grep -q 'ZVM_INSTALL' "$TARGET_FILE"; then
-        echo "ZVM environment variables are already present in $TARGET_FILE"
-        exit 0
+# Check for --no-env flag
+NO_ENV=0
+for arg in "$@"; do
+    if [ "$arg" = "--no-env" ]; then
+        NO_ENV=1
+        break
     fi
-    echo "Adding ZVM environment variables to $TARGET_FILE"
+done
 
-    if [[ "$SHELL" == */fish ]]; then
-        {
-            echo
-            echo "# ZVM"
-            echo 'set -gx ZVM_INSTALL "$HOME/.zvm/self"'
-            echo 'set -gx PATH $PATH "$HOME/.zvm/bin"'
-            echo 'set -gx PATH $PATH "$ZVM_INSTALL/"'
-        } >>"$TARGET_FILE"
-        echo "Restart fish or run 'source $TARGET_FILE' to start using ZVM in this shell!"
+# Append the ZVM environment variables if they are not already present, unless --no-env is passed.
+if [ "$NO_ENV" -eq 0 ]; then
+    if [ -n "$TARGET_FILE" ]; then
+        if grep -q 'ZVM_INSTALL' "$TARGET_FILE"; then
+            echo "ZVM environment variables are already present in $TARGET_FILE"
+            exit 0
+        fi
+        echo "Adding ZVM environment variables to $TARGET_FILE"
+
+        if [[ "$SHELL" == */fish ]]; then
+            {
+                echo
+                echo "# ZVM"
+                echo 'set -gx ZVM_INSTALL "$HOME/.zvm/self"'
+                echo 'set -gx PATH $PATH "$HOME/.zvm/bin"'
+                echo 'set -gx PATH $PATH "$ZVM_INSTALL/"'
+            } >>"$TARGET_FILE"
+            echo "Restart fish or run 'source $TARGET_FILE' to start using ZVM in this shell!"
+        else
+            {
+                echo
+                echo "# ZVM"
+                echo 'export ZVM_INSTALL="$HOME/.zvm/self"'
+                echo 'export PATH="$PATH:$HOME/.zvm/bin"'
+                echo 'export PATH="$PATH:$ZVM_INSTALL/"'
+            } >>"$TARGET_FILE"
+            echo "Run 'source $TARGET_FILE' to start using ZVM in this shell!"
+        fi
+        echo "Run 'zvm i master' to install Zig"
     else
-        {
-            echo
-            echo "# ZVM"
-            echo 'export ZVM_INSTALL="$HOME/.zvm/self"'
-            echo 'export PATH="$PATH:$HOME/.zvm/bin"'
-            echo 'export PATH="$PATH:$ZVM_INSTALL/"'
-        } >>"$TARGET_FILE"
-        echo "Run 'source $TARGET_FILE' to start using ZVM in this shell!"
+        echo
+        echo "No suitable shell startup file found."
+        echo "Please add the following lines to your shell's startup script (or execute them in your current session):"
+        if [[ "$TERM" == "xterm"* || "$TERM" == "screen"* || "$TERM" == "tmux"* ]]; then
+            # Colors for pretty-printing
+            RED='\033[0;31m'
+            GREEN='\033[0;32m'
+            BLUE='\033[0;34m'
+            NC='\033[0m'
+            if [[ "$SHELL" == */fish ]]; then
+                echo -e "${GREEN}set -gx${NC} ${BLUE}ZVM_INSTALL${NC}${GREEN} ${NC}${RED}\"\$HOME/.zvm/self\"${NC}"
+                echo -e "${GREEN}set -gx${NC} ${BLUE}PATH${NC}${GREEN} ${NC}${RED}\"\$PATH:\$HOME/.zvm/bin\"${NC}"
+                echo -e "${GREEN}set -gx${NC} ${BLUE}PATH${NC}${GREEN} ${NC}${RED}\"\$PATH:\$ZVM_INSTALL/\"${NC}"
+            else
+                echo -e "${GREEN}export${NC} ${BLUE}ZVM_INSTALL${NC}${GREEN}=${NC}${RED}\"\$HOME/.zvm/self\"${NC}"
+                echo -e "${GREEN}export${NC} ${BLUE}PATH${NC}${GREEN}=${NC}${RED}\"\$PATH:\$HOME/.zvm/bin\"${NC}"
+                echo -e "${GREEN}export${NC} ${BLUE}PATH${NC}${GREEN}=${NC}${RED}\"\$PATH:\$ZVM_INSTALL/\"${NC}"
+            fi
+        else
+            if [[ "$SHELL" == */fish ]]; then
+                echo 'set -gx ZVM_INSTALL "$HOME/.zvm/self"'
+                echo 'set -gx PATH $PATH "$HOME/.zvm/bin"'
+                echo 'set -gx PATH $PATH "$ZVM_INSTALL/"'
+            else
+                echo 'export ZVM_INSTALL="$HOME/.zvm/self"'
+                echo 'export PATH="$PATH:$HOME/.zvm/bin"'
+                echo 'export PATH="$PATH:$ZVM_INSTALL/"'
+            fi
+        fi
+        echo "Run 'zvm i master' to install Zig"
     fi
-    echo "Run 'zvm i master' to install Zig"
 else
-    echo
-    echo "No suitable shell startup file found."
-    echo "Please add the following lines to your shell's startup script (or execute them in your current session):"
-    if [[ "$TERM" == "xterm"* || "$TERM" == "screen"* || "$TERM" == "tmux"* ]]; then
-        # Colors for pretty-printing
-        RED='\033[0;31m'
-        GREEN='\033[0;32m'
-        BLUE='\033[0;34m'
-        NC='\033[0m'
-        if [[ "$SHELL" == */fish ]]; then
-            echo -e "${GREEN}set -gx${NC} ${BLUE}ZVM_INSTALL${NC}${GREEN} ${NC}${RED}\"\$HOME/.zvm/self\"${NC}"
-            echo -e "${GREEN}set -gx${NC} ${BLUE}PATH${NC}${GREEN} ${NC}${RED}\"\$PATH:\$HOME/.zvm/bin\"${NC}"
-            echo -e "${GREEN}set -gx${NC} ${BLUE}PATH${NC}${GREEN} ${NC}${RED}\"\$PATH:\$ZVM_INSTALL/\"${NC}"
-        else
-            echo -e "${GREEN}export${NC} ${BLUE}ZVM_INSTALL${NC}${GREEN}=${NC}${RED}\"\$HOME/.zvm/self\"${NC}"
-            echo -e "${GREEN}export${NC} ${BLUE}PATH${NC}${GREEN}=${NC}${RED}\"\$PATH:\$HOME/.zvm/bin\"${NC}"
-            echo -e "${GREEN}export${NC} ${BLUE}PATH${NC}${GREEN}=${NC}${RED}\"\$PATH:\$ZVM_INSTALL/\"${NC}"
-        fi
-    else
-        if [[ "$SHELL" == */fish ]]; then
-            echo 'set -gx ZVM_INSTALL "$HOME/.zvm/self"'
-            echo 'set -gx PATH $PATH "$HOME/.zvm/bin"'
-            echo 'set -gx PATH $PATH "$ZVM_INSTALL/"'
-        else
-            echo 'export ZVM_INSTALL="$HOME/.zvm/self"'
-            echo 'export PATH="$PATH:$HOME/.zvm/bin"'
-            echo 'export PATH="$PATH:$ZVM_INSTALL/"'
-        fi
-    fi
-    echo "Run 'zvm i master' to install Zig"
+    echo "Skipping environment variable setup due to --no-env flag."
 fi

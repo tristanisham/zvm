@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"slices"
 	"strings"
 
@@ -82,6 +83,11 @@ func (z ZVM) ListRemoteAvailable() error {
 		return err
 	}
 
+	installedVersions, err := z.GetInstalledVersions()
+	if err != nil {
+		return err
+	}
+
 	options := make([]string, 0, len(zigVersions))
 
 	// add 'v' prefix for sorting.
@@ -92,17 +98,61 @@ func (z ZVM) ListRemoteAvailable() error {
 	semver.Sort(options)
 	slices.Reverse(options)
 
-	// remove "v" prefix to maintain consistency with zig versioning.
-	finalList := options[:0]
+	fmt.Printf("%-12s%-12s%s\n", "Version", "Installed", "ZLS")
+
 	for _, version := range options {
 		stripped := version[1:]
-		if _, ok := zlsVersions[stripped]; ok {
-			stripped += "\t(tagged zls)"
+
+		if stripped == "master" {
+			continue
 		}
-		finalList = append(finalList, stripped)
+
+		installed := ""
+		if slices.Contains(installedVersions, stripped) {
+			installed = "[installed]"
+		}
+
+		zlsInfo := ""
+		if _, ok := zlsVersions[stripped]; ok {
+			zlsInfo = "(zls tagged)"
+		}
+
+		fmt.Printf("%-12s%-12s%s\n", stripped, installed, zlsInfo)
 	}
 
-	fmt.Println(strings.Join(finalList, "\n"))
+	if _, ok := zigVersions["master"]; ok {
+		var remoteVersion string
+		if master, ok := zigVersions["master"]; ok {
+			if versionInfo, ok := master["version"].(string); ok {
+				remoteVersion = versionInfo
+			}
+		}
+
+		zlsInfo := ""
+		if _, ok := zlsVersions["master"]; ok {
+			zlsInfo = "(zls tagged)"
+		}
+		fmt.Printf("%-12s%-12s%s\n", fmt.Sprintf("master (remote) (%s)", remoteVersion), "", zlsInfo)
+
+		// Check if master is installed and print local version
+		if slices.Contains(installedVersions, "master") {
+			targetZig := strings.TrimSpace(filepath.Join(z.baseDir, "master", "zig"))
+			cmd := exec.Command(targetZig, "version")
+			var zigVersion strings.Builder
+			cmd.Stdout = &zigVersion
+			err := cmd.Run()
+			if err != nil {
+				log.Warn(err)
+			} else {
+				localVersion := strings.TrimSpace(zigVersion.String())
+
+				fmt.Printf("%-15s (%-15s) %-10s", "master (local)", localVersion, "[installed]")
+				if localVersion != remoteVersion {
+					print("[outdated]")
+				}
+			}
+		}
+	}
 
 	return nil
 }

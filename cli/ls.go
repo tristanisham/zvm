@@ -146,9 +146,9 @@ func (z ZVM) ListRemoteAvailable() error {
 			} else {
 				localVersion := strings.TrimSpace(zigVersion.String())
 
-				fmt.Printf("%-15s (%-15s) %-10s", "master (local)", localVersion, "[installed]")
+				fmt.Printf("%-15s (%-15s) %-10s\n", "master (local)", localVersion, "[installed]")
 				if localVersion != remoteVersion {
-					print("[outdated]")
+					fmt.Print("[outdated]")
 				}
 			}
 		}

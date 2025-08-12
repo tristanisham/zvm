@@ -137,7 +137,7 @@ func (s Settings) save() error {
 		return fmt.Errorf("unable to generate settings.json file %v", err)
 	}
 
-	if err := os.MkdirAll(filepath.Dir(s.path), 0755); err != nil {	
+	if err := os.MkdirAll(filepath.Dir(s.path), 0755); err != nil {
 		return fmt.Errorf("unable to create settings directory: %w", err)
 	}
 

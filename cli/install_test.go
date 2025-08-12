@@ -55,4 +55,3 @@ func TestPkg(t *testing.T) {
 		t.Fatalf("Recieved %q. Wanted %q", result.Version, "11")
 	}
 }
-

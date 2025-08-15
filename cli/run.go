@@ -55,7 +55,7 @@ func (z *ZVM) Run(version string, cmd []string) error {
 		fmt.Printf("It looks like %s isn't installed. Would you like to install it? [y/n]\n", version)
 
 		if getConfirmation() {
-			if err = z.Install(version, false); err != nil {
+			if err = z.Install(version, false, true); err != nil {
 				return err
 			}
 			return z.runZig(version, cmd)

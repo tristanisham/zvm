@@ -77,6 +77,10 @@ var zvmApp = &opts.Command{
 					Name:  "full",
 					Usage: "use the 'full' zls compatibility mode",
 				},
+				&opts.BoolFlag{
+					Name:  "nomirror",
+					Usage: "download Zig from ziglang.org instead of a community mirror",
+				},
 			},
 			Description: "To install the latest version, use `master`",
 			// Args:        true,
@@ -103,7 +107,7 @@ var zvmApp = &opts.Command{
 				}
 
 				// Install Zig
-				err := zvm.Install(req.Package, force)
+				err := zvm.Install(req.Package, force, !cmd.Bool("nomirror"))
 				if err != nil {
 					return err
 				}
@@ -220,6 +224,27 @@ var zvmApp = &opts.Command{
 			Action: func(ctx context.Context, cmd *opts.Command) error {
 				printUpgradeNotice = false
 				return zvm.Upgrade()
+			},
+		},
+		{
+			Name:  "mirrorlist",
+			Usage: "set ZVM's mirror list URL for custom Zig distribution servers, or set to \"disabled\" to download directly from ziglang.org",
+			Action: func(ctx context.Context, cmd *opts.Command) error {
+				url := cmd.Args().First()
+				log.Debug("user passed mirrorlist", "url", url)
+
+				switch url {
+				case "default":
+					return zvm.Settings.ResetMirrorList()
+
+				default:
+					if err := zvm.Settings.SetMirrorListUrl(url); err != nil {
+						log.Info("Run `zvm mirrorlist default` to reset your mirror list.")
+						return err
+					}
+				}
+
+				return nil
 			},
 		},
 		{

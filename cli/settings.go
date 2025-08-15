@@ -18,10 +18,26 @@ import (
 
 type Settings struct {
 	path               string
+	MirrorListUrl      string `json:"mirrorListUrl,omitempty"` // Zig's community mirror list URL
+	MinisignPubKey     string `json:"minisignPubKey,omitempty"`
 	VersionMapUrl      string `json:"versionMapUrl,omitempty"`    // Zig's version map URL
 	ZlsVMU             string `json:"zlsVersionMapUrl,omitempty"` // ZLS's version map URL
 	UseColor           bool   `json:"useColor"`
 	AlwaysForceInstall bool   `json:"alwaysForceInstall"`
+}
+
+var DefaultSettings = Settings{
+	MirrorListUrl: "https://ziglang.org/download/community-mirrors.txt",
+	// From https://ziglang.org/download/
+	MinisignPubKey:     "RWSGOq2NVecA2UPNdBUZykf1CCb147pkmdtYxgb3Ti+JO/wCYvhbAb/U",
+	VersionMapUrl:      "https://ziglang.org/download/index.json",
+	ZlsVMU:             "https://releases.zigtools.org/",
+	UseColor:           true,
+	AlwaysForceInstall: false,
+}
+
+func (s *Settings) UseMirrorList() bool {
+	return s.MirrorListUrl != "disabled"
 }
 
 func (s *Settings) ToggleColor() {
@@ -38,8 +54,17 @@ func (s *Settings) ToggleColor() {
 	fmt.Println("Terminal color output: OFF")
 }
 
+func (s *Settings) ResetMirrorList() error {
+	s.MirrorListUrl = DefaultSettings.MirrorListUrl
+	if err := s.save(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (s *Settings) ResetVersionMap() error {
-	s.VersionMapUrl = "https://ziglang.org/download/index.json"
+	s.VersionMapUrl = DefaultSettings.VersionMapUrl
 	if err := s.save(); err != nil {
 		return err
 	}
@@ -48,7 +73,7 @@ func (s *Settings) ResetVersionMap() error {
 }
 
 func (s *Settings) ResetZlsVMU() error {
-	s.ZlsVMU = "https://releases.zigtools.org/"
+	s.ZlsVMU = DefaultSettings.ZlsVMU
 	if err := s.save(); err != nil {
 		return err
 	}
@@ -77,6 +102,23 @@ func (s *Settings) SetColor(answer bool) {
 	if err := s.save(); err != nil {
 		log.Fatal(err)
 	}
+}
+
+func (s *Settings) SetMirrorListUrl(mirrorListUrl string) error {
+	if mirrorListUrl != "disabled" {
+		if err := isValidWebURL(mirrorListUrl); err != nil {
+			return fmt.Errorf("%w: %w", ErrInvalidVersionMap, err)
+		}
+	}
+
+	s.MirrorListUrl = mirrorListUrl
+	if err := s.save(); err != nil {
+		return err
+	}
+
+	log.Debug("set mirror list url", "url", s.MirrorListUrl)
+
+	return nil
 }
 
 func (s *Settings) SetVersionMapUrl(versionMapUrl string) error {
@@ -109,6 +151,26 @@ func (s *Settings) SetZlsVMU(versionMapUrl string) error {
 	return nil
 }
 
+func (s *Settings) ResetEmpty() error {
+	if s.MirrorListUrl == "" {
+		s.MirrorListUrl = DefaultSettings.MirrorListUrl
+	}
+
+	if s.MinisignPubKey == "" {
+		s.MinisignPubKey = DefaultSettings.MinisignPubKey
+	}
+
+	if s.VersionMapUrl == "" {
+		s.VersionMapUrl = DefaultSettings.VersionMapUrl
+	}
+
+	if s.ZlsVMU == "" {
+		s.ZlsVMU = DefaultSettings.ZlsVMU
+	}
+
+	return s.save()
+}
+
 // isValidWebURL checks if the given URL string is a valid web URL.
 func isValidWebURL(urlString string) error {
 	parsedURL, err := url.Parse(urlString)
@@ -132,7 +194,7 @@ func isValidWebURL(urlString string) error {
 }
 
 func (s Settings) save() error {
-	out_settings, err := json.MarshalIndent(&s, "", "    ")
+	outSettings, err := json.MarshalIndent(&s, "", "    ")
 	if err != nil {
 		return fmt.Errorf("unable to generate settings.json file %v", err)
 	}
@@ -141,7 +203,7 @@ func (s Settings) save() error {
 		return fmt.Errorf("unable to create settings directory: %w", err)
 	}
 
-	if err := os.WriteFile(s.path, out_settings, 0755); err != nil {
+	if err := os.WriteFile(s.path, outSettings, 0755); err != nil {
 		return fmt.Errorf("unable to create settings.json file %w", err)
 	}
 

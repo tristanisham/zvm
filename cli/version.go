@@ -22,24 +22,9 @@ import (
 )
 
 func (z *ZVM) fetchVersionMap() (zigVersionMap, error) {
-	log.Debug("initial VMU", "url", z.Settings.VersionMapUrl)
+	log.Debug("setting's VMU", "url", z.Settings.VersionMapUrl)
 
-	if err := z.loadSettings(); err != nil {
-		log.Warnf("could not load version map from settings: %q", err)
-		log.Debug("vmu", z.Settings.VersionMapUrl)
-	}
-
-	defaultVersionMapUrl := "https://ziglang.org/download/index.json"
-
-	versionMapUrl := z.Settings.VersionMapUrl
-
-	log.Debug("setting's VMU", "url", versionMapUrl)
-
-	if len(versionMapUrl) == 0 {
-		versionMapUrl = defaultVersionMapUrl
-	}
-
-	req, err := http.NewRequest("GET", versionMapUrl, nil)
+	req, err := http.NewRequest("GET", z.Settings.VersionMapUrl, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -95,22 +80,9 @@ func cleanURL(url string) string {
 
 // note: the zls release-worker uses the same index format as zig, but without the latest master entry.
 func (z *ZVM) fetchZlsTaggedVersionMap() (zigVersionMap, error) {
-	log.Debug("initial ZRW", "func", "fetchZlsTaggedVersionMap", "url", z.Settings.ZlsVMU)
+	log.Debug("setting's ZRW", "url", z.Settings.ZlsVMU)
 
-	if err := z.loadSettings(); err != nil {
-		log.Warnf("could not load zls release worker base url from settings: %q", err)
-		log.Debug("zrw", z.Settings.ZlsVMU)
-	}
-
-	versionMapUrl := z.Settings.ZlsVMU
-
-	log.Debug("setting's ZRW", "url", versionMapUrl)
-
-	if len(z.Settings.ZlsVMU) == 0 {
-		versionMapUrl = "https://releases.zigtools.org/"
-	}
-
-	fullVersionMapAPI := cleanURL(versionMapUrl + "v1/zls/index.json")
+	fullVersionMapAPI := cleanURL(z.Settings.ZlsVMU + "v1/zls/index.json")
 
 	log.Debug("Version Map Url (95)", "func", "fetchZlsTaggedVersionMap", "url", fullVersionMapAPI)
 	req, err := http.NewRequest("GET", fullVersionMapAPI, nil)
@@ -151,28 +123,13 @@ func (z *ZVM) fetchZlsTaggedVersionMap() (zigVersionMap, error) {
 // note: the zls release-worker uses the same index format as zig, but without the latest master entry.
 // this function does not write the result to a file.
 func (z *ZVM) fetchZlsVersionByZigVersion(version string, compatMode string) (zigVersion, error) {
-	log.Debug("initial ZRW", "func", "fetchZlsVersionByZigVersion", "url", z.Settings.ZlsVMU)
-
-	if err := z.loadSettings(); err != nil {
-		log.Warnf("could not load zls release worker base url from settings: %q", err)
-		log.Debug("zrw", z.Settings.ZlsVMU)
-	}
-
-	defaultZrwBaseUrl := "https://releases.zigtools.org/"
-
-	zrwBaseUrl := z.Settings.ZlsVMU
-
-	log.Debug("setting's ZRW", "url", zrwBaseUrl)
-
-	if len(zrwBaseUrl) == 0 {
-		zrwBaseUrl = defaultZrwBaseUrl
-	}
+	log.Debug("setting's ZRW", "url", z.Settings.ZlsVMU)
 
 	// https://github.com/zigtools/release-worker?tab=readme-ov-file#query-parameters
 	// The compatibility query parameter must be either only-runtime or full:
 	//   full: Request a ZLS build that can be built and used with the given Zig version.
 	//   only-runtime: Request a ZLS build that can be used at runtime with the given Zig version but may not be able to build ZLS from source.
-	selectVersionUrl := cleanURL(fmt.Sprintf("%s/v1/zls/select-version?zig_version=%s&compatibility=%s", zrwBaseUrl, url.QueryEscape(version), compatMode))
+	selectVersionUrl := cleanURL(fmt.Sprintf("%s/v1/zls/select-version?zig_version=%s&compatibility=%s", z.Settings.ZlsVMU, url.QueryEscape(version), compatMode))
 	log.Debug("fetching zls version", "zigVersion", version, "url", selectVersionUrl)
 	req, err := http.NewRequest("GET", selectVersionUrl, nil)
 	if err != nil {

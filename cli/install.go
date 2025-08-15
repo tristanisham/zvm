@@ -13,15 +13,18 @@ import (
 	"fmt"
 	"io"
 	"io/fs"
+	"math/rand"
 	"net/http"
 	"net/url"
 	"os"
 	"os/exec"
+	"path"
 	"path/filepath"
 	"runtime"
 	"slices"
 	"strings"
 
+	"github.com/jedisct1/go-minisign"
 	"github.com/schollz/progressbar/v3"
 	"github.com/tristanisham/zvm/cli/meta"
 
@@ -30,8 +33,11 @@ import (
 	"github.com/tristanisham/clr"
 )
 
-func (z *ZVM) Install(version string, force bool) error {
-	os.Mkdir(z.baseDir, 0755)
+func (z *ZVM) Install(version string, force bool, mirror bool) error {
+	err := os.MkdirAll(z.baseDir, 0755)
+	if err != nil {
+		return err
+	}
 	rawVersionStructure, err := z.fetchVersionMap()
 	if err != nil {
 		return err
@@ -82,7 +88,14 @@ func (z *ZVM) Install(version string, force bool) error {
 
 	log.Debug("tarPath", "url", tarPath)
 
-	tarResp, err := requestDownload(tarPath)
+	var tarResp *http.Response
+	minisig := ""
+	if mirror && z.Settings.UseMirrorList() && z.Settings.VersionMapUrl == DefaultSettings.VersionMapUrl {
+		tarResp, minisig, err = attemptMirrorDownload(z.Settings.MirrorListUrl, tarPath)
+	} else {
+		tarResp, err = attemptDownload(tarPath)
+	}
+
 	if err != nil {
 		return err
 	}
@@ -95,28 +108,28 @@ func (z *ZVM) Install(version string, force bool) error {
 		pathEnding = "*.tar.xz"
 	}
 
-	tempDir, err := os.CreateTemp(z.baseDir, pathEnding)
+	tempFile, err := os.CreateTemp(z.baseDir, pathEnding)
 	if err != nil {
 		return err
 	}
 
-	defer tempDir.Close()
-	defer os.RemoveAll(tempDir.Name())
+	defer tempFile.Close()
+	defer os.RemoveAll(tempFile.Name())
 
-	var clr_opt_ver_str string
+	var clrOptVerStr string
 	if z.Settings.UseColor {
-		clr_opt_ver_str = clr.Green(version)
+		clrOptVerStr = clr.Green(version)
 	} else {
-		clr_opt_ver_str = version
+		clrOptVerStr = version
 	}
 
 	pbar := progressbar.DefaultBytes(
 		int64(tarResp.ContentLength),
-		fmt.Sprintf("Downloading %s:", clr_opt_ver_str),
+		fmt.Sprintf("Downloading %s:", clrOptVerStr),
 	)
 
 	hash := sha256.New()
-	_, err = io.Copy(io.MultiWriter(tempDir, pbar, hash), tarResp.Body)
+	_, err = io.Copy(io.MultiWriter(tempFile, pbar, hash), tarResp.Body)
 	if err != nil {
 		return err
 	}
@@ -144,11 +157,33 @@ func (z *ZVM) Install(version string, force bool) error {
 		log.Warnf("No shasum provided by host")
 	}
 
+	if minisig != "" {
+		fmt.Println("Checking minisign signature...")
+		pubkey, err := minisign.NewPublicKey(z.Settings.MinisignPubKey)
+		if err != nil {
+			return fmt.Errorf("minisign public key decoding failed: %v", err)
+		}
+		signature, err := minisign.DecodeSignature(minisig)
+		if err != nil {
+			return fmt.Errorf("minisign signature decoding failed: %v", err)
+		}
+		verified, err := pubkey.VerifyFromFile(tempFile.Name(), signature)
+		if err != nil {
+			return fmt.Errorf("minisign verification failed: %v", err)
+		}
+
+		if !verified {
+			return fmt.Errorf("minisign signature for %v could not be verified", version)
+		}
+
+		fmt.Println("Minisign signature verified! 🎉")
+	}
+
 	// The base directory where all Zig files for the appropriate version are installed
 	// installedVersionPath := filepath.Join(z.zvmBaseDir, version)
 	fmt.Println("Extracting bundle...")
 
-	if err := ExtractBundle(tempDir.Name(), z.baseDir); err != nil {
+	if err := ExtractBundle(tempFile.Name(), z.baseDir); err != nil {
 		log.Fatal(err)
 	}
 	var tarName string
@@ -198,50 +233,79 @@ func (z *ZVM) Install(version string, force bool) error {
 	return nil
 }
 
-// requestDownload HTTP requests Zig downloads from the official site and mirrors
-func requestDownload(tarURL string) (*http.Response, error) {
-	log.Debug("requestWithMirror", "tarURL", tarURL)
-
-	tarResp, err := attemptDownload(tarURL)
+// attemptMirrorDownload HTTP requests Zig downloads from the community mirrorlist.
+// Returns a tuple of (response, minisig, error).
+func attemptMirrorDownload(mirrorListURL string, tarURL string) (*http.Response, string, error) {
+	log.Debug("attemptMirrorDownload", "mirrorListURL", mirrorListURL, "tarURL", tarURL)
+	tarURLParsed, err := url.Parse(tarURL)
 	if err != nil {
-		return nil, err
+		return nil, "", fmt.Errorf("%w: %w", ErrDownloadFail, err)
+	}
+	tarName := path.Base(tarURLParsed.Path)
+
+	resp, err := attemptDownload(mirrorListURL)
+	if err != nil {
+		return nil, "", fmt.Errorf("%w: %w", ErrDownloadFail, err)
+	}
+	defer resp.Body.Close()
+
+	mirrorBytes, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, "", err
 	}
 
-	if tarResp.StatusCode == 200 {
-		return tarResp, nil
-	}
-
-	mirrors := []func(string) (string, error){mirrorHryx, mirrorMachEngine}
+	mirrors := strings.Split(string(mirrorBytes), "\n")
+	rand.Shuffle(len(mirrors), func(i, j int) { mirrors[i], mirrors[j] = mirrors[j], mirrors[i] })
+	// Default as fallback
+	mirrors = append(mirrors, "https://ziglang.org/builds/")
 
 	for i, mirror := range mirrors {
-		log.Debugf("requestWithMirror url #%d", i)
-
-		newURL, err := mirror(tarURL)
+		log.Debug("attemptMirrorDownload", "mirror", i, "mirrorURL", mirror)
+		mirrorTarURL, err := url.JoinPath(mirror, tarName)
 		if err != nil {
-			return nil, fmt.Errorf("%w: %w", ErrDownloadFail, err)
-		}
-
-		log.Debug(fmt.Sprintf("mirror %d", i), "url", newURL)
-
-		tarResp, err = attemptDownload(newURL)
-		if err != nil {
-			log.Debug("mirror req err", "mirror", newURL, "error", err)
+			log.Debug("mirror path error", "mirror", mirror, "error", err)
 			continue
 		}
 
-		if tarResp.StatusCode == 200 {
-			return tarResp, nil
+		tarResp, err := attemptDownload(mirrorTarURL)
+		if err != nil {
+			log.Debug("mirror tar error", "mirror", mirror, "error", err)
+			continue
 		}
+
+		minisig, err := attemptMinisigDownload(mirrorTarURL)
+		if err != nil {
+			log.Debug("mirror minisig error", "mirror", mirror, "error", err)
+			tarResp.Body.Close()
+			continue
+		}
+
+		return tarResp, minisig, nil
 	}
 
-	return nil, errors.Join(err, fmt.Errorf("all download attempts failed"))
+	return nil, "", fmt.Errorf("%w: %w: %w", ErrDownloadFail, errors.New("all download attempts failed"), err)
 }
 
-// attemptDownlaod creates a generic http request for ZVM.
+func attemptMinisigDownload(tarURL string) (string, error) {
+	minisigResp, err := attemptDownload(tarURL + ".minisig")
+	if err != nil {
+		return "", err
+	}
+	defer minisigResp.Body.Close()
+
+	minisigBytes, err := io.ReadAll(minisigResp.Body)
+	if err != nil {
+		return "", err
+	}
+
+	return string(minisigBytes), nil
+}
+
+// attemptDownload creates a generic http request for ZVM.
 func attemptDownload(url string) (*http.Response, error) {
 	req, err := createDownloadReq(url)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("%w: %w", ErrDownloadFail, err)
 	}
 
 	client := http.DefaultClient
@@ -267,10 +331,12 @@ func attemptDownload(url string) (*http.Response, error) {
 
 	resp, err := client.Do(req)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("%w: %w", ErrDownloadFail, err)
 	}
 
-	log.Debug("attemptDownload", "status code", resp.StatusCode)
+	if resp.StatusCode != 200 {
+		return nil, fmt.Errorf("%w: %s", ErrDownloadFail, resp.Status)
+	}
 
 	return resp, nil
 }
@@ -278,7 +344,7 @@ func attemptDownload(url string) (*http.Response, error) {
 func createDownloadReq(tarURL string) (*http.Request, error) {
 	zigArch, zigOS := zigStyleSysInfo()
 
-	zigDownloadReq, err := http.NewRequest("GET", tarURL, nil)
+	zigDownloadReq, err := http.NewRequest("GET", tarURL+"?source=zvm", nil)
 	if err != nil {
 		return nil, err
 	}
@@ -288,36 +354,6 @@ func createDownloadReq(tarURL string) (*http.Request, error) {
 	zigDownloadReq.Header.Set("X-Client-Arch", zigArch)
 
 	return zigDownloadReq, nil
-}
-
-// mirrorReplace takes official Zig VMU download links and replaces them with an alternative download url.
-func mirrorReplace(url, mirror string) (string, error) {
-	var downloadToggle bool = false
-	dlBuild := "https://ziglang.org/builds/"
-	dlDownload := "https://ziglang.org/download/"
-	if !strings.HasPrefix(url, dlBuild) && !strings.HasPrefix(url, dlDownload) {
-		return "", fmt.Errorf("%w: expected a url that started with %s or %s. Recieved %q", ErrInvalidInput, dlBuild, dlDownload, url)
-	}
-
-	if strings.HasPrefix(url, dlDownload) {
-		downloadToggle = true
-	}
-
-	if downloadToggle {
-		return strings.Replace(url, dlDownload, mirror, 1), nil
-	}
-
-	return strings.Replace(url, dlBuild, mirror, 1), nil
-}
-
-// mirrorHryx returns the Hryx mirror url equivilant for a Zig Build tarball URL.
-func mirrorHryx(url string) (string, error) {
-	return mirrorReplace(url, "https://zigmirror.hryx.net/zig/")
-}
-
-// mirrorMachEngine returns the Mach Engine mirror url equivilant for a Zig Build tarball URL.
-func mirrorMachEngine(url string) (string, error) {
-	return mirrorReplace(url, "https://pkg.machengine.org/zig/")
 }
 
 func (z *ZVM) SelectZlsVersion(version string, compatMode string) (string, string, string, error) {
@@ -430,7 +466,7 @@ func (z *ZVM) InstallZls(requestedVersion string, compatMode string, force bool)
 
 	log.Debug("tarPath", "url", tarPath)
 
-	tarResp, err := requestDownload(tarPath)
+	tarResp, err := attemptDownload(tarPath)
 	if err != nil {
 		return err
 	}

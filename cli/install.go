@@ -260,13 +260,13 @@ func attemptMirrorDownload(mirrorListURL string, tarURL string) (*http.Response,
 	mirrors = append(mirrors, "https://ziglang.org/builds/")
 
 	for i, mirror := range mirrors {
-		log.Debug("attemptMirrorDownload", "mirror", i, "mirrorURL", mirror)
 		mirrorTarURL, err := url.JoinPath(mirror, tarName)
 		if err != nil {
 			log.Debug("mirror path error", "mirror", mirror, "error", err)
 			continue
 		}
 
+		log.Debug("attemptMirrorDownload", "mirror", i, "mirrorURL", mirrorTarURL)
 		tarResp, err := attemptDownload(mirrorTarURL)
 		if err != nil {
 			log.Debug("mirror tar error", "mirror", mirror, "error", err)

@@ -252,6 +252,8 @@ func attemptMirrorDownload(mirrorListURL string, tarURL string) (*http.Response,
 	}
 
 	mirrors := strings.Split(string(mirrorBytes), "\n")
+	// Pop empty field after terminating newline
+	mirrors = mirrors[:len(mirrors)-1]
 	rand.Shuffle(len(mirrors), func(i, j int) { mirrors[i], mirrors[j] = mirrors[j], mirrors[i] })
 	// Default as fallback
 	mirrors = append(mirrors, "https://ziglang.org/builds/")

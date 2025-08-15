@@ -89,8 +89,9 @@ func (z *ZVM) Install(version string, force bool, mirror bool) error {
 	log.Debug("tarPath", "url", tarPath)
 
 	var tarResp *http.Response
-	minisig := ""
-	if mirror && z.Settings.UseMirrorList() && z.Settings.VersionMapUrl == DefaultSettings.VersionMapUrl {
+	var minisig minisign.Signature
+	mirror = mirror && z.Settings.UseMirrorList() && z.Settings.VersionMapUrl == DefaultSettings.VersionMapUrl
+	if mirror {
 		tarResp, minisig, err = attemptMirrorDownload(z.Settings.MirrorListUrl, tarPath)
 	} else {
 		tarResp, err = attemptDownload(tarPath)
@@ -157,17 +158,13 @@ func (z *ZVM) Install(version string, force bool, mirror bool) error {
 		log.Warnf("No shasum provided by host")
 	}
 
-	if minisig != "" {
+	if mirror {
 		fmt.Println("Checking minisign signature...")
 		pubkey, err := minisign.NewPublicKey(z.Settings.MinisignPubKey)
 		if err != nil {
 			return fmt.Errorf("minisign public key decoding failed: %v", err)
 		}
-		signature, err := minisign.DecodeSignature(minisig)
-		if err != nil {
-			return fmt.Errorf("minisign signature decoding failed: %v", err)
-		}
-		verified, err := pubkey.VerifyFromFile(tempFile.Name(), signature)
+		verified, err := pubkey.VerifyFromFile(tempFile.Name(), minisig)
 		if err != nil {
 			return fmt.Errorf("minisign verification failed: %v", err)
 		}
@@ -235,23 +232,23 @@ func (z *ZVM) Install(version string, force bool, mirror bool) error {
 
 // attemptMirrorDownload HTTP requests Zig downloads from the community mirrorlist.
 // Returns a tuple of (response, minisig, error).
-func attemptMirrorDownload(mirrorListURL string, tarURL string) (*http.Response, string, error) {
+func attemptMirrorDownload(mirrorListURL string, tarURL string) (*http.Response, minisign.Signature, error) {
 	log.Debug("attemptMirrorDownload", "mirrorListURL", mirrorListURL, "tarURL", tarURL)
 	tarURLParsed, err := url.Parse(tarURL)
 	if err != nil {
-		return nil, "", fmt.Errorf("%w: %w", ErrDownloadFail, err)
+		return nil, minisign.Signature{}, fmt.Errorf("%w: %w", ErrDownloadFail, err)
 	}
 	tarName := path.Base(tarURLParsed.Path)
 
 	resp, err := attemptDownload(mirrorListURL)
 	if err != nil {
-		return nil, "", fmt.Errorf("%w: %w", ErrDownloadFail, err)
+		return nil, minisign.Signature{}, fmt.Errorf("%w: %w", ErrDownloadFail, err)
 	}
 	defer resp.Body.Close()
 
 	mirrorBytes, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return nil, "", err
+		return nil, minisign.Signature{}, err
 	}
 
 	mirrors := strings.Split(string(mirrorBytes), "\n")
@@ -283,22 +280,22 @@ func attemptMirrorDownload(mirrorListURL string, tarURL string) (*http.Response,
 		return tarResp, minisig, nil
 	}
 
-	return nil, "", fmt.Errorf("%w: %w: %w", ErrDownloadFail, errors.New("all download attempts failed"), err)
+	return nil, minisign.Signature{}, fmt.Errorf("%w: %w: %w", ErrDownloadFail, errors.New("all download attempts failed"), err)
 }
 
-func attemptMinisigDownload(tarURL string) (string, error) {
+func attemptMinisigDownload(tarURL string) (minisign.Signature, error) {
 	minisigResp, err := attemptDownload(tarURL + ".minisig")
 	if err != nil {
-		return "", err
+		return minisign.Signature{}, err
 	}
 	defer minisigResp.Body.Close()
 
 	minisigBytes, err := io.ReadAll(minisigResp.Body)
 	if err != nil {
-		return "", err
+		return minisign.Signature{}, err
 	}
 
-	return string(minisigBytes), nil
+	return minisign.DecodeSignature(string(minisigBytes))
 }
 
 // attemptDownload creates a generic http request for ZVM.

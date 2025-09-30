@@ -1,3 +1,4 @@
+// deno-lint-ignore-file no-import-prefix
 // Copyright 2025 Tristan Isham. All rights reserved.
 // Use of this source code is governed by the MIT
 // license that can be found in the LICENSE file.

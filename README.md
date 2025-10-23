@@ -273,7 +273,7 @@ Make sure you switch your VMU before using `run`.
 
 ```sh
 zvm vmu zig mach
-run mach-latest version
+zvm run mach-latest version
 # 0.14.0-dev.1911+3bf89f55c
 ```
 
@@ -297,6 +297,15 @@ zvm vmu zig default # Resets back to default Zig releases.
 zvm vmu zig mach # Sets ZVM to pull from Mach nominated Zig.
 
 zvm vmu zls default # Resets back to default ZLS releases.
+```
+
+## Use a Custom Mirror Distribution Server
+ZVM now lets you set your own Mirror Distribution Server. If you cannot or choose not to use the official Zig mirror list, you can host your own, or use another grouping of mirrors.
+
+```sh
+zvm mirrorlist <url>
+# Reset to the official mirror
+zvm mirrorlist default
 ```
 
 ## Print program help

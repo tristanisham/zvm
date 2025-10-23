@@ -137,6 +137,11 @@ var zvmApp = &opts.Command{
 					return zvm.Sync()
 				} else {
 					versionArg := strings.TrimPrefix(cmd.Args().First(), "v")
+
+					if versionArg == "" {
+						return fmt.Errorf("command 'use' requires 1 valid Zig version as an argument")
+					}
+
 					if err := zvm.Use(versionArg); err != nil {
 						return err
 					}

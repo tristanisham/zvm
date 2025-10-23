@@ -1,8 +1,6 @@
 module github.com/tristanisham/zvm
 
-go 1.24.0
-
-toolchain go1.24.1
+go 1.25.3
 
 require (
 	github.com/charmbracelet/lipgloss v1.1.0
@@ -34,6 +32,6 @@ require (
 	github.com/muesli/termenv v0.16.0 // indirect
 	github.com/rivo/uniseg v0.4.7 // indirect
 	github.com/urfave/cli/v3 v3.5.0
-	golang.org/x/exp v0.0.0-20251017212417-90e834f514db // indirect
+	golang.org/x/exp v0.0.0-20251023183803-a4bb9ffd2546 // indirect
 	golang.org/x/term v0.36.0 // indirect
 )

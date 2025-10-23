@@ -239,6 +239,9 @@ var zvmApp = &opts.Command{
 
 				default:
 					if err := zvm.Settings.SetMirrorListUrl(url); err != nil {
+						if url == "" {
+							err = fmt.Errorf("%wURL cannot be an empty string", err)
+						}
 						log.Info("Run `zvm mirrorlist default` to reset your mirror list.")
 						return err
 					}

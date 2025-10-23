@@ -24,38 +24,33 @@ func Initialize() *ZVM {
 	if err != nil {
 		home = "~"
 	}
-	zvm_path := os.Getenv("ZVM_PATH")
-	if zvm_path == "" {
-		zvm_path = filepath.Join(home, ".zvm")
+	zvmPath := os.Getenv("ZVM_PATH")
+	if zvmPath == "" {
+		zvmPath = filepath.Join(home, ".zvm")
 	}
 
-	if _, err := os.Stat(zvm_path); errors.Is(err, fs.ErrNotExist) {
-		if err := os.MkdirAll(filepath.Join(zvm_path, "self"), 0775); err != nil {
+	if _, err := os.Stat(zvmPath); errors.Is(err, fs.ErrNotExist) {
+		if err := os.MkdirAll(filepath.Join(zvmPath, "self"), 0775); err != nil {
 			log.Fatal(err)
 		}
 	}
 
 	zvm := &ZVM{
-		baseDir: zvm_path,
+		baseDir: zvmPath,
 	}
 
-	zvm.Settings.path = filepath.Join(zvm_path, "settings.json")
+	zvm.Settings.path = filepath.Join(zvmPath, "settings.json")
 
 	if err := zvm.loadSettings(); err != nil {
 		if errors.Is(err, ErrNoSettings) {
-			zvm.Settings = Settings{
-				VersionMapUrl:      "https://ziglang.org/download/index.json",
-				ZlsVMU:             "https://releases.zigtools.org/",
-				UseColor:           true,
-				AlwaysForceInstall: false,
-			}
+			zvm.Settings = DefaultSettings
 
-			out_settings, err := json.MarshalIndent(&zvm.Settings, "", "    ")
+			outSettings, err := json.MarshalIndent(&zvm.Settings, "", "    ")
 			if err != nil {
 				log.Warn("Unable to generate settings.json file", err)
 			}
 
-			if err := os.WriteFile(filepath.Join(zvm_path, "settings.json"), out_settings, 0755); err != nil {
+			if err := os.WriteFile(filepath.Join(zvmPath, "settings.json"), outSettings, 0755); err != nil {
 				log.Warn("Unable to create settings.json file", err)
 			}
 		}
@@ -131,17 +126,21 @@ func (z ZVM) getVersion(version string) error {
 }
 
 func (z *ZVM) loadSettings() error {
-	set_path := z.Settings.path
-	if _, err := os.Stat(set_path); errors.Is(err, os.ErrNotExist) {
+	setPath := z.Settings.path
+	if _, err := os.Stat(setPath); errors.Is(err, os.ErrNotExist) {
 		return ErrNoSettings
 	}
 
-	data, err := os.ReadFile(set_path)
+	data, err := os.ReadFile(setPath)
 	if err != nil {
 		return err
 	}
 
-	return json.Unmarshal(data, &z.Settings)
+	if err = json.Unmarshal(data, &z.Settings); err != nil {
+		return err
+	}
+
+	return z.Settings.ResetEmpty()
 }
 
 // func (z *ZVM) AlertIfUpgradable() {

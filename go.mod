@@ -9,7 +9,7 @@ require (
 	github.com/schollz/progressbar/v3 v3.18.0
 	github.com/tristanisham/clr v0.0.0-20221004001624-00ee60046d85
 	golang.org/x/mod v0.29.0
-	golang.org/x/sys v0.37.0
+	golang.org/x/sys v0.38.0
 )
 
 require (
@@ -19,7 +19,7 @@ require (
 	github.com/charmbracelet/x/term v0.2.1 // indirect
 	github.com/clipperhouse/uax29/v2 v2.2.0 // indirect
 	github.com/xo/terminfo v0.0.0-20220910002029-abceb7e1c41e // indirect
-	golang.org/x/crypto v0.43.0 // indirect
+	golang.org/x/crypto v0.45.0 // indirect
 )
 
 require (
@@ -33,5 +33,5 @@ require (
 	github.com/rivo/uniseg v0.4.7 // indirect
 	github.com/urfave/cli/v3 v3.5.0
 	golang.org/x/exp v0.0.0-20251023183803-a4bb9ffd2546 // indirect
-	golang.org/x/term v0.36.0 // indirect
+	golang.org/x/term v0.37.0 // indirect
 )

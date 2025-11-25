@@ -101,6 +101,11 @@ var zvmApp = &opts.Command{
 					force = cmd.Bool("force")
 				}
 
+				// Validate development versions require --force flag
+				if cli.isDevelopmentVersion(req.Package) && !force {
+					return errors.New("development versions require the --force flag to install. Use: zvm i " + req.Package + " --force")
+				}
+
 				zlsCompat := "only-runtime"
 				if cmd.Bool("full") {
 					zlsCompat = "full"

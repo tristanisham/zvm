@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"os"
 	"regexp"
 	"runtime"
 	"strings"
@@ -109,6 +110,7 @@ func AskForFeedback(accessible bool) error {
 	}
 
 	if submitForm {
+		formData.Metadata.TimeSubmitted = time.Now()
 		formBody, err := json.Marshal(formData)
 		if err != nil {
 			return fmt.Errorf("unable to marshal form data. %w", err)
@@ -117,7 +119,13 @@ func AskForFeedback(accessible bool) error {
 		ctx, cancel := context.WithTimeout(context.Background(), time.Duration(time.Second*10))
 		defer cancel()
 
-		req, err := http.NewRequest("POST", "https://artsie.red/api/zvm-feedback", bytes.NewBuffer(formBody))
+		// This is my personal website running Laravel. I already have it up and configured for other projects.
+		feedbackUrl := "https://artsie.red/api/zvm-feedback"
+		if fUrl := os.Getenv("ZVM_FEEDBACK_URL"); fUrl != "" {
+			feedbackUrl = fUrl
+		}
+
+		req, err := http.NewRequest("POST", feedbackUrl, bytes.NewBuffer(formBody))
 		if err != nil {
 			return err
 		}

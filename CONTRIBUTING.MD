@@ -35,7 +35,7 @@ If you are submitting a pull request to ZVM that was written with generative AI,
 ### 1. Know what the AI wrote. 
 If you cannot explain, identify, or defend the choices and code written by your AI agent, you should not be making pull request. ZVM is a tool installed on thousands of computers. That is, in part, due to the trust our users 
 have in the quality and security of the application. **I do not take that lightly**. AI cannot be held responsible for decisions it makes, but you will be. 
-This is not a vibe-coded app, and contributors are expected to have the request skills that, if AI were not to exist, write the code themselves, or at least write it in a language they are already familiar with.
+This is not a vibe-coded app, and contributors are expected to have the requisite skills that, if AI were not to exist, write the code themselves, or at least write it in a language they are already familiar with.
 
 ### 2. Clearly Disclose AI usage
 PRs that are written with Generative AI and that do not disclose it will not be merged. If it is found out that generative AI was used and not disclosed in a Pull Request, your future contributions will be sidelined. 

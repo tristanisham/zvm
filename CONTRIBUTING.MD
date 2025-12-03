@@ -30,7 +30,7 @@ Regardless of your thoughts on generative AI, as [Linus Torvalds said](https://w
 ZVM itself employs Gemini Code Assist in this repo to assist with evaluating new PRs for vulnerabilies, styling defects, and other issues that can be address by the pull request's author.
 It does not make any decisions or write any code without manual review and approval. 
 
-If you are submitting a pull request to ZVM that was written with generative AI, I ask you to follow these rules, or have your PR rejected and future contributions sidelined.
+If you are submitting a pull request to ZVM that was written with generative AI, I ask you to follow these rules, or have your P.R. rejected and future contributions sidelined.
 
 ### 1. Know what the AI wrote. 
 If you cannot explain, identify, or defend the choices and code written by your AI agent, you should not be making pull request. ZVM is a tool installed on thousands of computers. That is, in part, due to the trust our users 
@@ -40,5 +40,5 @@ This is not a vibe-coded app, and contributors are expected to have the request 
 ### 2. Clearly Disclose AI usage
 PRs that are written with Generative AI and that do not disclose it will not be merged. If it is found out that generative AI was used and not disclosed in a Pull Request, your future contributions will be sidelined. 
 
-### 3. Do not add AI metadata in your PR
+### 3. Do not add AI metadata in your P.R.
 PRs that add AI metadata such as `AGENT.md` or `Claude.md` will not be merged. 

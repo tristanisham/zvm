@@ -10,3 +10,6 @@ testdata/
 *.syso
 zvm-*
 .idea/
+.gemini
+.codex
+.claude

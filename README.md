@@ -21,6 +21,7 @@ a language gets updated frequently.
 
 <a href="https://polar.sh/tristanisham"><picture><source media="(prefers-color-scheme: dark)" srcset="https://polar.sh/embed/subscribe.svg?org=tristanisham&label=Subscribe&darkmode"><img alt="Subscribe on Polar" src="https://polar.sh/embed/subscribe.svg?org=tristanisham&label=Subscribe"></picture></a>
 
+
 # Installing ZVM
 
 ZVM lives entirely in `$HOME/.zvm` on all platforms it supports. Inside of the

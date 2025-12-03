@@ -38,7 +38,7 @@ have in the quality and security of the application. **I do not take that lightl
 This is not a vibe-coded app, and contributors are expected to have the requisite skills that, if AI were not to exist, write the code themselves, or at least write it in a language they are already familiar with.
 
 ### 2. Clearly Disclose AI usage
-P.R.s that are written with Generative AI and that do not disclose it will not be merged. If it is found out that generative AI was used and not disclosed in a Pull Request, your future contributions will be sidelined. 
+P.R.s that are written with Generative AI and that do not disclose it will not be merged. If it is found out that generative AI was used and not disclosed in a pull request, your future contributions will be sidelined. 
 
 ### 3. Do not add AI metadata in your P.R.
 P.R.s that add AI metadata such as `AGENT.md` or `Claude.md` will not be merged. 

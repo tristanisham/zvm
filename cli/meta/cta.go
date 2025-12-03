@@ -4,15 +4,24 @@
 package meta
 
 import (
+	"errors"
 	"fmt"
 	"os"
 
+	"github.com/charmbracelet/huh"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/charmbracelet/log"
 )
 
 // CtaFatal prints an aesthetic CTA and exits with an error.
 func CtaFatal(err error) {
+	log.Debug(err)
+
+	// Handle 'errors' that don't require reporting or represent acceptable user/exe behavior
+	if errors.Is(err, huh.ErrUserAborted) {
+		os.Exit(130)
+	}
+
 	style := lipgloss.NewStyle().
 		Bold(true).
 		Foreground(lipgloss.Color("#FAFAFA")).
@@ -33,7 +42,7 @@ func CtaFatal(err error) {
 		Foreground(lipgloss.Color("#fee12b"))
 
 	fmt.Printf("\nIf you're experiencing a bug, run %s. If there's a new version of ZVM, we may have already fixed your bug in a new release :)\n", yellowText.Render("zvm upgrade"))
-	fmt.Printf("Otherwise, please report this error as a GitHub issue.\n%s\n", blueLink.Render("https://github.com/tristanisham/zvm/issues/\n"))
+	fmt.Printf("Otherwise, please report this error using %s or as a GitHub issue.\n%s\n", yellowText.Render("zvm feedback"), blueLink.Render("https://github.com/tristanisham/zvm/issues/\n"))
 	os.Exit(1)
 }
 

@@ -152,6 +152,24 @@ var zvmApp = &opts.Command{
 			},
 		},
 		{
+			Name: "feedback",
+			Flags: []opts.Flag{
+				&opts.BoolFlag{
+					Name: "accessible",
+					Aliases: []string{"screen-reader", "screenreader", "a", "no-tui", "notui"},
+				},
+			},
+			Usage: "submit feedback on ZVM or report bugs",
+			Action: func(ctx context.Context, c *opts.Command) error {
+				accessible := false
+				if c.Bool("accessible") || os.Getenv("ACCESSIBLE") != "" {
+					accessible = true
+				}
+
+				return cli.AskForFeedback(accessible)
+			},
+		},
+		{
 			Name:  "run",
 			Usage: "run a command with the given Zig version",
 			// Args:  true,

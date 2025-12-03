@@ -14,6 +14,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"strings"
 	"time"
 
 	"github.com/schollz/progressbar/v3"
@@ -241,6 +242,11 @@ func untar(tarball, target string) error {
 
 	tarReader := tar.NewReader(reader)
 
+	absTarget, err := filepath.Abs(target)
+	if err != nil {
+		return err
+	}
+
 	for {
 		header, err := tarReader.Next()
 
@@ -253,20 +259,30 @@ func untar(tarball, target string) error {
 			continue
 		}
 
-		target := target + string(os.PathSeparator) + header.Name
+		fpath := filepath.Join(absTarget, header.Name)
+
+		if !strings.HasPrefix(fpath, absTarget+string(os.PathSeparator)) {
+			return fmt.Errorf("illegal file path: %s", fpath)
+		}
+
 		switch header.Typeflag {
 		case tar.TypeDir:
-			if _, err := os.Stat(target); err != nil {
-				if err := os.MkdirAll(target, 0755); err != nil {
+			if _, err := os.Stat(fpath); err != nil {
+				if err := os.MkdirAll(fpath, 0755); err != nil {
 					return err
 				}
 			}
 		case tar.TypeReg:
-			writer, err := os.Create(target)
+			if err := os.MkdirAll(filepath.Dir(fpath), 0755); err != nil {
+				return err
+			}
+
+			writer, err := os.Create(fpath)
 			if err != nil {
 				return err
 			}
 			if _, err := io.Copy(writer, tarReader); err != nil {
+				writer.Close()
 				return err
 			}
 			writer.Close()

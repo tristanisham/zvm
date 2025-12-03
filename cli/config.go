@@ -98,15 +98,25 @@ func validVmuAlis(version string) bool {
 }
 
 func (z ZVM) getVersion(version string) error {
-	if _, err := os.Stat(filepath.Join(z.baseDir, version)); err != nil {
+	
+	root, err := os.OpenRoot(z.baseDir)
+	if err != nil {
 		return err
 	}
 
-	targetZig := strings.TrimSpace(filepath.Join(z.baseDir, version, "zig"))
+	defer root.Close()
+
+	if _, err := root.Stat(version); err != nil {
+		return err
+	}
+
+	
+
+	targetZig := strings.TrimSpace(filepath.Join(root.Name(), version, "zig"))
 	cmd := exec.Command(targetZig, "version")
 	var zigVersion strings.Builder
 	cmd.Stdout = &zigVersion
-	err := cmd.Run()
+	err = cmd.Run()
 	if err != nil {
 		log.Warn(err)
 	}
@@ -118,7 +128,7 @@ func (z ZVM) getVersion(version string) error {
 	if version == outputVersion {
 		return nil
 	} else {
-		if _, statErr := os.Stat(targetZig); statErr == nil || version == "master" {
+		if _, statErr := root.Stat(targetZig); statErr == nil || version == "master" {
 			return nil
 		}
 		return fmt.Errorf("version %s is not a released version", version)

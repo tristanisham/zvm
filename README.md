@@ -344,6 +344,28 @@ zvm --version
 
 Prints the version of ZVM you have installed.
 
+## Submit Feedback or Bug Reports
+
+You can now submit bug reports, feature requests, or general comments directly from your terminal using the `feedback` command.
+
+```sh
+zvm feedback
+```
+
+This will launch an interactive form to collect your feedback and send it to the maintainer.
+
+### Accessible Mode
+
+For users with screen readers or those who prefer a simpler interface, you can enable accessible mode with the `--accessible` flag or `ACCESSIBLE` environment variable.
+
+```sh
+zvm feedback --accessible
+# Or
+zvm feedback -a # --no-tui and --notui work too
+```
+
+If you're working in a small terminal window, the form may render in wonky way. Quit and resize your window to fix this bug.
+
 <hr>
 
 ## Option flags

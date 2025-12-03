@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"github.com/charmbracelet/huh"
+	"github.com/tristanisham/zvm/cli/meta"
 )
 
 
@@ -23,6 +24,7 @@ type FeedbackForm struct {
 	Metadata struct {
 		Arch          string    `json:"arch"`
 		Os            string    `json:"os"`
+		Version       string    `json:"version"`
 		TimeCreated   time.Time `json:"timeCreated"`
 		TimeSubmitted time.Time `json:"timeSubmitted"`
 	}
@@ -38,11 +40,13 @@ func AskForFeedback(accessible bool) error {
 		Metadata: struct {
 			Arch          string    `json:"arch"`
 			Os            string    `json:"os"`
+			Version       string    `json:"version"`
 			TimeCreated   time.Time `json:"timeCreated"`
 			TimeSubmitted time.Time `json:"timeSubmitted"`
 		}{
 			Arch:        runtime.GOARCH,
 			Os:          runtime.GOOS,
+			Version:     meta.VERSION,
 			TimeCreated: time.Now(),
 		},
 	}

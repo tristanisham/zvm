@@ -34,26 +34,24 @@ import (
 	"github.com/tristanisham/clr"
 )
 
-// isDevelopmentVersion checks if the version string matches a development version pattern
-// Examples: 0.16.0-dev.1334+06d08daba, 0.15.0-dev.42+abcdef1234
-func isDevelopmentVersion(version string) bool {
-	// Pattern: major.minor.patch-dev.number+commit
-	// Examples: 0.16.0-dev.1334+06d08daba
-	devVersionPattern := `^\d+\.\d+\.\d+-dev\.\d+\+[0-9a-f]+$`
-	matched, err := regexp.MatchString(devVersionPattern, version)
-	if err != nil {
-		log.Debug("Error matching development version pattern", "error", err)
-		return false
-	}
-	return matched
+// devVersionRegex is a pre-compiled regex pattern to match development versions
+// Pattern: major.minor.patch-dev.number+commit (e.g. 0.16.0-dev.1334+06d08daba)
+var devVersionRegex = regexp.MustCompile(`^\d+\.\d+\.\d+-dev\.\d+\+[0-9a-f]+$`)
+
+// zigBuildsBaseURL is the base URL for Zig development builds
+const zigBuildsBaseURL = "https://ziglang.org/builds/"
+
+// IsDevelopmentVersion checks if the version string matches a development version pattern
+func IsDevelopmentVersion(version string) bool {
+	return devVersionRegex.MatchString(version)
 }
 
 // constructDevVersionURL builds the direct download URL for a development version
-func constructDevVersionURL(version string) (string, error) {
+func constructDevVersionURL(version string) string {
 	arch, osName := zigStyleSysInfo()
-	// Development versions follow the pattern: https://ziglang.org/builds/zig-{arch}-{os}-{version}.tar.xz
-	url := fmt.Sprintf("https://ziglang.org/builds/zig-%s-%s-%s.tar.xz", arch, osName, version)
-	return url, nil
+	// Development versions follow the pattern: {zigBuildsBaseURL}zig-{arch}-{os}-{version}.tar.xz
+	url := fmt.Sprintf(zigBuildsBaseURL+"zig-%s-%s-%s.tar.xz", arch, osName, version)
+	return url
 }
 
 func (z *ZVM) Install(version string, force bool, mirror bool) error {
@@ -63,16 +61,13 @@ func (z *ZVM) Install(version string, force bool, mirror bool) error {
 	}
 
 	// Check if this is a development version
-	isDevVersion := isDevelopmentVersion(version)
+	isDevVersion := IsDevelopmentVersion(version)
 	var tarPath string
 	var shasum string
 
 	if isDevVersion {
 		// For development versions, construct URL directly
-		tarPath, err = constructDevVersionURL(version)
-		if err != nil {
-			return fmt.Errorf("failed to construct development version URL: %w", err)
-		}
+		tarPath = constructDevVersionURL(version)
 		log.Debug("Development version detected, using direct URL", "version", version, "url", tarPath)
 	} else {
 		// For regular versions, use version map
@@ -127,8 +122,7 @@ func (z *ZVM) Install(version string, force bool, mirror bool) error {
 		// Get shasum for regular versions (development versions don't have shasums in version map)
 		shasum, err = getVersionShasum(version, &rawVersionStructure)
 		if err != nil {
-			log.Debugf("Warning: Could not get shasum for version %s: %v", version, err)
-			shasum = ""
+			return err
 		}
 	}
 
@@ -188,7 +182,6 @@ func (z *ZVM) Install(version string, force bool, mirror bool) error {
 		return err
 	}
 
-	
 	fmt.Println("Checking shasum...")
 	if len(shasum) > 0 {
 		ourHexHash := hex.EncodeToString(hash.Sum(nil))
@@ -307,7 +300,7 @@ func attemptMirrorDownload(mirrorListURL string, tarURL string) (*http.Response,
 	mirrors = mirrors[:len(mirrors)-1]
 	rand.Shuffle(len(mirrors), func(i, j int) { mirrors[i], mirrors[j] = mirrors[j], mirrors[i] })
 	// Default as fallback
-	mirrors = append(mirrors, "https://ziglang.org/builds/")
+	mirrors = append(mirrors, zigBuildsBaseURL)
 
 	for i, mirror := range mirrors {
 		mirrorTarURL, err := url.JoinPath(mirror, tarName)

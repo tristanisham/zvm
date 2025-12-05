@@ -54,7 +54,7 @@ func constructDevVersionURL(version string) string {
 	return url
 }
 
-func (z *ZVM) Install(version string, force bool, mirror bool) error {
+func (z *ZVM) Install(version string, force bool, skipShasum bool, mirror bool) error {
 	err := os.MkdirAll(z.baseDir, 0755)
 	if err != nil {
 		return err
@@ -131,8 +131,8 @@ func (z *ZVM) Install(version string, force bool, mirror bool) error {
 	var tarResp *http.Response
 	var minisig minisign.Signature
 
-	// Development versions typically don't use mirrors
 	if isDevVersion {
+		// Development versions typically don't use mirrors
 		mirror = false
 	} else {
 		mirror = mirror && z.Settings.UseMirrorList() && z.Settings.VersionMapUrl == DefaultSettings.VersionMapUrl
@@ -182,24 +182,28 @@ func (z *ZVM) Install(version string, force bool, mirror bool) error {
 		return err
 	}
 
-	fmt.Println("Checking shasum...")
-	if len(shasum) > 0 {
-		ourHexHash := hex.EncodeToString(hash.Sum(nil))
-		log.Debug("shasum check:", "theirs", shasum, "ours", ourHexHash)
-		if ourHexHash != shasum {
-			// TODO (tristan)
-			// Why is my sha256 identical on the server and sha256sum,
-			// but not when I download it in ZVM? Oh shit.
-			// It's because it's a compressed download.
-			return fmt.Errorf("shasum for %v does not match expected value", version)
-		}
-		fmt.Println("Shasums match! 🎉")
-	} else {
-		if isDevVersion {
-			fmt.Println("Skipping shasum check for development version")
+	if !skipShasum {
+		fmt.Println("Checking shasum...")
+		if len(shasum) > 0 {
+			ourHexHash := hex.EncodeToString(hash.Sum(nil))
+			log.Debug("shasum check:", "theirs", shasum, "ours", ourHexHash)
+			if ourHexHash != shasum {
+				// TODO (tristan)
+				// Why is my sha256 identical on the server and sha256sum,
+				// but not when I download it in ZVM? Oh shit.
+				// It's because it's a compressed download.
+				return fmt.Errorf("shasum for %v does not match expected value", version)
+			}
+			fmt.Println("Shasums match! 🎉")
 		} else {
-			log.Warnf("No shasum provided by host")
+			if isDevVersion {
+				log.Warnf("Dev versions don't have shasum, it's recommended to install it with --skip-shasum")
+			} else {
+				log.Warnf("No shasum provided by host")
+			}
 		}
+	} else {
+		fmt.Println("Skipping shasum check (user requested)")
 	}
 
 	if mirror {
@@ -448,7 +452,7 @@ func (z *ZVM) SelectZlsVersion(version string, compatMode string) (string, strin
 	return "", "", "", err
 }
 
-func (z *ZVM) InstallZls(requestedVersion string, compatMode string, force bool) error {
+func (z *ZVM) InstallZls(requestedVersion string, compatMode string, force bool, skipShasum bool) error {
 	fmt.Println("Determining installed Zig version...")
 
 	// make sure dir exists
@@ -548,20 +552,24 @@ func (z *ZVM) InstallZls(requestedVersion string, compatMode string, force bool)
 		return err
 	}
 
-	fmt.Println("Checking ZLS shasum...")
-	if len(shasum) > 0 {
-		ourHexHash := hex.EncodeToString(hash.Sum(nil))
-		log.Debug("shasum check:", "theirs", shasum, "ours", ourHexHash)
-		if ourHexHash != shasum {
-			// TODO (tristan)
-			// Why is my sha256 identical on the server and sha256sum,
-			// but not when I download it in ZVM? Oh shit.
-			// It's because it's a compressed download.
-			return fmt.Errorf("shasum for zls-%v does not match expected value", zlsVersion)
+	if !skipShasum {
+		fmt.Println("Checking ZLS shasum...")
+		if len(shasum) > 0 {
+			ourHexHash := hex.EncodeToString(hash.Sum(nil))
+			log.Debug("shasum check:", "theirs", shasum, "ours", ourHexHash)
+			if ourHexHash != shasum {
+				// TODO (tristan)
+				// Why is my sha256 identical on the server and sha256sum,
+				// but not when I download it in ZVM? Oh shit.
+				// It's because it's a compressed download.
+				return fmt.Errorf("shasum for zls-%v does not match expected value", zlsVersion)
+			}
+			fmt.Println("Shasums for ZLS match! 🎉")
+		} else {
+			log.Warnf("No ZLS shasum provided by host")
 		}
-		fmt.Println("Shasums for ZLS match! 🎉")
 	} else {
-		log.Warnf("No ZLS shasum provided by host")
+		fmt.Println("Skipping ZLS shasum check (user requested)")
 	}
 
 	fmt.Println("Extracting ZLS bundle...")

@@ -23,7 +23,7 @@ func (z *ZVM) Use(ver string) error {
 
 			fmt.Printf("It looks like %s isn't installed. Would you like to install it? [y/n]\n", ver)
 			if getConfirmation() {
-				if err = z.Install(ver, false, true); err != nil {
+				if err = z.Install(ver, false, false, true); err != nil {
 					return err
 				}
 			} else {

@@ -20,6 +20,7 @@ import (
 	"os/exec"
 	"path"
 	"path/filepath"
+	"regexp"
 	"runtime"
 	"slices"
 	"strings"
@@ -33,55 +34,94 @@ import (
 	"github.com/tristanisham/clr"
 )
 
-func (z *ZVM) Install(version string, force bool, mirror bool) error {
+// devVersionRegex is a pre-compiled regex pattern to match development versions
+// Pattern: major.minor.patch-dev.number+commit (e.g. 0.16.0-dev.1334+06d08daba)
+var devVersionRegex = regexp.MustCompile(`^\d+\.\d+\.\d+-dev\.\d+\+[0-9a-f]+$`)
+
+// zigBuildsBaseURL is the base URL for Zig development builds
+const zigBuildsBaseURL = "https://ziglang.org/builds/"
+
+// IsDevelopmentVersion checks if the version string matches a development version pattern
+func IsDevelopmentVersion(version string) bool {
+	return devVersionRegex.MatchString(version)
+}
+
+// constructDevVersionURL builds the direct download URL for a development version
+func constructDevVersionURL(version string) string {
+	arch, osName := zigStyleSysInfo()
+	// Development versions follow the pattern: {zigBuildsBaseURL}zig-{arch}-{os}-{version}.tar.xz
+	url := fmt.Sprintf(zigBuildsBaseURL+"zig-%s-%s-%s.tar.xz", arch, osName, version)
+	return url
+}
+
+func (z *ZVM) Install(version string, force bool, skipShasum bool, mirror bool) error {
 	err := os.MkdirAll(z.baseDir, 0755)
 	if err != nil {
 		return err
 	}
-	rawVersionStructure, err := z.fetchVersionMap()
-	if err != nil {
-		return err
-	}
 
-	if !force {
-		installedVersions, err := z.GetInstalledVersions()
+	// Check if this is a development version
+	isDevVersion := IsDevelopmentVersion(version)
+	var tarPath string
+	var shasum string
+
+	if isDevVersion {
+		// For development versions, construct URL directly
+		tarPath = constructDevVersionURL(version)
+		log.Debug("Development version detected, using direct URL", "version", version, "url", tarPath)
+	} else {
+		// For regular versions, use version map
+		rawVersionStructure, err := z.fetchVersionMap()
 		if err != nil {
 			return err
 		}
-		if slices.Contains(installedVersions, version) {
-			alreadyInstalled := true
-			installedVersion := version
-			if version == "master" {
-				targetZig := strings.TrimSpace(filepath.Join(z.baseDir, "master", "zig"))
-				cmd := exec.Command(targetZig, "version")
-				var zigVersion strings.Builder
-				cmd.Stdout = &zigVersion
-				err := cmd.Run()
-				if err != nil {
-					log.Warn(err)
-				}
 
-				installedVersion = strings.TrimSpace(zigVersion.String())
-				if master, ok := rawVersionStructure["master"]; ok {
-					if remoteVersion, ok := master["version"].(string); ok {
-						if installedVersion != remoteVersion {
-							alreadyInstalled = false
+		if !force {
+			installedVersions, err := z.GetInstalledVersions()
+			if err != nil {
+				return err
+			}
+			if slices.Contains(installedVersions, version) {
+				alreadyInstalled := true
+				installedVersion := version
+				if version == "master" {
+					targetZig := strings.TrimSpace(filepath.Join(z.baseDir, "master", "zig"))
+					cmd := exec.Command(targetZig, "version")
+					var zigVersion strings.Builder
+					cmd.Stdout = &zigVersion
+					err := cmd.Run()
+					if err != nil {
+						log.Warn(err)
+					}
+
+					installedVersion = strings.TrimSpace(zigVersion.String())
+					if master, ok := rawVersionStructure["master"]; ok {
+						if remoteVersion, ok := master["version"].(string); ok {
+							if installedVersion != remoteVersion {
+								alreadyInstalled = false
+							}
 						}
 					}
 				}
-			}
-			if alreadyInstalled {
-				fmt.Printf("Zig version %s is already installed\nRerun with the `--force` flag to install anyway\n", installedVersion)
-				return nil
+				if alreadyInstalled {
+					fmt.Printf("Zig version %s is already installed\nRerun with the `--force` flag to install anyway\n", installedVersion)
+					return nil
+				}
 			}
 		}
-	}
 
-	tarPath, err := getTarPath(version, &rawVersionStructure)
-	if err != nil {
-		if errors.Is(err, ErrUnsupportedVersion) {
-			return fmt.Errorf("%s: %q", err, version)
-		} else {
+		tarPath, err = getTarPath(version, &rawVersionStructure)
+		if err != nil {
+			if errors.Is(err, ErrUnsupportedVersion) {
+				return fmt.Errorf("%s: %q", err, version)
+			} else {
+				return err
+			}
+		}
+
+		// Get shasum for regular versions (development versions don't have shasums in version map)
+		shasum, err = getVersionShasum(version, &rawVersionStructure)
+		if err != nil {
 			return err
 		}
 	}
@@ -90,7 +130,14 @@ func (z *ZVM) Install(version string, force bool, mirror bool) error {
 
 	var tarResp *http.Response
 	var minisig minisign.Signature
-	mirror = mirror && z.Settings.UseMirrorList() && z.Settings.VersionMapUrl == DefaultSettings.VersionMapUrl
+
+	if isDevVersion {
+		// Development versions typically don't use mirrors
+		mirror = false
+	} else {
+		mirror = mirror && z.Settings.UseMirrorList() && z.Settings.VersionMapUrl == DefaultSettings.VersionMapUrl
+	}
+
 	if mirror {
 		tarResp, minisig, err = attemptMirrorDownload(z.Settings.MirrorListUrl, tarPath)
 	} else {
@@ -135,27 +182,28 @@ func (z *ZVM) Install(version string, force bool, mirror bool) error {
 		return err
 	}
 
-	var shasum string
-
-	shasum, err = getVersionShasum(version, &rawVersionStructure)
-	if err != nil {
-		return err
-	}
-
-	fmt.Println("Checking shasum...")
-	if len(shasum) > 0 {
-		ourHexHash := hex.EncodeToString(hash.Sum(nil))
-		log.Debug("shasum check:", "theirs", shasum, "ours", ourHexHash)
-		if ourHexHash != shasum {
-			// TODO (tristan)
-			// Why is my sha256 identical on the server and sha256sum,
-			// but not when I download it in ZVM? Oh shit.
-			// It's because it's a compressed download.
-			return fmt.Errorf("shasum for %v does not match expected value", version)
+	if !skipShasum {
+		fmt.Println("Checking shasum...")
+		if len(shasum) > 0 {
+			ourHexHash := hex.EncodeToString(hash.Sum(nil))
+			log.Debug("shasum check:", "theirs", shasum, "ours", ourHexHash)
+			if ourHexHash != shasum {
+				// TODO (tristan)
+				// Why is my sha256 identical on the server and sha256sum,
+				// but not when I download it in ZVM? Oh shit.
+				// It's because it's a compressed download.
+				return fmt.Errorf("shasum for %v does not match expected value", version)
+			}
+			fmt.Println("Shasums match! 🎉")
+		} else {
+			if isDevVersion {
+				log.Warnf("Dev versions don't have shasum, it's recommended to install it with --skip-shasum")
+			} else {
+				log.Warnf("No shasum provided by host")
+			}
 		}
-		fmt.Println("Shasums match! 🎉")
 	} else {
-		log.Warnf("No shasum provided by host")
+		fmt.Println("Skipping shasum check (user requested)")
 	}
 
 	if mirror {
@@ -256,7 +304,7 @@ func attemptMirrorDownload(mirrorListURL string, tarURL string) (*http.Response,
 	mirrors = mirrors[:len(mirrors)-1]
 	rand.Shuffle(len(mirrors), func(i, j int) { mirrors[i], mirrors[j] = mirrors[j], mirrors[i] })
 	// Default as fallback
-	mirrors = append(mirrors, "https://ziglang.org/builds/")
+	mirrors = append(mirrors, zigBuildsBaseURL)
 
 	for i, mirror := range mirrors {
 		mirrorTarURL, err := url.JoinPath(mirror, tarName)
@@ -404,7 +452,7 @@ func (z *ZVM) SelectZlsVersion(version string, compatMode string) (string, strin
 	return "", "", "", err
 }
 
-func (z *ZVM) InstallZls(requestedVersion string, compatMode string, force bool) error {
+func (z *ZVM) InstallZls(requestedVersion string, compatMode string, force bool, skipShasum bool) error {
 	fmt.Println("Determining installed Zig version...")
 
 	// make sure dir exists
@@ -504,20 +552,24 @@ func (z *ZVM) InstallZls(requestedVersion string, compatMode string, force bool)
 		return err
 	}
 
-	fmt.Println("Checking ZLS shasum...")
-	if len(shasum) > 0 {
-		ourHexHash := hex.EncodeToString(hash.Sum(nil))
-		log.Debug("shasum check:", "theirs", shasum, "ours", ourHexHash)
-		if ourHexHash != shasum {
-			// TODO (tristan)
-			// Why is my sha256 identical on the server and sha256sum,
-			// but not when I download it in ZVM? Oh shit.
-			// It's because it's a compressed download.
-			return fmt.Errorf("shasum for zls-%v does not match expected value", zlsVersion)
+	if !skipShasum {
+		fmt.Println("Checking ZLS shasum...")
+		if len(shasum) > 0 {
+			ourHexHash := hex.EncodeToString(hash.Sum(nil))
+			log.Debug("shasum check:", "theirs", shasum, "ours", ourHexHash)
+			if ourHexHash != shasum {
+				// TODO (tristan)
+				// Why is my sha256 identical on the server and sha256sum,
+				// but not when I download it in ZVM? Oh shit.
+				// It's because it's a compressed download.
+				return fmt.Errorf("shasum for zls-%v does not match expected value", zlsVersion)
+			}
+			fmt.Println("Shasums for ZLS match! 🎉")
+		} else {
+			log.Warnf("No ZLS shasum provided by host")
 		}
-		fmt.Println("Shasums for ZLS match! 🎉")
 	} else {
-		log.Warnf("No ZLS shasum provided by host")
+		fmt.Println("Skipping ZLS shasum check (user requested)")
 	}
 
 	fmt.Println("Extracting ZLS bundle...")

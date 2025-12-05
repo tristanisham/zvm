@@ -156,6 +156,16 @@ zvm i --force master
 You can also enable the old behavior by setting the new `alwaysForceInstall`
 field to `true` in `~/.zvm/settings.json`.
 
+### Skip Shasum Check
+
+You can skip the shasum verification during installation using the `--skip-shasum` or `-s` flag. This is required for installing development versions.
+
+```sh
+zvm i --skip-shasum 0.16.0-dev.1334+06d08daba
+```
+
+This flag also works for normal versions if you want to skip the verification step.
+
 ### Install ZLS with ZVM
 
 You can now install ZLS with your Zig download! To install ZLS with ZVM, simply

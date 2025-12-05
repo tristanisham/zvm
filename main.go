@@ -74,6 +74,11 @@ var zvmApp = &opts.Command{
 					Usage:   "force installation even if the version is already installed",
 				},
 				&opts.BoolFlag{
+					Name:    "skip-shasum",
+					Aliases: []string{"s"},
+					Usage:   "skip shasum check during installation",
+				},
+				&opts.BoolFlag{
 					Name:  "full",
 					Usage: "use the 'full' zls compatibility mode",
 				},
@@ -96,9 +101,15 @@ var zvmApp = &opts.Command{
 				req.Version = strings.TrimPrefix(req.Version, "v")
 
 				force := zvm.Settings.AlwaysForceInstall
+				skipShasum := cmd.Bool("skip-shasum")
 
 				if cmd.Bool("force") {
 					force = cmd.Bool("force")
+				}
+
+				// Validate development versions require --skip-shasum flag
+				if cli.IsDevelopmentVersion(req.Package) && !skipShasum {
+					return errors.New("development versions require the --skip-shasum flag to install. Use: zvm i " + req.Package + " --skip-shasum")
 				}
 
 				zlsCompat := "only-runtime"
@@ -107,14 +118,14 @@ var zvmApp = &opts.Command{
 				}
 
 				// Install Zig
-				err := zvm.Install(req.Package, force, !cmd.Bool("nomirror"))
+				err := zvm.Install(req.Package, force, skipShasum, !cmd.Bool("nomirror"))
 				if err != nil {
 					return err
 				}
 
 				// Install ZLS (if requested)
 				if cmd.Bool("zls") {
-					if err := zvm.InstallZls(req.Package, zlsCompat, force); err != nil {
+					if err := zvm.InstallZls(req.Package, zlsCompat, force, skipShasum); err != nil {
 						return err
 					}
 				}

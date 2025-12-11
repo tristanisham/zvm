@@ -21,4 +21,5 @@ var (
 	ErrNoZlsVersion       = errors.New("zls release worker returned error")
 	ErrMissingVersionInfo = errors.New("version info not found")
 	ErrMissingShasum      = errors.New("shasum not found")
+	ErrZigNotInstalled    = errors.New("exec `zig` not found on $PATH")
 )

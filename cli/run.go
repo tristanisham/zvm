@@ -66,6 +66,7 @@ func (z *ZVM) Run(version string, cmd []string) error {
 
 }
 
+// runZig executes the Zig compiler for the specified version with the given arguments.
 func (z *ZVM) runZig(version string, cmd []string) error {
 	zigExe := "zig"
 	if runtime.GOOS == "windows" {

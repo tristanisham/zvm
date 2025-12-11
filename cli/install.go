@@ -33,6 +33,9 @@ import (
 	"github.com/tristanisham/clr"
 )
 
+// Install downloads and installs the specified Zig version.
+// It handles checking for existing installations, verifying checksums,
+// and extracting the downloaded bundle.
 func (z *ZVM) Install(version string, force bool, mirror bool) error {
 	err := os.MkdirAll(z.baseDir, 0755)
 	if err != nil {
@@ -285,6 +288,7 @@ func attemptMirrorDownload(mirrorListURL string, tarURL string) (*http.Response,
 	return nil, minisign.Signature{}, fmt.Errorf("%w: %w: %w", ErrDownloadFail, errors.New("all download attempts failed"), err)
 }
 
+// attemptMinisigDownload downloads the minisign signature for a given tarball URL.
 func attemptMinisigDownload(tarURL string) (minisign.Signature, error) {
 	minisigResp, err := attemptDownload(tarURL + ".minisig")
 	if err != nil {
@@ -340,6 +344,8 @@ func attemptDownload(url string) (*http.Response, error) {
 	return resp, nil
 }
 
+// createDownloadReq creates a new HTTP GET request for downloading Zig or ZLS,
+// setting appropriate User-Agent and client headers.
 func createDownloadReq(tarURL string) (*http.Request, error) {
 	zigArch, zigOS := zigStyleSysInfo()
 
@@ -355,6 +361,8 @@ func createDownloadReq(tarURL string) (*http.Request, error) {
 	return zigDownloadReq, nil
 }
 
+// SelectZlsVersion determines the appropriate ZLS version for a given Zig version.
+// It checks tagged releases first, then falls back to compatibility mode logic.
 func (z *ZVM) SelectZlsVersion(version string, compatMode string) (string, string, string, error) {
 	rawVersionStructure, err := z.fetchZlsTaggedVersionMap()
 	if err != nil {
@@ -404,6 +412,7 @@ func (z *ZVM) SelectZlsVersion(version string, compatMode string) (string, strin
 	return "", "", "", err
 }
 
+// InstallZls downloads and installs the Zig Language Server (ZLS) for the specified Zig version.
 func (z *ZVM) InstallZls(requestedVersion string, compatMode string, force bool) error {
 	fmt.Println("Determining installed Zig version...")
 
@@ -554,6 +563,7 @@ func (z *ZVM) InstallZls(requestedVersion string, compatMode string, force bool)
 	return nil
 }
 
+// findZlsExecutable searches the given directory for the ZLS executable.
 func findZlsExecutable(dir string) (string, error) {
 	var result string
 
@@ -586,6 +596,8 @@ func findZlsExecutable(dir string) (string, error) {
 	return result, nil
 }
 
+// createSymlink creates a symbolic link for the installed version
+// pointing to the 'bin' directory in the ZVM base path.
 func (z *ZVM) createSymlink(version string) {
 	// .zvm/master
 	versionPath := filepath.Join(z.baseDir, version)
@@ -610,6 +622,7 @@ func (z *ZVM) createSymlink(version string) {
 
 }
 
+// getTarPath determines the download URL for the Zig binary based on the version and system architecture.
 func getTarPath(version string, data *map[string]map[string]any) (string, error) {
 	arch, ops := zigStyleSysInfo()
 
@@ -631,6 +644,7 @@ func getTarPath(version string, data *map[string]map[string]any) (string, error)
 	return "", ErrUnsupportedVersion
 }
 
+// getVersionShasum retrieves the expected SHA256 checksum for the Zig binary of the given version.
 func getVersionShasum(version string, data *map[string]map[string]any) (string, error) {
 	if info, ok := (*data)[version]; ok {
 		arch, ops := zigStyleSysInfo()
@@ -654,6 +668,8 @@ func getVersionShasum(version string, data *map[string]map[string]any) (string, 
 	return "", fmt.Errorf("invalid Zig version: %s\nAllowed versions:%s", version, strings.Join(verMap, "\n  "))
 }
 
+// zigStyleSysInfo returns the architecture and operating system strings
+// formatted as expected by Zig's download servers (e.g., "x86_64", "macos").
 func zigStyleSysInfo() (arch string, os string) {
 	arch = runtime.GOARCH
 	os = runtime.GOOS
@@ -677,6 +693,7 @@ func zigStyleSysInfo() (arch string, os string) {
 	return arch, os
 }
 
+// ExtractBundle extracts a compressed bundle (zip, tar.xz) to the specified output directory.
 func ExtractBundle(bundle, out string) error {
 	// This is how I extracted an extension from a path in a cross-platform manner before
 	// I realized filepath existed.
@@ -698,6 +715,7 @@ func ExtractBundle(bundle, out string) error {
 	return fmt.Errorf("unknown format %v", extension)
 }
 
+// untarXZ extracts a .tar.xz file to the specified output directory using the 'tar' command.
 func untarXZ(in, out string) error {
 	tar := exec.Command("tar", "-xf", in, "-C", out)
 	tar.Stdout = os.Stdout
@@ -709,6 +727,7 @@ func untarXZ(in, out string) error {
 	return nil
 }
 
+// unzipSource extracts a .zip file to the specified destination directory.
 func unzipSource(source, destination string) error {
 	// 1. Open the zip file
 	reader, err := zip.OpenReader(source)
@@ -783,6 +802,8 @@ type installRequest struct {
 	Site, Package, Version string
 }
 
+// ExtractInstall parses a simplified installation string (e.g., "site:package@version")
+// into an installRequest structure.
 func ExtractInstall(input string) installRequest {
 	log.Debug("ExtractInstall", "input", input)
 	var req installRequest

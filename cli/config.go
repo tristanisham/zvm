@@ -19,6 +19,9 @@ import (
 
 var ErrNoSettings = errors.New("settings.json not found")
 
+// Initialize sets up the ZVM environment, including the base directory
+// and settings.json. It creates necessary directories if they don't exist
+// and loads the configuration from disk.
 func Initialize() *ZVM {
 	home, err := os.UserHomeDir()
 	if err != nil {
@@ -59,6 +62,8 @@ func Initialize() *ZVM {
 	return zvm
 }
 
+// ZVM represents the Zig Version Manager and holds its configuration
+// and state, including the base directory for installations and settings.
 type ZVM struct {
 	baseDir  string
 	Settings Settings
@@ -79,6 +84,8 @@ func LoadMasterVersion(zigMap *zigVersionMap) string {
 // A representation of individual Zig versions
 type zigVersion = map[string]any
 
+// ZigOnlVersion represents the structure of the Zig version data used by some online tools.
+// It maps a version string to a list of platform-specific download info.
 type ZigOnlVersion = map[string][]map[string]string
 
 //	func (z *ZVM) loadVersionCache() error {
@@ -92,11 +99,17 @@ type ZigOnlVersion = map[string][]map[string]string
 //		return nil
 //	}
 //
-// TODO switch to error so we can handle common typos. Make it return an (error, bool)
+
+// validVmuAlis checks if the provided version string is a valid VMU alias.
+// Valid aliases are "default" and "mach".
+// TODO: Fix typo in function name (Alis -> Alias).
 func validVmuAlis(version string) bool {
 	return version == "default" || version == "mach"
 }
 
+// getVersion determines the actual version string for a given input (e.g., resolving "master").
+// It checks if the version is installed and returns an error if it's not a valid release
+// or if the installed version doesn't match expectations.
 func (z ZVM) getVersion(version string) error {
 
 	root, err := os.OpenRoot(z.baseDir)
@@ -133,6 +146,8 @@ func (z ZVM) getVersion(version string) error {
 	}
 }
 
+// loadSettings loads the ZVM configuration from settings.json.
+// It handles missing settings files and ensures empty fields are reset to defaults.
 func (z *ZVM) loadSettings() error {
 	setPath := z.Settings.path
 	if _, err := os.Stat(setPath); errors.Is(err, os.ErrNotExist) {

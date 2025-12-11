@@ -8,6 +8,8 @@ import (
 	"path/filepath"
 )
 
+// Clean removes any compressed archives (.zip, .xz, .tar) from the ZVM base directory
+// to save disk space. It leaves the installed version directories intact.
 func (z *ZVM) Clean() error {
 	dir, err := os.ReadDir(z.baseDir)
 	if err != nil {

@@ -219,6 +219,7 @@ func (z ZVM) getInstallDir() (string, error) {
 	return zvmInstallDirENV, nil
 }
 
+// resolveSymlink follows a symbolic link and returns the absolute path to the target.
 func resolveSymlink(symlink string) (string, error) {
 	target, err := os.Readlink(symlink)
 	if err != nil {
@@ -232,6 +233,7 @@ func resolveSymlink(symlink string) (string, error) {
 	return absolutePath, nil
 }
 
+// untar extracts a tarball to the specified target directory.
 func untar(tarball, target string) error {
 	log.Debug("untar", "tarball", tarball, "target", target)
 	reader, err := os.Open(tarball)
@@ -290,6 +292,7 @@ func untar(tarball, target string) error {
 	}
 }
 
+// isSymlink checks if the given path is a symbolic link.
 func isSymlink(path string) (bool, error) {
 	fileInfo, err := os.Lstat(path)
 	if err != nil {
@@ -298,6 +301,8 @@ func isSymlink(path string) (bool, error) {
 	return fileInfo.Mode()&os.ModeSymlink != 0, nil
 }
 
+// CanIUpgrade checks if a newer version of ZVM is available on GitHub.
+// It returns the latest tag name, a boolean indicating if an upgrade is available, and any error.
 func CanIUpgrade() (string, bool, error) {
 	release, err := getLatestGitHubRelease("tristanisham", "zvm")
 	if err != nil {
@@ -328,6 +333,7 @@ func CanIUpgrade() (string, bool, error) {
 // 	return releases, nil
 // }
 
+// getLatestGitHubRelease fetches the latest release information for the specified repository from GitHub API.
 func getLatestGitHubRelease(owner, repo string) (*GithubRelease, error) {
 	url := fmt.Sprintf("https://api.github.com/repos/%s/%s/releases/latest", owner, repo)
 	resp, err := http.Get(url)
@@ -345,6 +351,7 @@ func getLatestGitHubRelease(owner, repo string) (*GithubRelease, error) {
 	return &release, nil
 }
 
+// GithubRelease represents the JSON structure of a GitHub release object.
 type GithubRelease struct {
 	CreatedAt       time.Time `json:"created_at"`
 	PublishedAt     time.Time `json:"published_at"`

@@ -21,6 +21,8 @@ import (
 	"github.com/charmbracelet/log"
 )
 
+// fetchVersionMap downloads the Zig version map from the configured URL.
+// It parses the JSON response and writes it to a "versions.json" file in the base directory.
 func (z *ZVM) fetchVersionMap() (zigVersionMap, error) {
 
 	log.Debug("setting's VMU", "url", z.Settings.VersionMapUrl)
@@ -80,6 +82,8 @@ func cleanURL(url string) string {
 }
 
 // note: the zls release-worker uses the same index format as zig, but without the latest master entry.
+// fetchZlsTaggedVersionMap downloads the ZLS tagged version map from the configured URL.
+// It writes the result to "versions-zls.json" in the base directory.
 func (z *ZVM) fetchZlsTaggedVersionMap() (zigVersionMap, error) {
 	log.Debug("setting's ZRW", "url", z.Settings.ZlsVMU)
 
@@ -123,6 +127,8 @@ func (z *ZVM) fetchZlsTaggedVersionMap() (zigVersionMap, error) {
 
 // note: the zls release-worker uses the same index format as zig, but without the latest master entry.
 // this function does not write the result to a file.
+// fetchZlsVersionByZigVersion queries the ZLS release worker for a ZLS build compatible
+// with the specific Zig version and compatibility mode provided.
 func (z *ZVM) fetchZlsVersionByZigVersion(version string, compatMode string) (zigVersion, error) {
 	log.Debug("setting's ZRW", "url", z.Settings.ZlsVMU)
 

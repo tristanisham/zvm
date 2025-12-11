@@ -12,6 +12,8 @@ import (
 	"strings"
 )
 
+// Sync parses the build.zig file in the current directory to find a "zvm-lock" configuration
+// and switches to the specified Zig version.
 func (z *ZVM) Sync() error {
 	cwd, err := os.Getwd()
 	if err != nil {

@@ -19,6 +19,7 @@ import (
 	"golang.org/x/sys/windows"
 )
 
+// becomeAdmin attempts to re-run the current executable with administrative privileges using "runas".
 func becomeAdmin() error {
 	verb := "runas"
 	exe, _ := os.Executable()
@@ -40,6 +41,7 @@ func becomeAdmin() error {
 	return nil
 }
 
+// isAdmin checks if the current process has administrative privileges.
 func isAdmin() bool {
 	_, err := os.Open("\\\\.\\PHYSICALDRIVE0")
 

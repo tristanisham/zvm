@@ -17,6 +17,8 @@ import (
 	"github.com/tristanisham/zvm/cli/meta"
 )
 
+// Use switches the active Zig version to the specified one.
+// If the version is not installed, it prompts the user to install it.
 func (z *ZVM) Use(ver string) error {
 	if err := z.getVersion(ver); err != nil {
 		if errors.Is(err, os.ErrNotExist) {
@@ -35,6 +37,7 @@ func (z *ZVM) Use(ver string) error {
 	return z.setBin(ver)
 }
 
+// setBin updates the symbolic link 'bin' in the ZVM base directory to point to the specified version's bin directory.
 func (z *ZVM) setBin(ver string) error {
 	// .zvm/master
 	version_path := filepath.Join(z.baseDir, ver)
@@ -71,6 +74,7 @@ func (z *ZVM) setBin(ver string) error {
 	return nil
 }
 
+// getConfirmation prompts the user for a yes/no confirmation via stdin.
 func getConfirmation() bool {
 	reader := bufio.NewReader(os.Stdin)
 	text, _ := reader.ReadString('\n')

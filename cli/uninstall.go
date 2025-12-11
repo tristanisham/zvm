@@ -9,6 +9,7 @@ import (
 	"os"
 )
 
+// Uninstall removes the specified Zig version from the ZVM base directory.
 func (z *ZVM) Uninstall(version string) error {
 	root, err := os.OpenRoot(z.baseDir)
 	if err != nil {

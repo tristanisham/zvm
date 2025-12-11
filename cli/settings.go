@@ -26,6 +26,7 @@ type Settings struct {
 	AlwaysForceInstall bool   `json:"alwaysForceInstall"`
 }
 
+// DefaultSettings defines the default configuration values for ZVM.
 var DefaultSettings = Settings{
 	MirrorListUrl: "https://ziglang.org/download/community-mirrors.txt",
 	// From https://ziglang.org/download/
@@ -36,10 +37,12 @@ var DefaultSettings = Settings{
 	AlwaysForceInstall: false,
 }
 
+// UseMirrorList returns true if the mirror list URL is not set to "disabled".
 func (s *Settings) UseMirrorList() bool {
 	return s.MirrorListUrl != "disabled"
 }
 
+// ToggleColor toggles the UseColor setting and saves the configuration.
 func (s *Settings) ToggleColor() {
 	s.UseColor = !s.UseColor
 	if err := s.save(); err != nil {
@@ -54,6 +57,7 @@ func (s *Settings) ToggleColor() {
 	fmt.Println("Terminal color output: OFF")
 }
 
+// ResetMirrorList resets the mirror list URL to the default value and saves the configuration.
 func (s *Settings) ResetMirrorList() error {
 	s.MirrorListUrl = DefaultSettings.MirrorListUrl
 	if err := s.save(); err != nil {
@@ -63,6 +67,7 @@ func (s *Settings) ResetMirrorList() error {
 	return nil
 }
 
+// ResetVersionMap resets the version map URL to the default value and saves the configuration.
 func (s *Settings) ResetVersionMap() error {
 	s.VersionMapUrl = DefaultSettings.VersionMapUrl
 	if err := s.save(); err != nil {
@@ -72,6 +77,7 @@ func (s *Settings) ResetVersionMap() error {
 	return nil
 }
 
+// ResetZlsVMU resets the ZLS version map URL to the default value and saves the configuration.
 func (s *Settings) ResetZlsVMU() error {
 	s.ZlsVMU = DefaultSettings.ZlsVMU
 	if err := s.save(); err != nil {
@@ -81,6 +87,7 @@ func (s *Settings) ResetZlsVMU() error {
 	return nil
 }
 
+// NoColor disables terminal color output and saves the configuration.
 func (s *Settings) NoColor() {
 	s.UseColor = false
 	if err := s.save(); err != nil {
@@ -89,6 +96,7 @@ func (s *Settings) NoColor() {
 	fmt.Println("Terminal color output: OFF")
 }
 
+// YesColor enables terminal color output and saves the configuration.
 func (s *Settings) YesColor() {
 	s.UseColor = true
 	if err := s.save(); err != nil {
@@ -97,6 +105,7 @@ func (s *Settings) YesColor() {
 	fmt.Printf("Terminal color output: %s\n", clr.Green("ON"))
 }
 
+// SetColor sets the terminal color output preference and saves the configuration.
 func (s *Settings) SetColor(answer bool) {
 	s.UseColor = answer
 	if err := s.save(); err != nil {
@@ -104,6 +113,8 @@ func (s *Settings) SetColor(answer bool) {
 	}
 }
 
+// SetMirrorListUrl sets the mirror list URL and saves the configuration.
+// It validates the URL unless it is set to "disabled".
 func (s *Settings) SetMirrorListUrl(mirrorListUrl string) error {
 	if mirrorListUrl != "disabled" {
 		if err := isValidWebURL(mirrorListUrl); err != nil {
@@ -121,6 +132,8 @@ func (s *Settings) SetMirrorListUrl(mirrorListUrl string) error {
 	return nil
 }
 
+// SetVersionMapUrl sets the version map URL and saves the configuration.
+// It validates that the URL is a valid web URL.
 func (s *Settings) SetVersionMapUrl(versionMapUrl string) error {
 	if err := isValidWebURL(versionMapUrl); err != nil {
 		return fmt.Errorf("%w: %w", ErrInvalidVersionMap, err)
@@ -136,6 +149,8 @@ func (s *Settings) SetVersionMapUrl(versionMapUrl string) error {
 	return nil
 }
 
+// SetZlsVMU sets the ZLS version map URL and saves the configuration.
+// It validates that the URL is a valid web URL.
 func (s *Settings) SetZlsVMU(versionMapUrl string) error {
 	if err := isValidWebURL(versionMapUrl); err != nil {
 		return fmt.Errorf("%w: %w", ErrInvalidVersionMap, err)
@@ -151,6 +166,8 @@ func (s *Settings) SetZlsVMU(versionMapUrl string) error {
 	return nil
 }
 
+// ResetEmpty ensures that any empty settings fields are set to their default values
+// and saves the configuration.
 func (s *Settings) ResetEmpty() error {
 	if s.MirrorListUrl == "" {
 		s.MirrorListUrl = DefaultSettings.MirrorListUrl
@@ -193,6 +210,7 @@ func isValidWebURL(urlString string) error {
 	return nil // URL is valid
 }
 
+// save writes the current settings to the settings.json file.
 func (s Settings) save() error {
 	outSettings, err := json.MarshalIndent(&s, "", "    ")
 	if err != nil {

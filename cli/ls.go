@@ -18,6 +18,7 @@ import (
 	"github.com/tristanisham/clr"
 )
 
+// ListVersions prints the installed Zig versions and marks the current version.
 func (z *ZVM) ListVersions() error {
 	if err := z.Clean(); err != nil {
 		return err
@@ -61,6 +62,8 @@ func (z *ZVM) ListVersions() error {
 	return nil
 }
 
+// GetInstalledVersions returns a slice of strings containing the names of
+// all installed Zig versions found in the base directory.
 func (z *ZVM) GetInstalledVersions() ([]string, error) {
 	dir, err := os.ReadDir(z.baseDir)
 	if err != nil {
@@ -81,6 +84,8 @@ func (z *ZVM) GetInstalledVersions() ([]string, error) {
 	return versions, nil
 }
 
+// ListRemoteAvailable lists all available Zig versions from the remote version map,
+// indicating which ones are already installed and which have ZLS support.
 func (z ZVM) ListRemoteAvailable() error {
 	zigVersions, err := z.fetchVersionMap()
 	if err != nil {

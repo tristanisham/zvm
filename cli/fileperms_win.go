@@ -8,6 +8,8 @@ package cli
 
 import "os"
 
+// canModifyFile checks if the current user has permission to modify the given file path.
+// On Windows, it primarily checks the read-only attribute and user permissions.
 func canModifyFile(path string) (bool, error) {
 	fileInfo, err := os.Stat(path)
 	if err != nil {

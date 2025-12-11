@@ -22,7 +22,7 @@ import (
 )
 
 func (z *ZVM) fetchVersionMap() (zigVersionMap, error) {
-	
+
 	log.Debug("setting's VMU", "url", z.Settings.VersionMapUrl)
 
 	req, err := http.NewRequest("GET", z.Settings.VersionMapUrl, nil)

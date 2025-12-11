@@ -27,7 +27,7 @@ func (z *ZVM) ListVersions() error {
 	cmd.Stdout = &zigVersion
 	err := cmd.Run()
 	if err != nil {
-		log.Warn(err)
+		log.Debug(err)
 	}
 
 	version := zigVersion.String()
@@ -35,6 +35,10 @@ func (z *ZVM) ListVersions() error {
 	installedVersions, err := z.GetInstalledVersions()
 	if err != nil {
 		return err
+	}
+
+	if len(installedVersions) == 0 {
+		fmt.Println("No local Zig installs. Run `zvm ls --all` to list all available-to-install versions of Zig.")
 	}
 
 	for _, key := range installedVersions {
@@ -58,6 +62,11 @@ func (z *ZVM) GetInstalledVersions() ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	// if len(dir) == 0 {
+	// 	return nil, ErrZigNotInstalled
+	// }
+
 	versions := make([]string, 0, len(dir))
 	for _, key := range dir {
 		if key.IsDir() {

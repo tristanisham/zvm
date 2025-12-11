@@ -98,7 +98,7 @@ func validVmuAlis(version string) bool {
 }
 
 func (z ZVM) getVersion(version string) error {
-	
+
 	root, err := os.OpenRoot(z.baseDir)
 	if err != nil {
 		return err
@@ -109,8 +109,6 @@ func (z ZVM) getVersion(version string) error {
 	if _, err := root.Stat(version); err != nil {
 		return err
 	}
-
-	
 
 	targetZig := strings.TrimSpace(filepath.Join(root.Name(), version, "zig"))
 	cmd := exec.Command(targetZig, "version")

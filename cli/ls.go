@@ -38,7 +38,11 @@ func (z *ZVM) ListVersions() error {
 	}
 
 	if len(installedVersions) == 0 {
-		fmt.Println("No local Zig installs. Run `zvm ls --all` to list all available-to-install versions of Zig.")
+		cmdHelp := "zvm ls --all"
+		if z.Settings.UseColor {
+			cmdHelp = clr.Blue(cmdHelp)
+		}
+		fmt.Printf("No local Zig installs. Run `%s` to list all available-to-install versions of Zig.\n", cmdHelp)
 	}
 
 	for _, key := range installedVersions {

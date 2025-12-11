@@ -627,13 +627,7 @@ func getTarPath(version string, data *map[string]map[string]any) (string, error)
 		}
 	}
 
-	// verMap := []string{"  "}
-	// for key := range *data {
-	// 	verMap = append(verMap, key)
-	// }
-
-	// return nil, fmt.Errorf("invalid Zig version: %s\nAllowed versions:%s", version, strings.Join(verMap, "\n  "))
-
+	
 	return "", ErrUnsupportedVersion
 }
 

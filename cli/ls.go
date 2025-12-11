@@ -67,10 +67,6 @@ func (z *ZVM) GetInstalledVersions() ([]string, error) {
 		return nil, err
 	}
 
-	// if len(dir) == 0 {
-	// 	return nil, ErrZigNotInstalled
-	// }
-
 	versions := make([]string, 0, len(dir))
 	for _, key := range dir {
 		if key.IsDir() {

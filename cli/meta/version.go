@@ -9,7 +9,7 @@ import (
 )
 
 const (
-	VERSION = "v0.8.11"
+	VERSION = "v0.8.12"
 
 	// VERSION = "v0.0.0" // For testing zvm upgrade
 

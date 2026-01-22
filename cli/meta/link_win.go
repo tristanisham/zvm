@@ -42,9 +42,19 @@ func becomeAdmin() error {
 
 // isAdmin checks if the current process has administrative privileges.
 func isAdmin() bool {
-	_, err := os.Open("\\\\.\\PHYSICALDRIVE0")
+	f, err := os.Open("\\\\.\\PHYSICALDRIVE0")
 
-	return err == nil
+	if err != nil {
+		return false
+	}
+
+	defer func() {
+		if err := f.Close(); err != nil {
+			log.Error("Failed to close file", "err", err)
+		}
+	}()
+
+	return true
 }
 
 // Link is a wrapper around Go's os.Symlink and os.Link functions,

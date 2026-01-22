@@ -6,8 +6,6 @@
 package meta
 
 import (
-	// "bytes"
-	"errors"
 	"os"
 
 	// "os/exec"
@@ -16,6 +14,7 @@ import (
 
 	// "github.com/charmbracelet/log"
 	"github.com/charmbracelet/log"
+	"github.com/nyaosorg/go-windows-junction"
 	"golang.org/x/sys/windows"
 )
 
@@ -52,35 +51,10 @@ func isAdmin() bool {
 // On Windows, if Link is unable to create a symlink it will attempt to create a
 // hardlink before trying its automatic privilege escalation.
 func Link(oldname, newname string) error {
-	// Attempt to do a regular symlink if allowed by user's permissions
-	if err := os.Symlink(oldname, newname); err != nil {
-		// If that fails, try to create an old hardlink.
-		if err := os.Link(oldname, newname); err == nil {
-			return nil
-		}
-		// If creating a hardlink fails, check to see if the user is an admin.
-		// If they're not an admin, try to become an admin and retry making a symlink.
-		if !isAdmin() {
-			log.Error("Symlink & Hardlink failed", "admin", false)
+	if err := junction.Create(oldname, newname); err != nil {
+		log.Error("Junction link failed")
 
-			// If not already admin, try to become admin
-			if adminErr := becomeAdmin(); adminErr != nil {
-				return errors.Join(ErrWinEscToAdmin, adminErr, err)
-			}
-
-			if err := os.Symlink(oldname, newname); err != nil {
-				if err := os.Link(oldname, newname); err == nil {
-					return nil
-				}
-
-				return errors.Join(ErrEscalatedSymlink, ErrEscalatedHardlink, err)
-			}
-
-			return nil
-		}
-
-		return errors.Join(ErrEscalatedSymlink, ErrEscalatedHardlink, err)
-
+		return err
 	}
 
 	return nil

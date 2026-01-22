@@ -52,7 +52,7 @@ func isAdmin() bool {
 // hardlink before trying its automatic privilege escalation.
 func Link(oldname, newname string) error {
 	if err := junction.Create(oldname, newname); err != nil {
-		log.Error("Junction link failed")
+		log.Error("Junction link failed", "err", err)
 
 		return err
 	}

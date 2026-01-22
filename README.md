@@ -109,7 +109,7 @@ community-maintained package, and may be out of date.
 
 While Zig is still pre-1.0 if you're going to stay up-to-date with the master
 branch, you're going to be downloading Zig quite often. You could do it
-manually, having to scoll around to find your appropriate version, decompress
+manually, having to scroll around to find your appropriate version, decompress
 it, and install it on your `$PATH`. Or, you could install ZVM and run
 `zvm i master` every time you want to update. `zvm` is a static binary under a
 permissive license. It supports more platforms than any other Zig version
@@ -207,7 +207,7 @@ Use `ls` to list all installed version of Zig.
 zvm ls --all
 ```
 
-The `--all` flag will list the available verisons of Zig for download. Not the
+The `--all` flag will list the available versions of Zig for download. Not the
 versions locally installed.
 
 ### List set version maps
@@ -237,7 +237,7 @@ zvm upgrade
 ```
 
 The latest version of ZVM should install on your machine, regardless of where
-your binary lives (though if you have your binary in a privaledged folder, you
+your binary lives (though if you have your binary in a privileged folder, you
 may have to run this command with `sudo`).
 
 ## Clean up build artifacts
@@ -283,8 +283,8 @@ If you would like to run the currently set Zig, please keep using the standard
 
 ## Set Version Map Source
 
-ZVM lets choose your vendor for Zig and ZLS. This is great if your company hosts
-it's own internal fork of Zig, you prefer a different flavor of the language,
+ZVM lets you choose your vendor for Zig and ZLS. This is great if your company hosts
+its own internal fork of Zig, you prefer a different flavor of the language,
 like Mach.
 
 ```sh
@@ -375,10 +375,10 @@ Enable or disable colored ZVM output. No value toggles colors.
 - `ZVM_DEBUG` enables DEBUG logging for your executable. This is meant for
   contributors and developers.
 - `ZVM_SET_CU` Toggle the automatic upgrade checker. If you want to reenable the
-  checker, just `uset ZVM_SET_CU`.
+  checker, just `unset ZVM_SET_CU`.
 - `ZVM_PATH` replaces the default install location for ZVM Set the environment
   variable to the parent directory of where you've placed the `.zvm` directory.
-- `ZVM_SKIP_TLS_VERIFY` Do you have problems using TLS in your evironment?
+- `ZVM_SKIP_TLS_VERIFY` Do you have problems using TLS in your environment?
   Toggle off verifying TLS by setting this environment variable.
   - By default when this is enabled ZVM will print a warning. Set this variable
     to `no-warn` to silence this warning.

@@ -6,6 +6,7 @@ require (
 	github.com/charmbracelet/lipgloss v1.1.0
 	github.com/charmbracelet/log v0.4.2
 	github.com/jedisct1/go-minisign v0.0.0-20241212093149-d2f9f49435c7
+	github.com/nyaosorg/go-windows-junction v0.2.0
 	github.com/schollz/progressbar/v3 v3.18.0
 	github.com/tristanisham/clr v0.0.0-20221004001624-00ee60046d85
 	golang.org/x/mod v0.30.0
@@ -13,6 +14,7 @@ require (
 )
 
 require (
+	github.com/Microsoft/go-winio v0.6.2 // indirect
 	github.com/charmbracelet/colorprofile v0.3.3 // indirect
 	github.com/charmbracelet/x/ansi v0.11.2 // indirect
 	github.com/charmbracelet/x/cellbuf v0.0.14 // indirect

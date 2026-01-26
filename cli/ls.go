@@ -52,7 +52,7 @@ func (z *ZVM) ListVersions() error {
 				// Should just check bin for used version
 				fmt.Println(clr.Green(key))
 			} else {
-				fmt.Printf("%s [x]", key)
+				fmt.Println(key + " [x]")
 			}
 		} else {
 			fmt.Println(key)

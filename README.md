@@ -21,7 +21,6 @@ a language gets updated frequently.
 
 <a href="https://polar.sh/tristanisham"><picture><source media="(prefers-color-scheme: dark)" srcset="https://polar.sh/embed/subscribe.svg?org=tristanisham&label=Subscribe&darkmode"><img alt="Subscribe on Polar" src="https://polar.sh/embed/subscribe.svg?org=tristanisham&label=Subscribe"></picture></a>
 
-
 # Installing ZVM
 
 ZVM lives entirely in `$HOME/.zvm` on all platforms it supports. Inside of the
@@ -283,9 +282,9 @@ If you would like to run the currently set Zig, please keep using the standard
 
 ## Set Version Map Source
 
-ZVM lets you choose your vendor for Zig and ZLS. This is great if your company hosts
-its own internal fork of Zig, you prefer a different flavor of the language,
-like Mach.
+ZVM lets you choose your vendor for Zig and ZLS. This is great if your company
+hosts its own internal fork of Zig, you prefer a different flavor of the
+language, like Mach.
 
 ```sh
 zvm vmu zig "https://machengine.org/zig/index.json" # Change the source ZVM pulls Zig release information from.
@@ -301,7 +300,10 @@ zvm vmu zls default # Resets back to default ZLS releases.
 ```
 
 ## Use a Custom Mirror Distribution Server
-ZVM now lets you set your own Mirror Distribution Server. If you cannot or choose not to use the official Zig mirror list, you can host your own, or use another grouping of mirrors.
+
+ZVM now lets you set your own Mirror Distribution Server. If you cannot or
+choose not to use the official Zig mirror list, you can host your own, or use
+another grouping of mirrors.
 
 ```sh
 zvm mirrorlist <url>

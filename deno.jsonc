@@ -3,5 +3,6 @@
     "build": "deno run -A build.ts",
     "clean": "rm -r build"
   },
-  "imports": { "@std/path": "jsr:@std/path@^0.219.1" }
+  "imports": { "@std/path": "jsr:@std/path@^0.219.1" },
+  "lock": false
 }

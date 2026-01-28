@@ -31,6 +31,8 @@ await Deno.mkdir("./build", { recursive: true });
 console.time("Built zvm");
 Deno.env.set("CGO_ENABLED", "0");
 
+const buildArtifacts = new Set<string>();
+
 // Compile step
 for (const os of GOOS) {
   for (const ar of GOARCH) {
@@ -47,11 +49,13 @@ for (const os of GOOS) {
     const zvm_str = `zvm-${os}-${ar}`;
     console.time(`Build zvm: ${zvm_str}`);
 
+    const build_path = `build/${zvm_str}/zvm${os === "windows" ? ".exe" : ""}`;
+
     const build_cmd = new Deno.Command("go", {
       args: [
         "build",
         "-o",
-        `build/${zvm_str}/zvm${os === "windows" ? ".exe" : ""}`,
+        build_path,
         "-ldflags=-w -s",
         "-trimpath",
       ],
@@ -62,6 +66,8 @@ for (const os of GOOS) {
       console.error(new TextDecoder().decode(stderr));
       Deno.exit(1);
     }
+
+    buildArtifacts.add(`${Deno.cwd()}/build/${zvm_str}`);
 
     //    if (os == "windows") {
     //      await Deno.mkdir(zvm_str, { recursive: true });
@@ -125,3 +131,8 @@ for (const os of GOOS) {
 }
 
 console.timeEnd(`Built zvm`);
+
+// Cleanup uncompressed directories in build
+console.time("Remove build artifacts");
+buildArtifacts.forEach((x) => Deno.remove(x, { recursive: true }));
+console.timeEnd("Remove build artifacts");

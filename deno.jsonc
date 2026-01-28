@@ -3,9 +3,5 @@
     "build": "deno run -A build.ts",
     "clean": "rm -r build"
   },
-  "imports": {
-    "@cliffy/flags": "jsr:@cliffy/flags@^1.0.0-rc.8",
-    "@deno-library/progress": "jsr:@deno-library/progress@^1.5.1",
-    "@std/path": "jsr:@std/path@^0.219.1"
-  }
+  "imports": { "@std/path": "jsr:@std/path@^0.219.1" },
 }

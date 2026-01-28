@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 
-# ZVM install script - v2.0.0 - ZVM: https://github.com/tristanisham/zvm
+# ZVM install script - v2.1.0 - ZVM: https://github.com/tristanisham/zvm
+set -eu
+
 
 ARCH=$(uname -m)
 OS=$(uname -s)
@@ -32,14 +34,14 @@ install_latest() {
 
     elif [ "$OS" = "Linux" ]; then
         # Do something under GNU/Linux platform
-        if command -v wget2 >/dev/null 2>&1; then
-            echo "wget2 is installed. Using wget2..."
-            wget2 -q --force-progress --max-redirect 5 -O zvm.tar "https://github.com/tristanisham/zvm/releases/latest/download/$1"
-        elif command -v wget >/dev/null 2>&1; then
+        if command -v wget >/dev/null 2>&1; then
             echo "wget is installed. Using wget..."
             wget -q --show-progress --max-redirect 5 -O zvm.tar "https://github.com/tristanisham/zvm/releases/latest/download/$1"
+        elif command -v wget2 >/dev/null 2>&1; then
+            echo "wget2 is installed. Using wget2..."
+            wget2 -q --force-progress --max-redirect 5 -O zvm.tar "https://github.com/tristanisham/zvm/releases/latest/download/$1"
         else
-            echo "wget is not installed. Using curl..."
+            echo "wget or wget2 are not installed. Using curl..."
             curl -L --max-redirs 5 "https://github.com/tristanisham/zvm/releases/latest/download/$1" -o zvm.tar
         fi
 

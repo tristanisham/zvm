@@ -34,10 +34,12 @@ Windows systems.
 If you don't want to use `ZVM_INSTALL` (like you already have ZVM in a place you
 like), then ZVM will update the exact executable you've called `upgrade` from.
 
+All installation scripts hosted on `www.zvm.app` are identical to, and automatically pulled from their respective copies on GitHub.
+
 # Linux, BSD, MacOS, *nix
 
 ```sh
-curl https://raw.githubusercontent.com/tristanisham/zvm/master/install.sh | bash
+curl https://www.zvm.app/install.sh | bash
 ```
 
 <!-- This script will **automatically append** ZVM's required environment variables (see below) to `~/.profile` or `~/.bashrc`. -->
@@ -55,13 +57,13 @@ echo export PATH="$PATH:$ZVM_INSTALL/" >> $HOME/.profile
 ## PowerShell
 
 ```ps1
-irm https://raw.githubusercontent.com/tristanisham/zvm/master/install.ps1 | iex
+irm https://www.zvm.app/install.ps1 | iex
 ```
 
 ## Command Prompt
 
 ```cmd
-powershell -c "irm https://raw.githubusercontent.com/tristanisham/zvm/master/install.ps1 | iex"
+powershell -c "irm https://www.zvm.app/install.ps1 | iex"
 ```
 
 # If You Have a Valid Version of Go Installed

@@ -57,7 +57,7 @@ echo export PATH="$PATH:$ZVM_INSTALL/" >> $HOME/.profile
 ## PowerShell
 
 ```ps1
-irm https://www.zvm.app/install.ps1 | iex
+irm "https://www.zvm.app/install.ps1" | iex
 ```
 
 ## Command Prompt

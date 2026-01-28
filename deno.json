@@ -1,0 +1,13 @@
+{
+  "tasks": {
+    "build": "deno run -A build.ts",
+    "clean": "rm -r build"
+  },
+  "imports": {
+    "@cliffy/flags": "jsr:@cliffy/flags@^1.0.0-rc.8",
+    "@deno-library/progress": "jsr:@deno-library/progress@^1.5.1",
+    "@std/path": "jsr:@std/path@^0.219.1",
+    "@std/tar": "jsr:@std/tar@^0.1.9",
+    "@zip-js/zip-js": "jsr:@zip-js/zip-js@^2.8.15"
+  }
+}

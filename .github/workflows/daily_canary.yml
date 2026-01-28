@@ -2,7 +2,7 @@ name: Daily Canary Test
 
 on:
   schedule:
-    - cron: '0 14 * * *' # Runs at 9:00 AM EST (14:00 UTC) every day
+    - cron: "0 14 * * *" # Runs at 9:00 AM EST (14:00 UTC) every day
   workflow_dispatch:
 
 jobs:
@@ -31,25 +31,25 @@ jobs:
         run: |
           # Add current directory to PATH so we can call ./zvm easily
           export PATH=$PWD:$PATH
-          
+
           echo "Installing Zig master..."
           ./zvm install master
-          
+
           # Verify the file exists (sanity check)
           # Note: On Windows this path might differ slightly, but zvm manages it.
           # We will trust zvm ls or running zig directly.
-          
+
           echo "Verifying installation..."
           ./zvm ls
-          
+
           # Use the installed version
           ./zvm use master
-          
+
           # Test if 'zig' command works
           # We need to source the env or add the zvm bin path manually for the test session
           # The standard path is usually ~/.zvm/bin
           export PATH="$HOME/.zvm/bin:$PATH"
-          
+
           echo "Checking Zig version..."
           zig version
 
@@ -58,7 +58,7 @@ jobs:
         run: |
           export PATH=$PWD:$PATH
           export PATH="$HOME/.zvm/bin:$PATH"
-          
+
           echo "Installing Zig 0.13.0 (Example Stable)..."
           ./zvm install 0.13.0
           ./zvm use 0.13.0

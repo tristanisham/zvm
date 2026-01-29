@@ -34,7 +34,10 @@ Windows systems.
 If you don't want to use `ZVM_INSTALL` (like you already have ZVM in a place you
 like), then ZVM will update the exact executable you've called `upgrade` from.
 
-All installation scripts hosted on `www.zvm.app` are identical to, and automatically pulled from their respective copies on GitHub.
+All installation scripts hosted on `www.zvm.app` are identical to, and are automatically synced with their respective copies on GitHub.
+```
+www.zvm.app/install.sh === ./install.sh
+```
 
 # Linux, BSD, MacOS, *nix
 

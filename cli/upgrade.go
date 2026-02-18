@@ -367,15 +367,15 @@ type GithubRelease struct {
 	AssetsURL       string    `json:"assets_url"`
 	UploadURL       string    `json:"upload_url"`
 	Assets          []struct {
-		UpdatedAt          time.Time   `json:"updated_at"`
-		CreatedAt          time.Time   `json:"created_at"`
-		Label              interface{} `json:"label"`
-		ContentType        string      `json:"content_type"`
-		Name               string      `json:"name"`
-		URL                string      `json:"url"`
-		State              string      `json:"state"`
-		NodeID             string      `json:"node_id"`
-		BrowserDownloadURL string      `json:"browser_download_url"`
+		UpdatedAt          time.Time `json:"updated_at"`
+		CreatedAt          time.Time `json:"created_at"`
+		Label              any       `json:"label"`
+		ContentType        string    `json:"content_type"`
+		Name               string    `json:"name"`
+		URL                string    `json:"url"`
+		State              string    `json:"state"`
+		NodeID             string    `json:"node_id"`
+		BrowserDownloadURL string    `json:"browser_download_url"`
 		Uploader           struct {
 			FollowingURL      string `json:"following_url"`
 			NodeID            string `json:"node_id"`

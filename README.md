@@ -80,6 +80,18 @@ go install -ldflags "-s -w" github.com/tristanisham/zvm@latest
 Please grab the
 [latest release](https://github.com/tristanisham/zvm/releases/latest).
 
+Alternatively, you can build the app by cloning the repository and running
+```bash
+go build .
+./zvm
+```
+
+If you want to disable that ZVM can automatically update itself, you can run
+```bash
+go build -tags noAutoUpgrades .
+```
+instead for building the app.
+
 ## Putting ZVM on your Path
 
 ZVM requires a few directories to be on your `$PATH`. If you don't know how to

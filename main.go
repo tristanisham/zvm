@@ -20,9 +20,9 @@ import (
 )
 
 var (
-	zvm                cli.ZVM
-	printUpgradeNotice bool = true
-	BuildUpgradeMessage = "\033[3m*Uh oh, somebody forgot to change the default message.*\033[0m Visit \033[4;94mhttps://zvm.app\033[0m for help."
+	zvm                 cli.ZVM
+	printUpgradeNotice  bool = true
+	BuildUpgradeMessage      = "\033[3m*Uh oh, somebody forgot to change the default message.*\033[0m Visit \033[4;94mhttps://zvm.app\033[0m for help."
 )
 
 var zvmApp = &opts.Command{

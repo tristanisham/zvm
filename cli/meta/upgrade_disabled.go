@@ -3,8 +3,6 @@
 
 package meta
 
-
-
 const (
 	NoAutoUpgrades BuildFlag = true
 )

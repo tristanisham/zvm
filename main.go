@@ -229,7 +229,7 @@ var zvmApp = &opts.Command{
 			Usage: "self-upgrade ZVM",
 			Action: func(ctx context.Context, cmd *opts.Command) error {
 				if meta.NoAutoUpgrades {
-					fmt.Printf("This version of ZVM was built with noAutoUpgrades\n")
+					fmt.Println("This version of ZVM was built with noAutoUpgrades")
 					// This is where you as a distributor or builder can specify how to upgrade
 					// zvm on your system.
 					fmt.Printf("You can upgrade this zvm binary by running: %s\n", BuildUpgradeMessage)

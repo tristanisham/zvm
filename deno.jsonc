@@ -3,5 +3,8 @@
     "build": "deno run -A build.ts",
     "clean": "rm -r build"
   },
-  "imports": { "@std/path": "jsr:@std/path@^0.219.1" }
+  "imports": {
+    "@std/cli": "jsr:@std/cli@^1.0.28",
+    "@std/path": "jsr:@std/path@^0.219.1"
+  }
 }

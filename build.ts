@@ -22,7 +22,7 @@ const BuildUpgradeMessage = args.buildUpgradeMessage || "";
 if (!args.autoUpgrades) {
   console.log("%cBuilding without autoUpgrades (noAutoUpgrades)", "color: yellow;")
   if (BuildUpgradeMessage === "" || BuildUpgradeMessage === undefined) {
-    console.warn("%cYou really should set buildUpgradeMessage", "color: red;")
+    console.warn("%cbuildUpgradeMessage not set, falling back to default message", "color: red;")
   } 
   
 }

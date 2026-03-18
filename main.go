@@ -22,7 +22,7 @@ import (
 var (
 	zvm                 cli.ZVM
 	printUpgradeNotice  bool = true
-	BuildUpgradeMessage      = "\033[3m*Uh oh, somebody forgot to change the default message.*\033[0m Visit \033[4;94mhttps://zvm.app\033[0m for help."
+	BuildUpgradeMessage      = "You should probably use your system package manager to update ZVM."
 )
 
 var zvmApp = &opts.Command{
@@ -232,7 +232,7 @@ var zvmApp = &opts.Command{
 					fmt.Println("This version of ZVM was built with noAutoUpgrades")
 					// This is where you as a distributor or builder can specify how to upgrade
 					// zvm on your system.
-					fmt.Printf("You can upgrade this zvm binary by running: %s\n", BuildUpgradeMessage)
+					fmt.Println(BuildUpgradeMessage)
 				}
 				printUpgradeNotice = false
 				return zvm.Upgrade()

@@ -640,7 +640,6 @@ func getTarPath(version string, data *map[string]map[string]any) (string, error)
 		}
 	}
 
-	
 	return "", ErrUnsupportedVersion
 }
 

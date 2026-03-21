@@ -74,3 +74,24 @@ func CtaGeneric(header string, text string) {
 
 	fmt.Println(text)
 }
+
+func CtaBuilderMsg(message string) {
+	style := lipgloss.NewStyle().
+		Bold(true).
+		Foreground(lipgloss.Color("#FAFAFA")).
+		Background(lipgloss.Color("#e12bfb")).
+		Width(20).
+		// MarginBottom(1).
+		Align(lipgloss.Center)
+
+	fmt.Println(style.Render("Builder Message"))
+
+	gray := lipgloss.NewStyle().
+	    Foreground(lipgloss.Color("#6e6d6d")).
+	    Align(lipgloss.Left)
+
+
+	fmt.Println(gray.Render("This version of ZVM was built with noAutoUpgrades. To learn more visit https://www.zvm.app/reference/upgrade-zvm/"))
+	fmt.Println(message)
+
+}

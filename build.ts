@@ -5,8 +5,27 @@
 
 import { Tar } from "https://deno.land/std@0.184.0/archive/mod.ts";
 import { copy } from "https://deno.land/std@0.184.0/streams/copy.ts";
+import { parseArgs } from "@std/cli/parse-args";
+
 // Command to count final build results
 //  find ./build -type f \( -name "*.tar" -o -name "*.zip" \) | wc -l
+
+const args = parseArgs(Deno.args, {
+  string: ["buildUpgradeMessage"],
+  boolean: ["autoUpgrades"],
+  negatable: ["autoUpgrades"],
+  default: {autoUpgrades: true}
+});
+
+const BuildUpgradeMessage = args.buildUpgradeMessage || "";
+
+if (!args.autoUpgrades) {
+  console.log("%cBuilding without autoUpgrades (noAutoUpgrades)", "color: yellow;")
+  if (BuildUpgradeMessage === "" || BuildUpgradeMessage === undefined) {
+    console.warn("%cbuildUpgradeMessage not set, falling back to default message", "color: red;")
+  } 
+  
+}
 
 const GOARCH = [
   "amd64",
@@ -54,9 +73,10 @@ for (const os of GOOS) {
     const build_cmd = new Deno.Command("go", {
       args: [
         "build",
+        ...(args.autoUpgrades ? [] : ["-tags", "noAutoUpgrades"]),
         "-o",
         build_path,
-        "-ldflags=-w -s",
+        `-ldflags=-w -s -X 'main.BuildUpgradeMessage=${BuildUpgradeMessage}'`,
         "-trimpath",
       ],
     });

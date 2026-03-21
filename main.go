@@ -20,8 +20,9 @@ import (
 )
 
 var (
-	zvm                cli.ZVM
-	printUpgradeNotice bool = true
+	zvm                 cli.ZVM
+	printUpgradeNotice  bool = true
+	BuildUpgradeMessage      = "You should probably use your system package manager to update ZVM."
 )
 
 var zvmApp = &opts.Command{
@@ -227,8 +228,14 @@ var zvmApp = &opts.Command{
 			Name:  "upgrade",
 			Usage: "self-upgrade ZVM",
 			Action: func(ctx context.Context, cmd *opts.Command) error {
+				if meta.NoAutoUpgrades {
+					// This is where you as a distributor or builder can specify how to upgrade
+					// zvm on your system.
+					meta.CtaBuilderMsg(BuildUpgradeMessage)
+				}
 				printUpgradeNotice = false
 				return zvm.Upgrade()
+
 			},
 		},
 		{
@@ -323,7 +330,12 @@ func main() {
 	}
 
 	_, checkUpgradeDisabled := os.LookupEnv("ZVM_SET_CU")
-	log.Debug("Automatic Upgrade Checker", "disabled", checkUpgradeDisabled)
+
+	if meta.NoAutoUpgrades {
+		checkUpgradeDisabled = true
+	}
+
+	log.Debug("Automatic Upgrade Checker", "disabled", checkUpgradeDisabled, "noAutoUpgrades", meta.NoAutoUpgrades)
 
 	// Upgrade
 	upSig := make(chan string, 1)
@@ -358,10 +370,14 @@ func main() {
 	}
 
 	if tag := <-upSig; tag != "" {
-		if printUpgradeNotice {
-			meta.CtaUpgradeAvailable(tag)
-		} else {
-			log.Infof("You are now using ZVM %s\n", tag)
+
+		if !meta.NoAutoUpgrades {
+			if printUpgradeNotice {
+				meta.CtaUpgradeAvailable(tag)
+			} else {
+				log.Infof("You are now using ZVM %s\n", tag)
+			}
 		}
+
 	}
 }

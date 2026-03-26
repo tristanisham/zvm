@@ -261,6 +261,21 @@ The latest version of ZVM should install on your machine, regardless of where
 your binary lives (though if you have your binary in a privileged folder, you
 may have to run this command with `sudo`).
 
+### Install via Package Manager
+ZVM (> v0.8.14) can also be built without its auto upgrader (`zvm upgrade`).
+This is to make installing ZVM via a package manager easier for those who prefer this method.
+
+When you run a build of ZVM with the autoupgrader disabled, you will see a builder-specified message.
+
+<img width="1041" height="73" alt="image" src="https://github.com/user-attachments/assets/4143436a-8838-438e-9e15-9aab63b378a3" />
+
+```go
+
+go build -ldflags=-w -s -X 'main.BuildUpgradeMessage=Command to upgrade ZVM goes here.'
+```
+
+Remember, ZVM is an open source project. Anyone can customize and distribute it.
+
 ## Clean up build artifacts
 
 ```sh

@@ -34,7 +34,9 @@ Windows systems.
 If you don't want to use `ZVM_INSTALL` (like you already have ZVM in a place you
 like), then ZVM will update the exact executable you've called `upgrade` from.
 
-All installation scripts hosted on `www.zvm.app` are identical to, and are automatically synced with their respective copies on GitHub.
+All installation scripts hosted on `www.zvm.app` are identical to, and are
+automatically synced with their respective copies on GitHub.
+
 ```
 www.zvm.app/install.sh === ./install.sh
 ```
@@ -81,15 +83,18 @@ Please grab the
 [latest release](https://github.com/tristanisham/zvm/releases/latest).
 
 Alternatively, you can build the app by cloning the repository and running
+
 ```bash
 go build .
 ./zvm
 ```
 
 If you want to disable that ZVM can automatically update itself, you can run
+
 ```bash
 go build -tags noAutoUpgrades .
 ```
+
 instead for building the app.
 
 ## Putting ZVM on your Path

@@ -14,17 +14,22 @@ const args = parseArgs(Deno.args, {
   string: ["buildUpgradeMessage"],
   boolean: ["autoUpgrades"],
   negatable: ["autoUpgrades"],
-  default: {autoUpgrades: true}
+  default: { autoUpgrades: true },
 });
 
 const BuildUpgradeMessage = args.buildUpgradeMessage || "";
 
 if (!args.autoUpgrades) {
-  console.log("%cBuilding without autoUpgrades (noAutoUpgrades)", "color: yellow;")
+  console.log(
+    "%cBuilding without autoUpgrades (noAutoUpgrades)",
+    "color: yellow;",
+  );
   if (BuildUpgradeMessage === "" || BuildUpgradeMessage === undefined) {
-    console.warn("%cbuildUpgradeMessage not set, falling back to default message", "color: red;")
-  } 
-  
+    console.warn(
+      "%cbuildUpgradeMessage not set, falling back to default message",
+      "color: red;",
+    );
+  }
 }
 
 const GOARCH = [
@@ -45,114 +50,121 @@ const GOOS = [
   "solaris",
 ];
 
+interface Target {
+  os: string;
+  arch: string;
+  label: string;
+}
+
+function getTargets(): Target[] {
+  const targets: Target[] = [];
+  for (const os of GOOS) {
+    for (const arch of GOARCH) {
+      if (
+        os === "solaris" && arch === "arm64" ||
+        os === "plan9" && arch === "arm64" ||
+        os !== "linux" && arch === "loong64" ||
+        os !== "linux" && arch === "ppc64le"
+      ) {
+        continue;
+      }
+      targets.push({ os, arch, label: `zvm-${os}-${arch}` });
+    }
+  }
+  return targets;
+}
+
+const projectRoot = Deno.cwd();
+
 await Deno.mkdir("./build", { recursive: true });
 
 console.time("Built zvm");
 Deno.env.set("CGO_ENABLED", "0");
 
-const buildArtifacts = new Set<string>();
+const targets = getTargets();
 
-// Compile step
-for (const os of GOOS) {
-  for (const ar of GOARCH) {
-    if (
-      os == "solaris" && ar == "arm64" ||
-      os == "plan9" && ar == "arm64" ||
-      os != "linux" && ar == "loong64" ||
-      os != "linux" && ar == "ppc64le"
-    ) {
-      continue;
-    }
-    Deno.env.set("GOOS", os);
-    Deno.env.set("GOARCH", ar);
-    const zvm_str = `zvm-${os}-${ar}`;
-    console.time(`Build zvm: ${zvm_str}`);
+// Compile step — all targets in parallel
+const compileResults = await Promise.all(
+  targets.map(async ({ os, arch, label }) => {
+    console.time(`Build zvm: ${label}`);
 
-    const build_path = `build/${zvm_str}/zvm${os === "windows" ? ".exe" : ""}`;
+    const buildPath = `build/${label}/zvm${os === "windows" ? ".exe" : ""}`;
 
     const build_cmd = new Deno.Command("go", {
       args: [
         "build",
         ...(args.autoUpgrades ? [] : ["-tags", "noAutoUpgrades"]),
         "-o",
-        build_path,
+        buildPath,
         `-ldflags=-w -s -X 'main.BuildUpgradeMessage=${BuildUpgradeMessage}'`,
         "-trimpath",
       ],
+      env: {
+        ...Deno.env.toObject(),
+        GOOS: os,
+        GOARCH: arch,
+      },
     });
 
     const { code, stderr } = await build_cmd.output();
     if (code !== 0) {
+      console.error(`Failed to build ${label}:`);
       console.error(new TextDecoder().decode(stderr));
       Deno.exit(1);
     }
 
-    buildArtifacts.add(`${Deno.cwd()}/build/${zvm_str}`);
+    console.timeEnd(`Build zvm: ${label}`);
+    return `${projectRoot}/build/${label}`;
+  }),
+);
 
-    //    if (os == "windows") {
-    //      await Deno.mkdir(zvm_str, { recursive: true });
-    //
-    //   }
+// Bundle step — all targets in parallel
+await Promise.all(
+  targets.map(async ({ os, arch, label }) => {
+    const buildDir = `${projectRoot}/build`;
 
-    console.timeEnd(`Build zvm: ${zvm_str}`);
-  }
-}
-
-// Bundle step
-Deno.chdir("build");
-for (const os of GOOS) {
-  for (const ar of GOARCH) {
-    if (
-      os == "solaris" && ar == "arm64" ||
-      os == "plan9" && ar == "arm64" ||
-      os != "linux" && ar == "loong64" ||
-      os != "linux" && ar == "ppc64le"
-    ) {
-      continue;
-    }
-    const zvm_str = `zvm-${os}-${ar}`;
-
-    /**
-     * Windows
-     */
     if (os === "windows") {
-      console.time(`Compress zvm (zip): ${zvm_str}`);
-      const zip = new Deno.Command(`zip`, {
+      console.time(`Compress zvm (zip): ${label}`);
+      const zip = new Deno.Command("zip", {
         args: [
-          `${zvm_str}.zip`,
-          `${zvm_str}/zvm.exe`,
-          `${zvm_str}/elevate.cmd`,
-          `${zvm_str}/elevate.vbs`,
+          `${label}.zip`,
+          `${label}/zvm.exe`,
+          `${label}/elevate.cmd`,
+          `${label}/elevate.vbs`,
         ],
-        stdin: "piped",
-        stdout: "piped",
+        cwd: buildDir,
       });
 
-      zip.spawn();
-
-      console.timeEnd(`Compress zvm (zip): ${zvm_str}`);
-      continue;
+      const { code, stderr } = await zip.output();
+      if (code !== 0) {
+        console.error(`Failed to zip ${label}:`);
+        console.error(new TextDecoder().decode(stderr));
+      }
+      console.timeEnd(`Compress zvm (zip): ${label}`);
+      return;
     }
 
+    console.time(`Compress zvm (tar): ${label}`);
     const tar = new Tar();
-    console.time(`Compress zvm (tar): ${zvm_str}`);
     await tar.append("zvm", {
-      filePath: `${zvm_str}/zvm`,
+      filePath: `${buildDir}/${label}/zvm`,
     });
 
-    const writer = await Deno.open(`./${zvm_str}.tar`, {
+    const writer = await Deno.open(`${buildDir}/${label}.tar`, {
       write: true,
       create: true,
     });
     await copy(tar.getReader(), writer);
     writer.close();
-    console.timeEnd(`Compress zvm (tar): ${zvm_str}`);
-  }
-}
+    console.timeEnd(`Compress zvm (tar): ${label}`);
+  }),
+);
 
-console.timeEnd(`Built zvm`);
+console.timeEnd("Built zvm");
 
-// Cleanup uncompressed directories in build
+// Cleanup uncompressed directories
 console.time("Remove build artifacts");
-buildArtifacts.forEach((x) => Deno.remove(x, { recursive: true }));
+await Promise.all(
+  compileResults.map((dir) => Deno.remove(dir, { recursive: true })),
+);
 console.timeEnd("Remove build artifacts");

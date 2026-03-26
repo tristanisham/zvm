@@ -120,6 +120,7 @@ const compileResults = await Promise.all(
 
 // Bundle step — all targets in parallel
 await Promise.all(
+  // deno-lint-ignore no-unused-vars
   targets.map(async ({ os, arch, label }) => {
     const buildDir = `${projectRoot}/build`;
 

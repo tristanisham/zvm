@@ -265,7 +265,7 @@ may have to run this command with `sudo`).
 ZVM (> v0.8.14) can also be built without its auto upgrader (`zvm upgrade`).
 This is to make installing ZVM via a package manager easier for those who prefer this method.
 
-When you run a build of ZVM with the autoupgrader disabled, you will see a builder-specified message.
+When you run a build of ZVM with the autoupgrader disabled, you will see a builder-specified message when you run `zvm upgrade`.
 
 <img width="1041" height="73" alt="image" src="https://github.com/user-attachments/assets/4143436a-8838-438e-9e15-9aab63b378a3" />
 

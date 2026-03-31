@@ -6,6 +6,7 @@
 import { Tar } from "https://deno.land/std@0.184.0/archive/mod.ts";
 import { copy } from "https://deno.land/std@0.184.0/streams/copy.ts";
 import { parseArgs } from "@std/cli/parse-args";
+import * as zip from "@zip-js/zip-js";
 
 // Command to count final build results
 //  find ./build -type f \( -name "*.tar" -o -name "*.zip" \) | wc -l
@@ -123,27 +124,58 @@ await Promise.all(
   // deno-lint-ignore no-unused-vars
   targets.map(async ({ os, arch, label }) => {
     const buildDir = `${projectRoot}/build`;
+    console.time(`Compress zvm (zip): ${label}`);
 
-    if (os === "windows") {
-      console.time(`Compress zvm (zip): ${label}`);
-      const zip = new Deno.Command("zip", {
-        args: [
-          `${label}.zip`,
-          `${label}/zvm.exe`,
-          `${label}/elevate.cmd`,
-          `${label}/elevate.vbs`,
-        ],
-        cwd: buildDir,
-      });
+    const zipBlob = await zipFiles(
+      [
+        // { path: `${label}.zip`, mimetype: "application/zip" },
+        { path: `${label}/zvm.exe`, mimetype: "application/octet-stream" },
+        {
+          path: `${label}/elevate.cmd`,
+          mimetype: "application/x-msdos-program",
+        },
+        { path: `${label}/elevate.vbs`, mimetype: "application/x-vbs" },
+      ],
+    );
 
-      const { code, stderr } = await zip.output();
-      if (code !== 0) {
-        console.error(`Failed to zip ${label}:`);
-        console.error(new TextDecoder().decode(stderr));
-      }
-      console.timeEnd(`Compress zvm (zip): ${label}`);
-      return;
-    }
+    const zipSlice = await zipBlob.arrayBuffer();
+
+    // if (os === "windows") {
+    //   let zip: Deno.Command | undefined = undefined;
+
+    //   if (Deno.build.os === "windows") {
+    //     zip = new Deno.Command("Compress-Archive", {
+    //       args: [
+    //         "-Path",
+    //         `${label}.zip`,
+    //         `${label}/zvm.exe`,
+    //         `${label}/elevate.cmd`,
+    //         `${label}/elevate.vbs`,
+    //       ],
+    //       cwd: buildDir,
+    //     });
+    //   } else {
+    //     zip = new Deno.Command("zip", {
+    //       args: [
+    //         `${label}.zip`,
+    //         `${label}/zvm.exe`,
+    //         `${label}/elevate.cmd`,
+    //         `${label}/elevate.vbs`,
+    //       ],
+    //       cwd: buildDir,
+    //     });
+    //   }
+
+    //   const { code, stderr } = await zip.output();
+    //   if (code !== 0) {
+    //     console.error(`Failed to zip ${label}:`);
+    //     console.error(new TextDecoder().decode(stderr));
+    //   }
+    console.timeEnd(`Compress zvm (zip): ${label}`);
+    await Deno.writeFile(`${buildDir}/${label}`, new Uint8Array(zipSlice));
+
+    //   return;
+    // }
 
     console.time(`Compress zvm (tar): ${label}`);
     const tar = new Tar();
@@ -169,3 +201,21 @@ await Promise.all(
   compileResults.map((dir) => Deno.remove(dir, { recursive: true })),
 );
 console.timeEnd("Remove build artifacts");
+
+interface ZipFile {
+  path: string;
+  mimetype: string;
+}
+
+async function zipFiles(files: ZipFile[]): Promise<Blob> {
+  const blobWriter = new zip.BlobWriter("applicaton/zip");
+  const writer = new zip.ZipWriter(blobWriter);
+
+  for (const file of files) {
+    const f_bytes = await Deno.readFile(file.path);
+    const f_blob = new Blob([f_bytes], { type: file.mimetype });
+    await writer.add(file.path, new zip.BlobReader(f_blob));
+  }
+
+  return writer.close();
+}

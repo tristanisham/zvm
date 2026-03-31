@@ -5,6 +5,7 @@
   },
   "imports": {
     "@std/cli": "jsr:@std/cli@^1.0.28",
-    "@std/path": "jsr:@std/path@^0.219.1"
+    "@std/path": "jsr:@std/path@^0.219.1",
+    "@zip-js/zip-js": "jsr:@zip-js/zip-js@^2.8.24"
   }
 }

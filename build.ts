@@ -152,9 +152,11 @@ await Promise.all(
 
       const zipSlice = await zipBlob.arrayBuffer();
 
-     
       console.timeEnd(`Compress zvm (zip): ${label}`);
-      await Deno.writeFile(`${buildDir}/${label}.zip`, new Uint8Array(zipSlice));
+      await Deno.writeFile(
+        `${buildDir}/${label}.zip`,
+        new Uint8Array(zipSlice),
+      );
 
       return;
     }

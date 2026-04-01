@@ -1,7 +1,6 @@
 {
   "version": "5",
   "specifiers": {
-    "jsr:@doctor/tar-stream@^1.0.4": "1.0.4",
     "jsr:@std/assert@~0.219.1": "0.219.1",
     "jsr:@std/cli@^1.0.28": "1.0.28",
     "jsr:@std/fmt@^1.0.9": "1.0.9",
@@ -11,9 +10,6 @@
     "jsr:@zip-js/zip-js@^2.8.24": "2.8.24"
   },
   "jsr": {
-    "@doctor/tar-stream@1.0.4": {
-      "integrity": "82d1c095d1ffcb77b27f9e63f4f42f8a7b7f0efba138e595e21d638b75e223fd"
-    },
     "@std/assert@0.219.1": {
       "integrity": "e76c2a1799a78f0f4db7de04bdc9b908a7a4b821bb65eda0285885297d4fb8af"
     },
@@ -128,7 +124,6 @@
   },
   "workspace": {
     "dependencies": [
-      "jsr:@doctor/tar-stream@^1.0.4",
       "jsr:@std/cli@^1.0.28",
       "jsr:@std/path@~0.219.1",
       "jsr:@zip-js/zip-js@^2.8.24"

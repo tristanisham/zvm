@@ -35,4 +35,6 @@ var (
 	ErrZigNotInstalled = errors.New("exec `zig` not found on $PATH")
 
 	ErrMissingArgument = errors.New("missing argument")
+
+	ErrInvalidAlias = errors.New("invalid version alias")
 )

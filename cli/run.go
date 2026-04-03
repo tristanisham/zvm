@@ -30,7 +30,6 @@ func (z *ZVM) Run(version string, cmd []string) error {
 		// return z.runZig("bin", cmd)
 	}
 
-	// todo remove the duplicate run of this sequence now that it is checked in main
 	installedVersions, err := z.GetInstalledVersions()
 	if err != nil {
 		return err
@@ -47,7 +46,7 @@ func (z *ZVM) Run(version string, cmd []string) error {
 		_, err = getTarPath(version, &rawVersionStructure)
 		if err != nil {
 			if errors.Is(err, ErrUnsupportedVersion) {
-				return fmt.Errorf("%s: %q", err, version)
+				return fmt.Errorf("%w: %q", err, version)
 			} else {
 				return err
 			}
@@ -66,7 +65,6 @@ func (z *ZVM) Run(version string, cmd []string) error {
 	}
 
 }
-
 func (z *ZVM) IsInstalled(version string) bool {
 	installedVersions, err := z.GetInstalledVersions()
 	if err != nil {

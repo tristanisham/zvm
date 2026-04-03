@@ -177,22 +177,13 @@ var zvmApp = &opts.Command{
 				if err := zvm.Run(versionArg, cmds); err != nil {
 					if errors.Is(err, cli.ErrUnsupportedVersion) {
 						minZig, err := cli.ExtractMinimumZigVersion()
-						log.Debug("version not installed", "version", versionArg, "minZig", minZig)
-
-						if err == nil {
-							newCommands := make([]string, 0)
-							newCommands = append(newCommands, versionArg)
-							newCommands = append(newCommands, cmds...)
-
-							versionArg = strings.TrimPrefix(minZig, "v")
-							return zvm.Run(versionArg, newCommands)
-						} else {
-							log.Error(err)
+						if err != nil {
+							return fmt.Errorf("version %q is not a known Zig version and no minimum_zig_version found: %w", versionArg, err)
 						}
-					} else {
-						return err
+						log.Debug("falling back to minimum_zig_version", "version", versionArg, "minZig", minZig)
+						return zvm.Run(minZig, cmds)
 					}
-
+					return err
 				}
 
 				return nil

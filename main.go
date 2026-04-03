@@ -174,18 +174,28 @@ var zvmApp = &opts.Command{
 
 				log.Debug("run cmd", "version", versionArg, "args...", cmds)
 
-				if !zvm.IsInstalled(versionArg) {
-					minZig, err := cli.ExtractMinimumZigVersion()
-					log.Debug("version not installed", "version", versionArg, "minZig", minZig)
+				if err := zvm.Run(versionArg, cmds); err != nil {
+					if errors.Is(err, cli.ErrUnsupportedVersion) {
+						minZig, err := cli.ExtractMinimumZigVersion()
+						log.Debug("version not installed", "version", versionArg, "minZig", minZig)
 
-					if err == nil {
-						versionArg = strings.TrimPrefix(minZig, "v")
+						if err == nil {
+							newCommands := make([]string, 0)
+							newCommands = append(newCommands, versionArg)
+							newCommands = append(newCommands, cmds...)
+
+							versionArg = strings.TrimPrefix(minZig, "v")
+							return zvm.Run(versionArg, newCommands)
+						} else {
+							log.Error(err)
+						}
 					} else {
-						log.Error(err)
+						return err
 					}
+
 				}
 
-				return zvm.Run(versionArg, cmds)
+				return nil
 
 			},
 		},

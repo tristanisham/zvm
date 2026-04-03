@@ -9,6 +9,8 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"path/filepath"
+	"regexp"
 	"strings"
 	"time"
 
@@ -140,9 +142,35 @@ var zvmApp = &opts.Command{
 					versionArg := strings.TrimPrefix(cmd.Args().First(), "v")
 
 					if versionArg == "" {
+						// this is the new part.
+						cwd, err := os.Getwd()
+						if err != nil {
+							cwd = "./"
+						}
+
+						zigBuildfile := filepath.Join(cwd, "build.zig.zon")
+						log.Debug("build.zig.zon check", "cwd", zigBuildfile)
+
+						if _, err := os.Stat(zigBuildfile); err == nil {
+							search := regexp.MustCompile(`\.minimum_zig_version\s*=\s*"([^"]+)"`)
+							if data, err := os.ReadFile(zigBuildfile); err == nil {
+								log.Debugf("couldn't read `%s`. Err: %q", zigBuildfile, err)
+								matches := search.FindSubmatch(data)
+								if len(matches) < 2 {
+									return fmt.Errorf("build.zig.zon minimum_zig_version is unparsable. Please provide a valid Zig verison as an argument for `use`")
+								}
+								answer := strings.Trim(string(matches[1]), `"`)
+								log.Debug("build.zig.zon exists!", "minimum_zig_version", answer)
+								versionArg = strings.TrimPrefix(answer, "v")
+								goto use // ooh yes. We're using spicy words now.
+							}
+
+						}
+
 						return fmt.Errorf("command 'use' requires 1 valid Zig version as an argument")
 					}
 
+				use:
 					if err := zvm.Use(versionArg); err != nil {
 						return err
 					}

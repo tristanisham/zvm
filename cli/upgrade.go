@@ -124,7 +124,7 @@ func (z *ZVM) Upgrade() error {
 
 		if err := replaceExe(newDownload, zvmPath); err != nil {
 			log.Warn("This command might break if ZVM is installed outside of ~/.zvm/self/")
-			return fmt.Errorf("upgrade error: %q", err)
+			return fmt.Errorf("upgrade error: %w", err)
 		}
 		// fmt.Println("Run the following to complete your upgrade on Windows.")
 		// fmt.Printf("- Command Prompt:\n\tmove /Y '%s' '%s'\n", secondaryZVM, zvmPath)

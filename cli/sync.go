@@ -27,7 +27,7 @@ func (z *ZVM) Sync() error {
 
 	buildFile, err := os.Open(buildZigPath)
 	if err != nil {
-		return fmt.Errorf("error opening build.zig: %q", err)
+		return fmt.Errorf("error opening build.zig: %w", err)
 	}
 	defer buildFile.Close()
 

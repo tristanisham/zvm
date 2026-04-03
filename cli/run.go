@@ -20,14 +20,7 @@ import (
 func (z *ZVM) Run(version string, cmd []string) error {
 	log.Debug("Run", "version", version, "cmds", strings.Join(cmd, ", "))
 	if len(version) == 0 {
-		return fmt.Errorf("no zig version provided. If you want to run your set version of Zig, please use 'zig'")
-		// zig, err := z.zigPath()
-		// log.Debug("Run", "zig path", zig)
-		// if err != nil {
-		// 	return fmt.Errorf("%w: no Zig version found; %w", ErrMissingBundlePath, err)
-		// }
-
-		// return z.runZig("bin", cmd)
+		return fmt.Errorf("%w: no zig version provided. If you want to run your set version of Zig, please use 'zig'", ErrMissingArgument)
 	}
 
 	installedVersions, err := z.GetInstalledVersions()
@@ -46,7 +39,7 @@ func (z *ZVM) Run(version string, cmd []string) error {
 		_, err = getTarPath(version, &rawVersionStructure)
 		if err != nil {
 			if errors.Is(err, ErrUnsupportedVersion) {
-				return fmt.Errorf("%s: %q", err, version)
+				return fmt.Errorf("%w: %q", err, version)
 			} else {
 				return err
 			}
@@ -64,6 +57,15 @@ func (z *ZVM) Run(version string, cmd []string) error {
 		}
 	}
 
+}
+func (z *ZVM) IsInstalled(version string) bool {
+	installedVersions, err := z.GetInstalledVersions()
+	if err != nil {
+		log.Debug("isInstalled", "error", err)
+		return false
+	}
+
+	return slices.Contains(installedVersions, version)
 }
 
 // runZig executes the Zig compiler for the specified version with the given arguments.

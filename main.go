@@ -181,7 +181,10 @@ var zvmApp = &opts.Command{
 							return fmt.Errorf("version %q is not a known Zig version and no minimum_zig_version found: %w", versionArg, err)
 						}
 						log.Debug("falling back to minimum_zig_version", "version", versionArg, "minZig", minZig)
-						return zvm.Run(minZig, cmds)
+						redoneArgs := []string{cmd.Args().First()}
+						redoneArgs = append(redoneArgs, cmds...)
+						log.Debug("running with minZig", "minZig", minZig, "args", redoneArgs)
+						return zvm.Run(minZig, redoneArgs)
 					}
 					return err
 				}

@@ -175,7 +175,7 @@ var zvmApp = &opts.Command{
 				log.Debug("run cmd", "version", versionArg, "args...", cmds)
 
 				if err := zvm.Run(versionArg, cmds); err != nil {
-					if errors.Is(err, cli.ErrUnsupportedVersion) {
+					if errors.Is(err, cli.ErrUnsupportedVersion) || errors.Is(err, cli.ErrMissingArgument) {
 						minZig, err := cli.ExtractMinimumZigVersion()
 						if err != nil {
 							return fmt.Errorf("version %q is not a known Zig version and no minimum_zig_version found: %w", versionArg, err)

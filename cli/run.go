@@ -20,14 +20,7 @@ import (
 func (z *ZVM) Run(version string, cmd []string) error {
 	log.Debug("Run", "version", version, "cmds", strings.Join(cmd, ", "))
 	if len(version) == 0 {
-		return fmt.Errorf("no zig version provided. If you want to run your set version of Zig, please use 'zig'")
-		// zig, err := z.zigPath()
-		// log.Debug("Run", "zig path", zig)
-		// if err != nil {
-		// 	return fmt.Errorf("%w: no Zig version found; %w", ErrMissingBundlePath, err)
-		// }
-
-		// return z.runZig("bin", cmd)
+		return fmt.Errorf("%w: no zig version provided. If you want to run your set version of Zig, please use 'zig'", ErrMissingArgument)
 	}
 
 	installedVersions, err := z.GetInstalledVersions()

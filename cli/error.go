@@ -33,4 +33,6 @@ var (
 	ErrMissingShasum = errors.New("shasum not found")
 	// ErrZigNotInstalled is returned when the `zig` executable cannot be found in the PATH.
 	ErrZigNotInstalled = errors.New("exec `zig` not found on $PATH")
+
+	ErrMissingArgument = errors.New("missing argument")
 )

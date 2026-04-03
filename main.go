@@ -9,8 +9,6 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"path/filepath"
-	"regexp"
 	"strings"
 	"time"
 
@@ -142,35 +140,20 @@ var zvmApp = &opts.Command{
 					versionArg := strings.TrimPrefix(cmd.Args().First(), "v")
 
 					if versionArg == "" {
-						// this is the new part.
-						cwd, err := os.Getwd()
+						emptyArgErrs := fmt.Errorf("command 'use' requires 1 valid Zig version as an argument")
+						minZig, err := cli.ExtractMinimumZigVersion()
 						if err != nil {
-							cwd = "./"
+							// so if there is no arg, it checks to see if it can get a value from build.zig.zon
+							// if that value isn't found, it returns both errors.
+							// if it is found, it pushes up the value and runs use like normal.
+							emptyArgErrs = errors.Join(emptyArgErrs, err)
+							return emptyArgErrs
 						}
 
-						zigBuildfile := filepath.Join(cwd, "build.zig.zon")
-						log.Debug("build.zig.zon check", "cwd", zigBuildfile)
+						versionArg = minZig
 
-						if _, err := os.Stat(zigBuildfile); err == nil {
-							search := regexp.MustCompile(`\.minimum_zig_version\s*=\s*"([^"]+)"`)
-							if data, err := os.ReadFile(zigBuildfile); err == nil {
-								log.Debugf("couldn't read `%s`. Err: %q", zigBuildfile, err)
-								matches := search.FindSubmatch(data)
-								if len(matches) < 2 {
-									return fmt.Errorf("build.zig.zon minimum_zig_version is unparsable. Please provide a valid Zig verison as an argument for `use`")
-								}
-								answer := strings.Trim(string(matches[1]), `"`)
-								log.Debug("build.zig.zon exists!", "minimum_zig_version", answer)
-								versionArg = strings.TrimPrefix(answer, "v")
-								goto use // ooh yes. We're using spicy words now.
-							}
-
-						}
-
-						return fmt.Errorf("command 'use' requires 1 valid Zig version as an argument")
 					}
 
-				use:
 					if err := zvm.Use(versionArg); err != nil {
 						return err
 					}
@@ -188,6 +171,20 @@ var zvmApp = &opts.Command{
 			Action: func(ctx context.Context, cmd *opts.Command) error {
 				versionArg := strings.TrimPrefix(cmd.Args().First(), "v")
 				cmds := cmd.Args().Tail()
+
+				log.Debug("run cmd", "version", versionArg, "args...", cmds)
+
+				if !zvm.IsInstalled(versionArg) {
+					minZig, err := cli.ExtractMinimumZigVersion()
+					log.Debug("version not installed", "version", versionArg, "minZig", minZig)
+
+					if err == nil {
+						versionArg = strings.TrimPrefix(minZig, "v")
+					} else {
+						log.Error(err)
+					}
+				}
+
 				return zvm.Run(versionArg, cmds)
 
 			},

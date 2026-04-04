@@ -140,7 +140,18 @@ var zvmApp = &opts.Command{
 					versionArg := strings.TrimPrefix(cmd.Args().First(), "v")
 
 					if versionArg == "" {
-						return fmt.Errorf("command 'use' requires 1 valid Zig version as an argument")
+						emptyArgErrs := fmt.Errorf("command 'use' requires 1 valid Zig version as an argument")
+						minZig, err := cli.ExtractMinimumZigVersion()
+						if err != nil {
+							// so if there is no arg, it checks to see if it can get a value from build.zig.zon
+							// if that value isn't found, it returns both errors.
+							// if it is found, it pushes up the value and runs use like normal.
+							emptyArgErrs = errors.Join(emptyArgErrs, err)
+							return emptyArgErrs
+						}
+
+						versionArg = minZig
+
 					}
 
 					if err := zvm.Use(versionArg); err != nil {
@@ -160,7 +171,25 @@ var zvmApp = &opts.Command{
 			Action: func(ctx context.Context, cmd *opts.Command) error {
 				versionArg := strings.TrimPrefix(cmd.Args().First(), "v")
 				cmds := cmd.Args().Tail()
-				return zvm.Run(versionArg, cmds)
+
+				log.Debug("run cmd", "version", versionArg, "args...", cmds)
+
+				if err := zvm.Run(versionArg, cmds); err != nil {
+					if errors.Is(err, cli.ErrUnsupportedVersion) || errors.Is(err, cli.ErrMissingArgument) {
+						minZig, err := cli.ExtractMinimumZigVersion()
+						if err != nil {
+							return fmt.Errorf("version %q is not a known Zig version and no minimum_zig_version found: %w", versionArg, err)
+						}
+						log.Debug("falling back to minimum_zig_version", "version", versionArg, "minZig", minZig)
+						redoneArgs := []string{cmd.Args().First()}
+						redoneArgs = append(redoneArgs, cmds...)
+						log.Debug("running with minZig", "minZig", minZig, "args", redoneArgs)
+						return zvm.Run(minZig, redoneArgs)
+					}
+					return err
+				}
+
+				return nil
 
 			},
 		},

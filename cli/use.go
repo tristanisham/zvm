@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"regexp"
 
 	"strings"
 
@@ -81,4 +82,33 @@ func getConfirmation() bool {
 
 	answer := strings.TrimSpace(strings.ToLower(text))
 	return answer == "y" || answer == "ye" || answer == "yes"
+}
+
+var minZigVersionRe = regexp.MustCompile(`(?m)^\s*\.minimum_zig_version\s*=\s*"([^"]+)"`)
+
+func ExtractMinimumZigVersion() (string, error) {
+
+	// this is the new part.
+	cwd, err := os.Getwd()
+	if err != nil {
+		cwd = "./"
+	}
+	zigBuildfile := filepath.Join(cwd, "build.zig.zon")
+	log.Debug("build.zig.zon check", "cwd", zigBuildfile)
+
+	// only fetches uncommented minimum_zig_versions
+	data, err := os.ReadFile(zigBuildfile)
+	if err != nil {
+		return "", fmt.Errorf("couldn't read build.zig.zon: %w", err)
+	}
+
+	matches := minZigVersionRe.FindSubmatch(data)
+	if len(matches) < 2 {
+		return "", fmt.Errorf("build.zig.zon minimum_zig_version is unparsable. Please provide a valid Zig version as an argument for `use`")
+	}
+	answer := string(matches[1])
+	log.Debug("build.zig.zon exists!", "minimum_zig_version", answer)
+	versionArg := strings.TrimPrefix(answer, "v")
+
+	return versionArg, nil
 }

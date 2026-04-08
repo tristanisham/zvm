@@ -31,7 +31,7 @@ function Install-ZVM {
     try {
         $lastProgressPreference = $global:ProgressPreference
         $global:ProgressPreference = 'SilentlyContinue';
-        Expand-Archive "$ZipPath" "$ZVMSelf" -Force
+        Expand-Archive "$ZipPath" "$ZVMSelf\$UnzippedPath" -Force
         $global:ProgressPreference = $lastProgressPreference
         if (!(Test-Path "${ZVMSelf}\$UnzippedPath\zvm.exe")) {
             throw "The file '${ZVMSelf}\$UnzippedPath\zvm.exe' does not exist. Download is corrupt / Antivirus intercepted?`n"
@@ -103,9 +103,9 @@ function Install-ZVM {
 $PROCESSOR_ARCH = $env:PROCESSOR_ARCHITECTURE.ToLower()
 
 if ($PROCESSOR_ARCH -eq "x86") {
-  Write-Output "Install Failed - ZVM requires a 64-bit environment."
-  Write-Output "Please ensure that you are running the 64-bit version of PowerShell or that your system is 64-bit.`n"
-  exit 1
+    Write-Output "Install Failed - ZVM requires a 64-bit environment."
+    Write-Output "Please ensure that you are running the 64-bit version of PowerShell or that your system is 64-bit.`n"
+    exit 1
 }
 
 # Parse --no-env flag if present

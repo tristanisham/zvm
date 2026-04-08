@@ -19,7 +19,6 @@ import (
 
 	"github.com/tristanisham/zvm/cli/meta"
 
-
 	"github.com/charmbracelet/log"
 )
 
@@ -182,4 +181,3 @@ func (z *ZVM) fetchZlsVersionByZigVersion(version string, compatMode string) (zi
 }
 
 // statelessFetchVersionMap is the same as fetchVersionMap but it doesn't write to disk. Will probably be depreciated and nuked from orbit when my
-

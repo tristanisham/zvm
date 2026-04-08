@@ -69,7 +69,7 @@ func (z *ZVM) Upgrade() error {
 
 	resp, err := http.Get(downloadUrl)
 	if err != nil {
-		errors.Join(ErrFailedUpgrade, err)
+		return errors.Join(ErrFailedUpgrade, err)
 	}
 	defer resp.Body.Close()
 

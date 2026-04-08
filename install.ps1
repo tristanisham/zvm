@@ -92,8 +92,7 @@ function Install-ZVM {
         if ($env:PATH -notcontains ";${ZVMBin}") {
             $env:PATH = "${env:Path};${ZVMBin}"
         }
-    }
-    else {
+    } else {
         Write-Output "Skipping environment variable setup due to --no-env flag.`n"
     }
 

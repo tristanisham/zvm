@@ -30,7 +30,7 @@ function Install-ZVM {
     try {
         $lastProgressPreference = $global:ProgressPreference
         $global:ProgressPreference = 'SilentlyContinue';
-        Remove-Item "${ZVMSelf}\zvm.exe" -ErrorAction SilentlyContinue
+        Remove-Item "${ZVMSelf}\zvm.exe" -Force -ErrorAction SilentlyContinue
         Expand-Archive "$ZipPath" "$ZVMSelf" -Force
         Unblock-File "${ZVMSelf}\zvm.exe" -ErrorAction SilentlyContinue
         $global:ProgressPreference = $lastProgressPreference

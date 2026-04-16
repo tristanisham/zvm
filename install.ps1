@@ -32,6 +32,7 @@ function Install-ZVM {
         $global:ProgressPreference = 'SilentlyContinue';
         Remove-Item "${ZVMSelf}\zvm.exe" -ErrorAction SilentlyContinue
         Expand-Archive "$ZipPath" "$ZVMSelf" -Force
+        Unblock-File "${ZVMSelf}\zvm.exe" -ErrorAction SilentlyContinue
         $global:ProgressPreference = $lastProgressPreference
         if (!(Test-Path "${ZVMSelf}\zvm.exe")) {
             throw "The file '${ZVMSelf}\zvm.exe' does not exist.`nLikely cause: Windows Defender quarantined it.`nFix: Add an exclusion for '$ZVMRoot' in Windows Security > Virus & threat protection > Exclusions, then re-run the installer.`n"

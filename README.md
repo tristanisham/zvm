@@ -157,32 +157,68 @@ zvm install <version>
 zvm i <version>
 ```
 
-Use `install` or `i` to download a specific version of Zig. To install the
-latest version, use "master".
+Use `install` or `i` to download a specific version of Zig. You can pass an
+exact version, a [shorthand](#version-shorthand), or an
+[alias](#version-aliases).
 
 ```sh
-# Example
-zvm i master
+zvm i 0.13.0      # Install an exact version
+zvm i master      # Install the current master nightly
+zvm i stable      # Install the latest stable release
+zvm i .14         # Shorthand — installs 0.14.x (latest patch)
 ```
 
 ### Version Shorthand
 
-You can use abbreviated version numbers and ZVM will resolve them to the latest
-matching release:
+You can use abbreviated version numbers and ZVM will resolve them to the
+**latest matching release**:
 
 ```sh
 zvm i 0.13     # Installs 0.13.0
-zvm i .13      # Same as above — leading dot implies "0."
+zvm i .13      # Same as above — a leading dot implies "0."
 zvm i 0.15     # Installs 0.15.2 (latest 0.15.x patch)
+zvm i .15      # Same — resolves to 0.15.2
 ```
 
-Use `stable` to install the latest non-dev release:
+Whenever ZVM expands a shorthand, it prints the result so you know exactly
+what's being fetched:
+
+```
+$ zvm i .14
+Resolved ".14" to 0.14.1
+...
+```
+
+Shorthand works across every command that takes a version:
 
 ```sh
-zvm i stable   # Installs the latest stable release (e.g. 0.16.0)
+zvm i 0.14      # install
+zvm use .13     # switch active version
+zvm run 0.12 version
+zvm rm .11      # uninstall
 ```
 
-Version shorthand works with all commands: `install`, `use`, `run`, and `rm`.
+For `use` and `rm`, shorthand is resolved against your **locally installed**
+versions. For `install` and `run`, it resolves against the **remote** version
+map.
+
+### Version Aliases
+
+ZVM understands a few named aliases in addition to concrete versions:
+
+| Alias    | Resolves to                                              |
+| -------- | -------------------------------------------------------- |
+| `master` | The current `master` nightly build (passes through as-is) |
+| `stable` | The highest non-dev, non-master release (e.g. `0.16.0`)  |
+
+```sh
+zvm i stable        # Install the latest stable release
+zvm use stable      # Switch to the latest installed stable release
+zvm i master        # Install the current master nightly
+```
+
+`stable` is especially useful in automation — you don't have to know the exact
+version number to grab the newest release.
 
 ### Force Install
 
@@ -248,11 +284,14 @@ zvm i --zls --full master
 zvm use <version>
 ```
 
-Use `use` to switch between versions of Zig.
+Use `use` to switch between versions of Zig. The version argument accepts
+[shorthand](#version-shorthand) and [aliases](#version-aliases).
 
 ```sh
-# Example
-zvm use master
+zvm use master     # Switch to master
+zvm use stable     # Switch to the latest installed stable release
+zvm use 0.13       # Resolves to 0.13.x (latest installed patch)
+zvm use .14        # Same — leading dot implies "0."
 ```
 
 ## List installed Zig versions
@@ -284,11 +323,14 @@ The `--vmu` flag will list set version maps for Zig and ZLS downloads.
 ## Uninstall a Zig version
 
 ```sh
-# Example
-zvm rm 0.10.0
+zvm rm 0.10.0      # Remove an exact version
+zvm rm .13         # Shorthand — removes the installed 0.13.x
+zvm rm stable      # Alias — removes the installed stable release
 ```
 
-Use `uninstall` or `rm` to remove an uninstalled version from your system.
+Use `uninstall` or `rm` to remove an installed version from your system.
+The version argument accepts [shorthand](#version-shorthand) and
+[aliases](#version-aliases), resolved against what you have installed locally.
 
 ## Upgrade your ZVM installation
 
@@ -332,7 +374,8 @@ Use `clean` to remove build artifacts (Good if you're on Windows).
 ## Run installed version of Zig without switching your default
 
 If you want to run a version of Zig without setting it as your default, the new
-`run` command is your friend.
+`run` command is your friend. The version argument accepts
+[shorthand](#version-shorthand) and [aliases](#version-aliases).
 
 ```sh
 zig version
@@ -340,6 +383,12 @@ zig version
 
 zvm run 0.11.0 version
 # 0.11.0
+
+zvm run .12 version     # Shorthand works too
+# 0.12.1
+
+zvm run stable version  # Run against the latest stable
+# 0.16.0
 
 zig version
 # 0.13.0

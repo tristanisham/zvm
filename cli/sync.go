@@ -49,7 +49,7 @@ func (z *ZVM) Sync() error {
 		switch strings.ToLower(strings.TrimSpace(variablePieces[0])) {
 		case "zvm-lock":
 			val := strings.TrimSpace(variablePieces[1])
-			if err := z.Use(val); err != nil {
+			if _, err := z.Use(val); err != nil {
 				return err
 			}
 		}

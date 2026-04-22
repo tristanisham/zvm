@@ -7,10 +7,21 @@ package cli
 import (
 	"fmt"
 	"os"
+
+	"github.com/charmbracelet/log"
 )
 
 // Uninstall removes the specified Zig version from the ZVM base directory.
 func (z *ZVM) Uninstall(version string) error {
+	// Resolve shorthand against locally installed versions
+	if installedVersions, err := z.GetInstalledVersions(); err == nil {
+		if resolved, resolveErr := resolveVersionShorthand(version, installedVersions); resolveErr == nil && resolved != version {
+			log.Debug("resolved version shorthand", "input", version, "resolved", resolved)
+			fmt.Printf("Resolved %q to %s\n", version, resolved)
+			version = resolved
+		}
+	}
+
 	root, err := os.OpenRoot(z.baseDir)
 	if err != nil {
 		return err
@@ -20,7 +31,7 @@ func (z *ZVM) Uninstall(version string) error {
 		if err := root.RemoveAll(version); err != nil {
 			return err
 		}
-		fmt.Printf("✔ Uninstalled %s.\nRun `zvm ls` to view installed versions.\n", version)
+		fmt.Printf("✔ Uninstalled %s\nRun `zvm ls` to view installed versions.\n", version)
 		return nil
 	}
 	fmt.Printf("Version: %s not found locally.\nHere are your installed versions:\n", version)

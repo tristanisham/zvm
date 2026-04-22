@@ -82,6 +82,16 @@ var zvmApp = &opts.Command{
 					Name:  "nomirror",
 					Usage: "download Zig from ziglang.org instead of a community mirror",
 				},
+				&opts.StringFlag{
+					Name:    "target-os",
+					Usage:   "override the target operating system (e.g., linux, macos, windows, freebsd)",
+					Sources: opts.EnvVars("ZVM_TARGET_OS"),
+				},
+				&opts.StringFlag{
+					Name:    "target-arch",
+					Usage:   "override the target architecture (e.g., x86_64, aarch64, arm, riscv64)",
+					Sources: opts.EnvVars("ZVM_TARGET_ARCH"),
+				},
 			},
 			Description: "To install the latest version, use `master`",
 			// Args:        true,
@@ -107,15 +117,22 @@ var zvmApp = &opts.Command{
 					zlsCompat = "full"
 				}
 
+				if v := cmd.String("target-os"); v != "" {
+					os.Setenv("ZVM_TARGET_OS", v)
+				}
+				if v := cmd.String("target-arch"); v != "" {
+					os.Setenv("ZVM_TARGET_ARCH", v)
+				}
+
 				// Install Zig
-				err := zvm.Install(req.Package, force, !cmd.Bool("nomirror"))
+				resolvedVersion, err := zvm.Install(req.Package, force, !cmd.Bool("nomirror"))
 				if err != nil {
 					return err
 				}
 
 				// Install ZLS (if requested)
 				if cmd.Bool("zls") {
-					if err := zvm.InstallZls(req.Package, zlsCompat, force); err != nil {
+					if err := zvm.InstallZls(resolvedVersion, zlsCompat, force); err != nil {
 						return err
 					}
 				}
@@ -154,11 +171,12 @@ var zvmApp = &opts.Command{
 
 					}
 
-					if err := zvm.Use(versionArg); err != nil {
+					resolvedVer, err := zvm.Use(versionArg)
+					if err != nil {
 						return err
 					}
 
-					fmt.Printf("Now using Zig %s\n", versionArg)
+					fmt.Printf("Now using Zig %s\n", resolvedVer)
 					return nil
 				}
 			},

@@ -10,7 +10,7 @@ minimal dependencies (only `tar` on Unix systems).
 
 ## Architecture & Tech Stack
 
-- **Language:** Go (v1.25.3)
+- **Language:** Go (v1.26.2)
 - **Build System:** Deno (`build.ts`) is used for cross-platform compilation and
   bundling, though standard `go build` works for local development.
 - **Key Libraries:**
@@ -37,7 +37,7 @@ minimal dependencies (only `tar` on Unix systems).
 
 ### Prerequisites
 
-- Go 1.25+
+- Go 1.26+
 - Deno (optional, for release builds)
 
 ### Development Commands

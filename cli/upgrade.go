@@ -40,7 +40,7 @@ func (z *ZVM) Upgrade() error {
 
 	tagName, upgradable, err := CanIUpgrade()
 	if err != nil {
-		return errors.Join(ErrFailedUpgrade, err)
+		return fmt.Errorf("%w: %w", ErrFailedUpgrade, err)
 	}
 
 	if !upgradable {
@@ -69,9 +69,13 @@ func (z *ZVM) Upgrade() error {
 
 	resp, err := http.Get(downloadUrl)
 	if err != nil {
-		return errors.Join(ErrFailedUpgrade, err)
+		return fmt.Errorf("%w: %w", ErrFailedUpgrade, err)
 	}
 	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("%w: unexpected status code %d", ErrFailedUpgrade, resp.StatusCode)
+	}
 
 	tempDownload, err := os.CreateTemp(z.baseDir, "*."+archive)
 	if err != nil {
@@ -97,7 +101,7 @@ func (z *ZVM) Upgrade() error {
 	newTemp, err := os.MkdirTemp(z.baseDir, "zvm-upgrade-*")
 	if err != nil {
 		log.Debugf("Failed to create temp directory: %s", newTemp)
-		return errors.Join(ErrFailedUpgrade, err)
+		return fmt.Errorf("%w: %w", ErrFailedUpgrade, err)
 	}
 	defer os.RemoveAll(newTemp)
 
@@ -105,12 +109,12 @@ func (z *ZVM) Upgrade() error {
 	case "zip":
 		log.Debug("unzip", "from", tempDownload.Name(), "to", newTemp)
 		if err := unzipSource(tempDownload.Name(), newTemp); err != nil {
-			return errors.Join(ErrFailedUpgrade, err)
+			return fmt.Errorf("%w: %w", ErrFailedUpgrade, err)
 		}
 	case "tar":
 		log.Debug("untar", "from", tempDownload.Name(), "to", newTemp)
 		if err := untar(tempDownload.Name(), newTemp); err != nil {
-			return errors.Join(ErrFailedUpgrade, err)
+			return fmt.Errorf("%w: %w", ErrFailedUpgrade, err)
 		}
 	}
 
@@ -118,7 +122,7 @@ func (z *ZVM) Upgrade() error {
 
 	if err := replaceExe(src, zvmPath); err != nil {
 		log.Warn("This command might break if ZVM is installed outside of ~/.zvm/self/")
-		return errors.Join(ErrFailedUpgrade, err)
+		return fmt.Errorf("%w: %w", ErrFailedUpgrade, err)
 	}
 
 	// Clean up the .old backup from Windows upgrades (best-effort)
@@ -128,7 +132,7 @@ func (z *ZVM) Upgrade() error {
 
 	if err := os.Chmod(zvmPath, 0775); err != nil {
 		log.Debugf("Failed to update permissions for %s", zvmPath)
-		return errors.Join(ErrFailedUpgrade, err)
+		return fmt.Errorf("%w: %w", ErrFailedUpgrade, err)
 	}
 
 	return nil

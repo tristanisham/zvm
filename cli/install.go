@@ -230,6 +230,9 @@ func (z *ZVM) Install(version string, force bool, mirror bool) error {
 
 	fmt.Println("Successfully installed Zig!")
 
+	// I figure nobody wants crap just sitting around taking up valuable bytes.
+	_ = z.Clean()
+
 	return nil
 }
 

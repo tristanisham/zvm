@@ -13,6 +13,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"io/fs"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -139,29 +140,21 @@ func (z *ZVM) Upgrade() error {
 }
 
 // replaceExe replaces the file at `to` with the file at `from`.
-// On Windows, the existing file is renamed to `.old` rather than deleted,
-// since Windows locks executables that are currently running.
+// The existing file is renamed to `.old` as a backup so it can be
+// restored if the replacement fails.
 func replaceExe(from, to string) error {
 	oldPath := fmt.Sprintf("%s.old", to)
 
-	if runtime.GOOS == "windows" {
-		if err := os.Rename(to, oldPath); err != nil && !errors.Is(err, os.ErrNotExist) {
-			return err
-		}
-	} else {
-		if err := os.Remove(to); err != nil && !errors.Is(err, os.ErrNotExist) {
-			return err
-		}
+	if err := os.Rename(to, oldPath); err != nil && !errors.Is(err, fs.ErrNotExist) {
+		return err
 	}
 
 	if err := os.Rename(from, to); err != nil {
 		// Cross-device fallback: copy the file contents
 		if copyErr := copyFile(from, to); copyErr != nil {
-			// Rollback on Windows: restore the old binary
-			if runtime.GOOS == "windows" {
-				if rbErr := os.Rename(oldPath, to); rbErr != nil {
-					log.Error("Failed to rollback after upgrade failure", "err", rbErr)
-				}
+			// Rollback: restore the old binary
+			if rbErr := os.Rename(oldPath, to); rbErr != nil {
+				log.Error("Failed to rollback after upgrade failure", "err", rbErr)
 			}
 			return copyErr
 		}

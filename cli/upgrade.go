@@ -92,14 +92,6 @@ func (z *ZVM) Upgrade() error {
 	}
 
 	zvmPath := filepath.Join(zvmInstallDirENV, zvmBinaryName)
-	if err := os.Remove(zvmPath); err != nil {
-		if pathErr, ok := err.(*os.PathError); ok {
-			if os.IsNotExist(pathErr) {
-				log.Debug("Failed to remove file", "path", zvmPath)
-			}
-		}
-	}
-
 	log.Debug("zvmPath", "path", zvmPath)
 
 	newTemp, err := os.MkdirTemp(z.baseDir, "zvm-upgrade-*")
@@ -109,12 +101,12 @@ func (z *ZVM) Upgrade() error {
 	defer os.RemoveAll(newTemp)
 
 	if archive == "zip" {
-	log.Debug("unzip", "from", tempDownload.Name(), "to", newTemp)
+		log.Debug("unzip", "from", tempDownload.Name(), "to", newTemp)
 		if err := unzipSource(tempDownload.Name(), newTemp); err != nil {
 			return errors.Join(ErrFailedUpgrade, err)
 		}
 	} else if archive == "tar" {
-	log.Debug("untar", "from", tempDownload.Name(), "to", newTemp)
+		log.Debug("untar", "from", tempDownload.Name(), "to", newTemp)
 		if err := untar(tempDownload.Name(), newTemp); err != nil {
 			return errors.Join(ErrFailedUpgrade, err)
 		}
@@ -124,7 +116,7 @@ func (z *ZVM) Upgrade() error {
 
 	if err := replaceExe(src, zvmPath); err != nil {
 		log.Warn("This command might break if ZVM is installed outside of ~/.zvm/self/")
-		return fmt.Errorf("upgrade error: %w", err)
+		return errors.Join(ErrFailedUpgrade, err)
 	}
 
 	if err := os.Chmod(zvmPath, 0775); err != nil {
@@ -163,7 +155,7 @@ func replaceExe(from, to string) error {
 		defer to_io.Close()
 
 		if _, err := io.Copy(to_io, from_io); err != nil {
-			return nil
+			return err
 		}
 	}
 

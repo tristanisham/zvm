@@ -214,7 +214,7 @@ func isValidWebURL(urlString string) error {
 func (s Settings) save() error {
 	outSettings, err := json.MarshalIndent(&s, "", "    ")
 	if err != nil {
-		return fmt.Errorf("unable to generate settings.json file %v", err)
+		return fmt.Errorf("unable to generate settings.json file: %w", err)
 	}
 
 	if err := os.MkdirAll(filepath.Dir(s.path), 0755); err != nil {

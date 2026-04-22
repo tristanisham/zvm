@@ -177,11 +177,11 @@ func (z *ZVM) Install(version string, force bool, mirror bool) (string, error) {
 		fmt.Println("Checking minisign signature...")
 		pubkey, err := minisign.NewPublicKey(z.Settings.MinisignPubKey)
 		if err != nil {
-			return version, fmt.Errorf("minisign public key decoding failed: %v", err)
+			return version, fmt.Errorf("minisign public key decoding failed: %w", err)
 		}
 		verified, err := pubkey.VerifyFromFile(tempFile.Name(), minisig)
 		if err != nil {
-			return version, fmt.Errorf("minisign verification failed: %v", err)
+			return version, fmt.Errorf("minisign verification failed: %w", err)
 		}
 
 		if !verified {
@@ -690,12 +690,12 @@ func getVersionShasum(version string, data *map[string]map[string]any) (string, 
 func zigStyleSysInfo() (arch string, osName string) {
 	arch = runtime.GOARCH
 	if envArch := os.Getenv("ZVM_TARGET_ARCH"); envArch != "" {
-		arch = envArch
+		arch = strings.ToLower(envArch)
 	}
 
 	osName = runtime.GOOS
 	if envOS := os.Getenv("ZVM_TARGET_OS"); envOS != "" {
-		osName = envOS
+		osName = strings.ToLower(envOS)
 	}
 
 	switch arch {

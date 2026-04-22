@@ -32,6 +32,15 @@ var zvmApp = &opts.Command{
 	Version:     meta.VerCopy,
 	Copyright:   fmt.Sprintf("Copyright © %d Tristan Isham", time.Now().Year()),
 	Suggest:     true,
+	EnableShellCompletion: true,
+	ConfigureShellCompletionCommand: func(cmd *opts.Command) {
+		cmd.Hidden = false
+		cmd.Usage = "generate a shell completion script"
+		cmd.Description = "Emit a completion script for bash, zsh, fish, or pwsh (PowerShell).\n" +
+			"Example: source <(zvm completion bash)   # bash\n" +
+			"         zvm completion zsh > _zvm       # zsh, place on $fpath\n" +
+			"         zvm completion pwsh > zvm.ps1   # PowerShell, dot-source in profile"
+	},
 	Before: func(ctx context.Context, cmd *opts.Command) (context.Context, error) {
 		zvm = *cli.Initialize()
 		return nil, nil

@@ -507,13 +507,28 @@ zvm completion bash > ~/.local/share/bash-completion/completions/zvm
 
 ### Zsh
 
-Place the script somewhere on your `$fpath` as `_zvm`:
+Place the script somewhere on your `$fpath` as `_zvm`. Pick a user-writable
+directory so you don't need `sudo`:
 
 ```sh
-zvm completion zsh > "${fpath[1]}/_zvm"
+# Plain zsh — create a user completions dir and add it to $fpath in ~/.zshrc:
+mkdir -p ~/.zsh/completions
+zvm completion zsh > ~/.zsh/completions/_zvm
+
+# Then in ~/.zshrc (before `compinit`):
+fpath=(~/.zsh/completions $fpath)
 ```
 
-Then ensure `compinit` is running in your `~/.zshrc`:
+If you use [Oh My Zsh](https://ohmyz.sh/), drop it into the custom completions
+directory instead — Oh My Zsh adds it to `$fpath` automatically:
+
+```sh
+mkdir -p ~/.oh-my-zsh/custom/completions
+zvm completion zsh > ~/.oh-my-zsh/custom/completions/_zvm
+```
+
+Then ensure `compinit` is running in your `~/.zshrc` (Oh My Zsh already does
+this for you):
 
 ```sh
 autoload -Uz compinit && compinit

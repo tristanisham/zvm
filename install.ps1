@@ -27,14 +27,15 @@ function Install-ZVM {
         Write-Output "The file '$ZipPath' does not exist. Did an antivirus delete it?`n"
         exit 1
     }
-    $UnzippedPath = $Target.Substring(0, $Target.Length - 4)
     try {
         $lastProgressPreference = $global:ProgressPreference
         $global:ProgressPreference = 'SilentlyContinue';
-        Expand-Archive "$ZipPath" "$ZVMSelf\$UnzippedPath" -Force
+        Remove-Item "${ZVMSelf}\zvm.exe" -Force -ErrorAction SilentlyContinue
+        Expand-Archive "$ZipPath" "$ZVMSelf" -Force
+        Unblock-File "${ZVMSelf}\zvm.exe" -ErrorAction SilentlyContinue
         $global:ProgressPreference = $lastProgressPreference
-        if (!(Test-Path "${ZVMSelf}\$UnzippedPath\zvm.exe")) {
-            throw "The file '${ZVMSelf}\$UnzippedPath\zvm.exe' does not exist. Download is corrupt / Antivirus intercepted?`n"
+        if (!(Test-Path "${ZVMSelf}\zvm.exe")) {
+            throw "The file '${ZVMSelf}\zvm.exe' does not exist.`nLikely cause: Windows Defender quarantined it.`nFix: Add an exclusion for '$ZVMRoot' in Windows Security > Virus & threat protection > Exclusions, then re-run the installer.`n"
         }
     }
     catch {
@@ -42,11 +43,7 @@ function Install-ZVM {
         Write-Error $_
         exit 1
     }
-    Remove-Item "${ZVMSelf}\zvm.exe" -ErrorAction SilentlyContinue
-    Move-Item "${ZVMSelf}\$UnzippedPath\zvm.exe" "${ZVMSelf}\zvm.exe" -Force
-
-    Remove-Item "${ZVMSelf}\$Target" -Recurse -Force
-    Remove-Item ${ZVMSelf}\$UnzippedPath -Force
+    Remove-Item "${ZVMSelf}\$Target" -Force -ErrorAction SilentlyContinue
 
     $null = "$(& "${ZVMSelf}\zvm.exe")"
     if ($LASTEXITCODE -eq 1073741795) {

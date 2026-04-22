@@ -545,13 +545,13 @@ Fish picks this up automatically on the next shell.
 ### PowerShell
 
 ```powershell
-zvm completion pwsh > $PROFILE.CurrentUserAllHosts\..\zvm.ps1
+zvm completion pwsh > $HOME/.zvm/zvm.ps1
 ```
 
 Then dot-source the file from your PowerShell profile (`$PROFILE`):
 
 ```powershell
-. "$HOME\Documents\PowerShell\zvm.ps1"
+. "$HOME/.zvm/zvm.ps1"
 ```
 
 <hr>

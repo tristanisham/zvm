@@ -175,12 +175,13 @@ func copyFile(src, dst string) error {
 	if err != nil {
 		return err
 	}
-	defer out.Close()
 
-	if _, err := io.Copy(out, in); err != nil {
+	_, err = io.Copy(out, in)
+	closeErr := out.Close()
+	if err != nil {
 		return err
 	}
-	return nil
+	return closeErr
 }
 
 // getInstallDir finds the directory this executabile is in.

@@ -1,7 +1,6 @@
 {
   "tasks": {
     "build": "deno run -A build.ts",
-    "build:win-installer": "cmake -B cmake-build -DCMAKE_BUILD_TYPE=Release && cmake --build cmake-build --config Release",
     "clean": "rm -r build"
   },
   "imports": {

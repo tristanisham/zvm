@@ -1,3 +1,8 @@
+// Regression tests for the ZVM self-upgrade helper functions.
+// These cover copyFile, replaceExe, isSymlink, resolveSymlink, and getInstallDir.
+//
+// Co-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>
+
 //go:build !noAutoUpgrades
 
 package cli
@@ -9,6 +14,8 @@ import (
 	"testing"
 )
 
+// TestCopyFile verifies that copyFile faithfully reproduces file contents,
+// handles empty files, binary data, and returns an error for missing sources.
 func TestCopyFile(t *testing.T) {
 	tests := []struct {
 		name        string
@@ -41,6 +48,7 @@ func TestCopyFile(t *testing.T) {
 			src := filepath.Join(dir, "src")
 			dst := filepath.Join(dir, "dst")
 
+			// Only create the source file if the test case expects it to exist.
 			if !tt.missingFrom {
 				if err := os.WriteFile(src, []byte(tt.content), 0644); err != nil {
 					t.Fatal(err)
@@ -58,6 +66,7 @@ func TestCopyFile(t *testing.T) {
 				t.Fatalf("unexpected error: %v", err)
 			}
 
+			// Read back the destination and compare byte-for-byte.
 			got, err := os.ReadFile(dst)
 			if err != nil {
 				t.Fatalf("failed to read dst: %v", err)
@@ -69,6 +78,9 @@ func TestCopyFile(t *testing.T) {
 	}
 }
 
+// TestCopyFile_unwritable_destination verifies that copyFile returns an error
+// when the destination directory is read-only. Skipped on Windows where the
+// permission model differs.
 func TestCopyFile_unwritable_destination(t *testing.T) {
 	if runtime.GOOS == "windows" {
 		t.Skip("Windows file permission model differs")
@@ -80,7 +92,7 @@ func TestCopyFile_unwritable_destination(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	// Make directory read-only so Create fails
+	// Make directory read-only so os.Create inside copyFile fails.
 	roDir := filepath.Join(dir, "readonly")
 	if err := os.MkdirAll(roDir, 0555); err != nil {
 		t.Fatal(err)
@@ -93,6 +105,8 @@ func TestCopyFile_unwritable_destination(t *testing.T) {
 	}
 }
 
+// TestReplaceExe_basic verifies the happy path: the new binary replaces
+// the old one, and the source file is consumed (renamed away).
 func TestReplaceExe_basic(t *testing.T) {
 	dir := t.TempDir()
 	from := filepath.Join(dir, "new_binary")
@@ -109,6 +123,7 @@ func TestReplaceExe_basic(t *testing.T) {
 		t.Fatalf("replaceExe failed: %v", err)
 	}
 
+	// The target should now contain the new binary's content.
 	got, err := os.ReadFile(to)
 	if err != nil {
 		t.Fatalf("failed to read target: %v", err)
@@ -117,15 +132,16 @@ func TestReplaceExe_basic(t *testing.T) {
 		t.Errorf("target content = %q, want %q", got, "new content")
 	}
 
-	// Source should be gone (renamed away)
+	// The source should be gone — it was renamed into the target path.
 	if _, err := os.Stat(from); !os.IsNotExist(err) {
 		t.Errorf("source file should not exist after rename, err = %v", err)
 	}
 }
 
+// TestReplaceExe_target_missing is a regression test: replaceExe previously
+// failed when the target binary didn't exist (e.g. first install or manual
+// deletion). It should tolerate fs.ErrNotExist on the old binary.
 func TestReplaceExe_target_missing(t *testing.T) {
-	// Regression: replaceExe used to fail when the target didn't exist.
-	// It should tolerate os.IsNotExist on the old binary.
 	dir := t.TempDir()
 	from := filepath.Join(dir, "new_binary")
 	to := filepath.Join(dir, "nonexistent_binary")
@@ -134,6 +150,7 @@ func TestReplaceExe_target_missing(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	// This should succeed even though 'to' doesn't exist yet.
 	if err := replaceExe(from, to); err != nil {
 		t.Fatalf("replaceExe should tolerate missing target, got: %v", err)
 	}
@@ -147,6 +164,9 @@ func TestReplaceExe_target_missing(t *testing.T) {
 	}
 }
 
+// TestReplaceExe_windows_creates_old_backup verifies that on Windows,
+// replaceExe renames the existing binary to .old instead of deleting it,
+// since Windows locks running executables.
 func TestReplaceExe_windows_creates_old_backup(t *testing.T) {
 	if runtime.GOOS != "windows" {
 		t.Skip("Windows-specific test")
@@ -167,7 +187,7 @@ func TestReplaceExe_windows_creates_old_backup(t *testing.T) {
 		t.Fatalf("replaceExe failed: %v", err)
 	}
 
-	// On Windows, old binary should be renamed to .old
+	// The old binary should now live at <name>.old with its original content.
 	oldBackup := to + ".old"
 	got, err := os.ReadFile(oldBackup)
 	if err != nil {
@@ -178,6 +198,8 @@ func TestReplaceExe_windows_creates_old_backup(t *testing.T) {
 	}
 }
 
+// TestReplaceExe_unix_removes_old verifies that on Unix, the old binary
+// is backed up to .old (same as Windows) for safe rollback.
 func TestReplaceExe_unix_removes_old(t *testing.T) {
 	if runtime.GOOS == "windows" {
 		t.Skip("Unix-specific test")
@@ -198,17 +220,21 @@ func TestReplaceExe_unix_removes_old(t *testing.T) {
 		t.Fatalf("replaceExe failed: %v", err)
 	}
 
-	// On Unix, there should be no .old file
+	// The .old backup should exist since we now use rename-to-backup on all platforms.
 	oldBackup := to + ".old"
-	if _, err := os.Stat(oldBackup); !os.IsNotExist(err) {
-		t.Errorf(".old backup should not exist on Unix, err = %v", err)
+	got, err := os.ReadFile(oldBackup)
+	if err != nil {
+		t.Fatalf(".old backup should exist on Unix too: %v", err)
+	}
+	if string(got) != "old" {
+		t.Errorf(".old content = %q, want %q", got, "old")
 	}
 }
 
+// TestReplaceExe_cross_device_fallback verifies that when os.Rename fails
+// (e.g. cross-device move), replaceExe falls back to copyFile and the
+// target still ends up with the correct content.
 func TestReplaceExe_cross_device_fallback(t *testing.T) {
-	// When rename fails (e.g., cross-device), replaceExe should
-	// fall back to copyFile. We simulate by using a real temp dir
-	// and verifying the content arrives correctly regardless of method.
 	dir := t.TempDir()
 	from := filepath.Join(dir, "src")
 	to := filepath.Join(dir, "dst")
@@ -233,6 +259,9 @@ func TestReplaceExe_cross_device_fallback(t *testing.T) {
 	}
 }
 
+// TestIsSymlink checks that isSymlink correctly distinguishes regular files,
+// symlinks, and nonexistent paths. Symlink subtests are skipped on Windows
+// where creation may require elevated privileges.
 func TestIsSymlink(t *testing.T) {
 	dir := t.TempDir()
 	regular := filepath.Join(dir, "regular.txt")
@@ -277,6 +306,8 @@ func TestIsSymlink(t *testing.T) {
 	})
 }
 
+// TestResolveSymlink verifies that resolveSymlink follows a symlink and
+// returns the absolute path to the real target file.
 func TestResolveSymlink(t *testing.T) {
 	if runtime.GOOS == "windows" {
 		t.Skip("Symlink creation may require elevated privileges on Windows")
@@ -304,6 +335,8 @@ func TestResolveSymlink(t *testing.T) {
 	}
 }
 
+// TestResolveSymlink_not_a_symlink verifies that resolveSymlink returns an
+// error when called on a regular file (os.Readlink fails on non-symlinks).
 func TestResolveSymlink_not_a_symlink(t *testing.T) {
 	dir := t.TempDir()
 	regular := filepath.Join(dir, "regular.txt")
@@ -317,6 +350,8 @@ func TestResolveSymlink_not_a_symlink(t *testing.T) {
 	}
 }
 
+// TestGetInstallDir_env_override verifies that when ZVM_INSTALL is set,
+// getInstallDir returns that value directly without probing the executable.
 func TestGetInstallDir_env_override(t *testing.T) {
 	z := ZVM{baseDir: t.TempDir()}
 	customDir := filepath.Join(t.TempDir(), "custom-install")
@@ -335,12 +370,15 @@ func TestGetInstallDir_env_override(t *testing.T) {
 	}
 }
 
+// TestGetInstallDir_fallback verifies that when ZVM_INSTALL is unset,
+// getInstallDir falls back to resolving the running executable's directory
+// (or baseDir/self if that fails). In a test environment the executable is
+// the test binary, so we just verify it returns something sensible.
 func TestGetInstallDir_fallback(t *testing.T) {
 	baseDir := t.TempDir()
 	z := ZVM{baseDir: baseDir}
 
 	// Unset ZVM_INSTALL to exercise the executable-based path.
-	// getInstallDir falls back to baseDir/self when it can't resolve.
 	t.Setenv("ZVM_INSTALL", "")
 	os.Unsetenv("ZVM_INSTALL")
 
@@ -352,7 +390,7 @@ func TestGetInstallDir_fallback(t *testing.T) {
 		return
 	}
 
-	// Should return some valid directory
+	// Should return some valid directory path.
 	if got == "" {
 		t.Error("getInstallDir returned empty string")
 	}

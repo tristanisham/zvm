@@ -283,7 +283,7 @@ var zvmApp = &opts.Command{
 						if url == "" {
 							err = fmt.Errorf("%wURL cannot be an empty string", err)
 						}
-						log.Info("Run `zvm mirrorlist default` to reset your mirror list.")
+						fmt.Println("Run `zvm mirrorlist default` to reset your mirror list.")
 						return err
 					}
 				}
@@ -320,13 +320,13 @@ var zvmApp = &opts.Command{
 
 						case "mach":
 							if err := zvm.Settings.SetVersionMapUrl("https://machengine.org/zig/index.json"); err != nil {
-								log.Info("Run `zvm vmu zig default` to reset your version map.")
+								fmt.Println("Run `zvm vmu zig default` to reset your version map.")
 								return err
 							}
 
 						default:
 							if err := zvm.Settings.SetVersionMapUrl(url); err != nil {
-								log.Info("Run `zvm vmu zig default` to reset your verison map.")
+								fmt.Println("Run `zvm vmu zig default` to reset your verison map.")
 								return err
 							}
 						}
@@ -348,7 +348,7 @@ var zvmApp = &opts.Command{
 
 						default:
 							if err := zvm.Settings.SetZlsVMU(url); err != nil {
-								log.Info("Run `zvm vmu zls default` to reset your release worker.")
+								fmt.Println("Run `zvm vmu zls default` to reset your release worker.")
 								return err
 							}
 						}
@@ -412,7 +412,7 @@ func main() {
 			if printUpgradeNotice {
 				meta.CtaUpgradeAvailable(tag)
 			} else {
-				log.Infof("You are now using ZVM %s\n", tag)
+				fmt.Printf("You are now using ZVM %s\n", tag)
 			}
 		}
 

@@ -13,6 +13,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"io/fs"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -40,15 +41,14 @@ func (z *ZVM) Upgrade() error {
 
 	tagName, upgradable, err := CanIUpgrade()
 	if err != nil {
-		return errors.Join(ErrFailedUpgrade, err)
+		return fmt.Errorf("%w: %w", ErrFailedUpgrade, err)
 	}
 
 	if !upgradable {
 		fmt.Printf("You are already on the latest release (%s) of ZVM :) \n", clr.Blue(meta.VERSION))
-		os.Exit(0)
-	} else {
-		fmt.Printf("You are on ZVM %s... upgrading to (%s)", meta.VERSION, tagName)
+		return nil
 	}
+	fmt.Printf("You are on ZVM %s... upgrading to (%s)", meta.VERSION, tagName)
 
 	zvmInstallDirENV, err := z.getInstallDir()
 	if err != nil {
@@ -59,21 +59,26 @@ func (z *ZVM) Upgrade() error {
 	zvmBinaryName := "zvm"
 	archive := "tar"
 	if runtime.GOOS == "windows" {
-		archive = "zip"
 		zvmBinaryName = "zvm.exe"
+		archive = "zip"
 	}
 
-	download := fmt.Sprintf("zvm-%s-%s.%s", runtime.GOOS, runtime.GOARCH, archive)
-
-	downloadUrl := fmt.Sprintf("https://github.com/tristanisham/zvm/releases/latest/download/%s", download)
+	downloadUrl := fmt.Sprintf(
+		"https://github.com/tristanisham/zvm/releases/latest/download/zvm-%s-%s.%s",
+		runtime.GOOS, runtime.GOARCH, archive,
+	)
 
 	resp, err := http.Get(downloadUrl)
 	if err != nil {
-		return errors.Join(ErrFailedUpgrade, err)
+		return fmt.Errorf("%w: %w", ErrFailedUpgrade, err)
 	}
 	defer resp.Body.Close()
 
-	tempDownload, err := os.CreateTemp(z.baseDir, fmt.Sprintf("*.%s", archive))
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("%w: unexpected status code %d", ErrFailedUpgrade, resp.StatusCode)
+	}
+
+	tempDownload, err := os.CreateTemp(z.baseDir, "*."+archive)
 	if err != nil {
 		return err
 	}
@@ -92,95 +97,91 @@ func (z *ZVM) Upgrade() error {
 	}
 
 	zvmPath := filepath.Join(zvmInstallDirENV, zvmBinaryName)
-	if err := os.Remove(filepath.Join(zvmInstallDirENV, zvmBinaryName)); err != nil {
-		if err, ok := err.(*os.PathError); ok {
-			if os.IsNotExist(err) {
-				log.Debug("Failed to remove file", "path", zvmPath)
-			}
-		}
-	}
-
 	log.Debug("zvmPath", "path", zvmPath)
 
 	newTemp, err := os.MkdirTemp(z.baseDir, "zvm-upgrade-*")
 	if err != nil {
-		log.Debugf("Failed to create temp direcory: %s", newTemp)
-		return errors.Join(ErrFailedUpgrade, err)
+		log.Debugf("Failed to create temp directory: %s", newTemp)
+		return fmt.Errorf("%w: %w", ErrFailedUpgrade, err)
 	}
-
 	defer os.RemoveAll(newTemp)
 
-	if runtime.GOOS == "windows" {
+	switch archive {
+	case "zip":
 		log.Debug("unzip", "from", tempDownload.Name(), "to", newTemp)
 		if err := unzipSource(tempDownload.Name(), newTemp); err != nil {
-			log.Error(err)
-			return err
+			return fmt.Errorf("%w: %w", ErrFailedUpgrade, err)
 		}
-
-		secondaryZVM := fmt.Sprintf("%s.old", zvmPath)
-		log.Debug("SecondaryZVM", "path", secondaryZVM)
-
-		newDownload := filepath.Join(newTemp, fmt.Sprintf("zvm-%s-%s", runtime.GOOS, runtime.GOARCH), zvmBinaryName)
-
-		if err := replaceExe(newDownload, zvmPath); err != nil {
-			log.Warn("This command might break if ZVM is installed outside of ~/.zvm/self/")
-			return fmt.Errorf("upgrade error: %w", err)
-		}
-		// fmt.Println("Run the following to complete your upgrade on Windows.")
-		// fmt.Printf("- Command Prompt:\n\tmove /Y '%s' '%s'\n", secondaryZVM, zvmPath)
-		// fmt.Printf("- Powershell:\n\tMove-Item -Path '%s' -Destination '%s' -Force\n", secondaryZVM, zvmPath)
-
-	} else {
+	case "tar":
+		log.Debug("untar", "from", tempDownload.Name(), "to", newTemp)
 		if err := untar(tempDownload.Name(), newTemp); err != nil {
-			log.Error(err)
-			return err
+			return fmt.Errorf("%w: %w", ErrFailedUpgrade, err)
 		}
+	}
 
-		if err := os.Rename(filepath.Join(newTemp, zvmBinaryName), zvmPath); err != nil {
-			log.Debugf("Failed to rename %s to %s", filepath.Join(newTemp, zvmBinaryName), zvmPath)
-			return errors.Join(ErrFailedUpgrade, err)
-		}
+	src := filepath.Join(newTemp, zvmBinaryName)
+
+	if err := replaceExe(src, zvmPath); err != nil {
+		log.Warn("This command might break if ZVM is installed outside of ~/.zvm/self/")
+		return fmt.Errorf("%w: %w", ErrFailedUpgrade, err)
+	}
+
+	// Clean up the .old backup from Windows upgrades (best-effort)
+	if runtime.GOOS == "windows" {
+		os.Remove(fmt.Sprintf("%s.old", zvmPath))
 	}
 
 	if err := os.Chmod(zvmPath, 0775); err != nil {
 		log.Debugf("Failed to update permissions for %s", zvmPath)
-		return errors.Join(ErrFailedUpgrade, err)
+		return fmt.Errorf("%w: %w", ErrFailedUpgrade, err)
 	}
 
 	return nil
 }
 
-// Replaces one file with another on Windows.
+// replaceExe replaces the file at `to` with the file at `from`.
+// The existing file is renamed to `.old` as a backup so it can be
+// restored if the replacement fails.
 func replaceExe(from, to string) error {
-	if runtime.GOOS == "windows" {
-		if err := os.Rename(to, fmt.Sprintf("%s.old", to)); err != nil {
-			return err
-		}
-	} else {
-		if err := os.Remove(to); err != nil {
-			return err
-		}
+	oldPath := fmt.Sprintf("%s.old", to)
+
+	if err := os.Rename(to, oldPath); err != nil && !errors.Is(err, fs.ErrNotExist) {
+		return err
 	}
 
 	if err := os.Rename(from, to); err != nil {
-		from_io, err := os.Open(from)
-		if err != nil {
-			return err
-		}
-		defer from_io.Close()
-
-		to_io, err := os.Create(to)
-		if err != nil {
-			return err
-		}
-		defer to_io.Close()
-
-		if _, err := io.Copy(to_io, from_io); err != nil {
-			return nil
+		// Cross-device fallback: copy the file contents
+		if copyErr := copyFile(from, to); copyErr != nil {
+			// Rollback: restore the old binary
+			if rbErr := os.Rename(oldPath, to); rbErr != nil {
+				log.Error("Failed to rollback after upgrade failure", "err", rbErr)
+			}
+			return copyErr
 		}
 	}
 
 	return nil
+}
+
+// copyFile copies the contents of src to dst.
+func copyFile(src, dst string) error {
+	in, err := os.Open(src)
+	if err != nil {
+		return err
+	}
+	defer in.Close()
+
+	out, err := os.Create(dst)
+	if err != nil {
+		return err
+	}
+
+	_, err = io.Copy(out, in)
+	closeErr := out.Close()
+	if err != nil {
+		return err
+	}
+	return closeErr
 }
 
 // getInstallDir finds the directory this executabile is in.
@@ -198,7 +199,7 @@ func (z ZVM) getInstallDir() (string, error) {
 		}
 
 		var finalPath string
-		if !itIsASymlink {
+		if itIsASymlink {
 			finalPath, err = resolveSymlink(this)
 			if err != nil {
 				return filepath.Join(z.baseDir, "self"), nil

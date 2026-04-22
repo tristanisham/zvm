@@ -43,7 +43,7 @@ function Install-ZVM {
         Write-Error $_
         exit 1
     }
-    Remove-Item "${ZVMSelf}\$Target" -Force -ErrorAction SilentlyContinue
+    Remove-Item "$ZipPath" -Force -ErrorAction SilentlyContinue
 
     $null = "$(& "${ZVMSelf}\zvm.exe")"
     if ($LASTEXITCODE -eq 1073741795) {
@@ -60,7 +60,7 @@ function Install-ZVM {
     $C_RESET = [char]27 + "[0m"
     $C_GREEN = [char]27 + "[1;32m"
 
-    Write-Output "${C_GREEN}ZVM${DisplayVersion} was installed successfully!${C_RESET}"
+    Write-Output "${C_GREEN}ZVM was installed successfully!${C_RESET}"
     Write-Output "The binary is located at ${ZVMSelf}\zvm.exe`n"
 
     if (-not $NoEnv) {
@@ -78,16 +78,17 @@ function Install-ZVM {
             $Path += $ZVMSelf
             [System.Environment]::SetEnvironmentVariable('Path', $Path -join ';', $User)
         } 
-        if ($env:PATH -notcontains ";${ZVMSelf}") {
-            $env:PATH = "${env:Path};${ZVMSelf}"
+        $SessionPath = $env:PATH -split ';'
+        if ($SessionPath -notcontains $ZVMSelf) {
+            $env:PATH = "${env:PATH};${ZVMSelf}"
         }
 
         if ($Path -notcontains $ZVMBin) {
             $Path += $ZVMBin
             [System.Environment]::SetEnvironmentVariable('Path', $Path -join ';', $User)
         }
-        if ($env:PATH -notcontains ";${ZVMBin}") {
-            $env:PATH = "${env:Path};${ZVMBin}"
+        if ($SessionPath -notcontains $ZVMBin) {
+            $env:PATH = "${env:PATH};${ZVMBin}"
         }
     } else {
         Write-Output "Skipping environment variable setup due to --no-env flag.`n"

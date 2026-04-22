@@ -292,6 +292,14 @@ var zvmApp = &opts.Command{
 			},
 		},
 		{
+			Name:  "version",
+			Usage: "print the current version of ZVM",
+			Action: func(ctx context.Context, cmd *opts.Command) error {
+				fmt.Println("zvm version " + meta.VerCopy)
+				return nil
+			},
+		},
+		{
 			Name:  "vmu",
 			Usage: "set ZVM's version map URL for custom Zig distribution servers",
 			// Args:  true,

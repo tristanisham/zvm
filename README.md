@@ -186,6 +186,29 @@ pass the `--zls` flag with `zvm i`. For example:
 zvm i --zls master
 ```
 
+### Install for a Different Target Platform
+
+If you're on a platform where pre-built Zig binaries aren't available for a
+specific version (e.g., FreeBSD for Zig 0.14.x), you can override the target
+OS and/or architecture to download a compatible build.
+
+Use the `--target-os` and `--target-arch` flags:
+
+```sh
+zvm i --target-os linux --target-arch x86_64 0.14.0
+```
+
+Or set the `ZVM_TARGET_OS` and `ZVM_TARGET_ARCH` environment variables:
+
+```sh
+export ZVM_TARGET_OS=linux
+export ZVM_TARGET_ARCH=x86_64
+zvm i 0.14.0
+```
+
+Both Go-style names (e.g., `darwin`, `amd64`) and Zig-style names (e.g.,
+`macos`, `x86_64`) are accepted.
+
 #### Select ZLS compatibility mode
 
 By default, ZVM will install a ZLS build, which can be used with the given Zig
@@ -419,6 +442,11 @@ Enable or disable colored ZVM output. No value toggles colors.
   checker, just `unset ZVM_SET_CU`.
 - `ZVM_PATH` replaces the default install location for ZVM Set the environment
   variable to the parent directory of where you've placed the `.zvm` directory.
+- `ZVM_TARGET_OS` Override the target operating system for downloads (e.g.,
+  `linux`, `macos`, `windows`, `freebsd`). Useful on platforms where Zig doesn't
+  provide pre-built binaries for a specific version.
+- `ZVM_TARGET_ARCH` Override the target architecture for downloads (e.g.,
+  `x86_64`, `aarch64`, `arm`, `riscv64`).
 - `ZVM_SKIP_TLS_VERIFY` Do you have problems using TLS in your environment?
   Toggle off verifying TLS by setting this environment variable.
   - By default when this is enabled ZVM will print a warning. Set this variable

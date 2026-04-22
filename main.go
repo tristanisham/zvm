@@ -82,6 +82,16 @@ var zvmApp = &opts.Command{
 					Name:  "nomirror",
 					Usage: "download Zig from ziglang.org instead of a community mirror",
 				},
+				&opts.StringFlag{
+					Name:    "target-os",
+					Usage:   "override the target operating system (e.g., linux, macos, windows, freebsd)",
+					Sources: opts.EnvVars("ZVM_TARGET_OS"),
+				},
+				&opts.StringFlag{
+					Name:    "target-arch",
+					Usage:   "override the target architecture (e.g., x86_64, aarch64, arm, riscv64)",
+					Sources: opts.EnvVars("ZVM_TARGET_ARCH"),
+				},
 			},
 			Description: "To install the latest version, use `master`",
 			// Args:        true,
@@ -105,6 +115,13 @@ var zvmApp = &opts.Command{
 				zlsCompat := "only-runtime"
 				if cmd.Bool("full") {
 					zlsCompat = "full"
+				}
+
+				if v := cmd.String("target-os"); v != "" {
+					os.Setenv("ZVM_TARGET_OS", v)
+				}
+				if v := cmd.String("target-arch"); v != "" {
+					os.Setenv("ZVM_TARGET_ARCH", v)
 				}
 
 				// Install Zig

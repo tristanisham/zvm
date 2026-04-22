@@ -105,8 +105,9 @@ func (z *ZVM) Install(version string, force bool, mirror bool) error {
 	}
 	defer tarResp.Body.Close()
 
+	_, targetOS := zigStyleSysInfo()
 	var pathEnding string
-	if runtime.GOOS == "windows" {
+	if targetOS == "windows" {
 		pathEnding = "*.zip"
 	} else {
 		pathEnding = "*.tar.xz"
@@ -483,8 +484,9 @@ func (z *ZVM) InstallZls(requestedVersion string, compatMode string, force bool)
 	}
 	defer tarResp.Body.Close()
 
+	_, zlsTargetOS := zigStyleSysInfo()
 	var pathEnding string
-	if runtime.GOOS == "windows" {
+	if zlsTargetOS == "windows" {
 		pathEnding = "*.zip"
 	} else {
 		pathEnding = "*.tar.xz"
@@ -672,9 +674,18 @@ func getVersionShasum(version string, data *map[string]map[string]any) (string, 
 
 // zigStyleSysInfo returns the architecture and operating system strings
 // formatted as expected by Zig's download servers (e.g., "x86_64", "macos").
-func zigStyleSysInfo() (arch string, os string) {
+// It checks ZVM_TARGET_ARCH and ZVM_TARGET_OS environment variables first,
+// falling back to the runtime-detected values.
+func 	zigStyleSysInfo() (arch string, osName string) {
 	arch = runtime.GOARCH
-	os = runtime.GOOS
+	if envArch := os.Getenv("ZVM_TARGET_ARCH"); envArch != "" {
+		arch = envArch
+	}
+
+	osName = runtime.GOOS
+	if envOS := os.Getenv("ZVM_TARGET_OS"); envOS != "" {
+		osName = envOS
+	}
 
 	switch arch {
 	case "amd64":
@@ -687,12 +698,12 @@ func zigStyleSysInfo() (arch string, os string) {
 		arch = "powerpc64le"
 	}
 
-	switch os {
+	switch osName {
 	case "darwin":
-		os = "macos"
+		osName = "macos"
 	}
 
-	return arch, os
+	return arch, osName
 }
 
 // ExtractBundle extracts a compressed bundle (zip, tar.xz) to the specified output directory.

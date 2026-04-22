@@ -36,20 +36,31 @@ import (
 // Install downloads and installs the specified Zig version.
 // It handles checking for existing installations, verifying checksums,
 // and extracting the downloaded bundle.
-func (z *ZVM) Install(version string, force bool, mirror bool) error {
+func (z *ZVM) Install(version string, force bool, mirror bool) (string, error) {
 	err := os.MkdirAll(z.baseDir, 0755)
 	if err != nil {
-		return err
+		return version, err
 	}
 	rawVersionStructure, err := z.fetchVersionMap()
 	if err != nil {
-		return err
+		return version, err
+	}
+
+	// Resolve version shorthand (e.g. "0.12" -> "0.12.0", "stable" -> latest release)
+	availableVersions := make([]string, 0, len(rawVersionStructure))
+	for k := range rawVersionStructure {
+		availableVersions = append(availableVersions, k)
+	}
+	if resolved, err := resolveVersionShorthand(version, availableVersions); err == nil && resolved != version {
+		log.Debug("resolved version shorthand", "input", version, "resolved", resolved)
+		fmt.Printf("Resolved %q to %s\n", version, resolved)
+		version = resolved
 	}
 
 	if !force {
 		installedVersions, err := z.GetInstalledVersions()
 		if err != nil {
-			return err
+			return version, err
 		}
 		if slices.Contains(installedVersions, version) {
 			alreadyInstalled := true
@@ -75,7 +86,7 @@ func (z *ZVM) Install(version string, force bool, mirror bool) error {
 			}
 			if alreadyInstalled {
 				fmt.Printf("Zig version %s is already installed\nRerun with the `--force` flag to install anyway\n", installedVersion)
-				return nil
+				return version, nil
 			}
 		}
 	}
@@ -83,9 +94,9 @@ func (z *ZVM) Install(version string, force bool, mirror bool) error {
 	tarPath, err := getTarPath(version, &rawVersionStructure)
 	if err != nil {
 		if errors.Is(err, ErrUnsupportedVersion) {
-			return fmt.Errorf("%s: %q", err, version)
+			return version, fmt.Errorf("%s: %q", err, version)
 		} else {
-			return err
+			return version, err
 		}
 	}
 
@@ -101,7 +112,7 @@ func (z *ZVM) Install(version string, force bool, mirror bool) error {
 	}
 
 	if err != nil {
-		return err
+		return version, err
 	}
 	defer tarResp.Body.Close()
 
@@ -115,7 +126,7 @@ func (z *ZVM) Install(version string, force bool, mirror bool) error {
 
 	tempFile, err := os.CreateTemp(z.baseDir, pathEnding)
 	if err != nil {
-		return err
+		return version, err
 	}
 
 	defer tempFile.Close()
@@ -136,14 +147,14 @@ func (z *ZVM) Install(version string, force bool, mirror bool) error {
 	hash := sha256.New()
 	_, err = io.Copy(io.MultiWriter(tempFile, pbar, hash), tarResp.Body)
 	if err != nil {
-		return err
+		return version, err
 	}
 
 	var shasum string
 
 	shasum, err = getVersionShasum(version, &rawVersionStructure)
 	if err != nil {
-		return err
+		return version, err
 	}
 
 	fmt.Println("Checking shasum...")
@@ -155,7 +166,7 @@ func (z *ZVM) Install(version string, force bool, mirror bool) error {
 			// Why is my sha256 identical on the server and sha256sum,
 			// but not when I download it in ZVM? Oh shit.
 			// It's because it's a compressed download.
-			return fmt.Errorf("shasum for %v does not match expected value", version)
+			return version, fmt.Errorf("shasum for %v does not match expected value", version)
 		}
 		fmt.Println("Shasums match! 🎉")
 	} else {
@@ -166,15 +177,15 @@ func (z *ZVM) Install(version string, force bool, mirror bool) error {
 		fmt.Println("Checking minisign signature...")
 		pubkey, err := minisign.NewPublicKey(z.Settings.MinisignPubKey)
 		if err != nil {
-			return fmt.Errorf("minisign public key decoding failed: %v", err)
+			return version, fmt.Errorf("minisign public key decoding failed: %v", err)
 		}
 		verified, err := pubkey.VerifyFromFile(tempFile.Name(), minisig)
 		if err != nil {
-			return fmt.Errorf("minisign verification failed: %v", err)
+			return version, fmt.Errorf("minisign verification failed: %v", err)
 		}
 
 		if !verified {
-			return fmt.Errorf("minisign signature for %v could not be verified", version)
+			return version, fmt.Errorf("minisign signature for %v could not be verified", version)
 		}
 
 		fmt.Println("Minisign signature verified! 🎉")
@@ -234,7 +245,7 @@ func (z *ZVM) Install(version string, force bool, mirror bool) error {
 	// I figure nobody wants crap just sitting around taking up valuable bytes.
 	_ = z.Clean()
 
-	return nil
+	return version, nil
 }
 
 // attemptMirrorDownload HTTP requests Zig downloads from the community mirrorlist.
@@ -676,7 +687,7 @@ func getVersionShasum(version string, data *map[string]map[string]any) (string, 
 // formatted as expected by Zig's download servers (e.g., "x86_64", "macos").
 // It checks ZVM_TARGET_ARCH and ZVM_TARGET_OS environment variables first,
 // falling back to the runtime-detected values.
-func 	zigStyleSysInfo() (arch string, osName string) {
+func zigStyleSysInfo() (arch string, osName string) {
 	arch = runtime.GOARCH
 	if envArch := os.Getenv("ZVM_TARGET_ARCH"); envArch != "" {
 		arch = envArch

@@ -28,12 +28,28 @@ func (z *ZVM) Run(version string, cmd []string) error {
 		return err
 	}
 
+	// Resolve shorthand against local installs
+	if resolved, resolveErr := resolveVersionShorthand(version, installedVersions); resolveErr == nil && resolved != version {
+		log.Debug("resolved version shorthand", "input", version, "resolved", resolved)
+		version = resolved
+	}
+
 	if slices.Contains(installedVersions, version) {
 		return z.runZig(version, cmd)
 	} else {
 		rawVersionStructure, err := z.fetchVersionMap()
 		if err != nil {
 			return err
+		}
+
+		// Also resolve against remote versions if not found locally
+		remoteVersions := make([]string, 0, len(rawVersionStructure))
+		for k := range rawVersionStructure {
+			remoteVersions = append(remoteVersions, k)
+		}
+		if resolved, resolveErr := resolveVersionShorthand(version, remoteVersions); resolveErr == nil && resolved != version {
+			log.Debug("resolved version shorthand (remote)", "input", version, "resolved", resolved)
+			version = resolved
 		}
 
 		_, err = getTarPath(version, &rawVersionStructure)
@@ -48,7 +64,7 @@ func (z *ZVM) Run(version string, cmd []string) error {
 		fmt.Printf("It looks like %s isn't installed. Would you like to install it? [y/n]\n", version)
 
 		if getConfirmation() {
-			if err = z.Install(version, false, true); err != nil {
+			if version, err = z.Install(version, false, true); err != nil {
 				return err
 			}
 			return z.runZig(version, cmd)

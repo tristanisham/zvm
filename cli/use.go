@@ -20,22 +20,32 @@ import (
 
 // Use switches the active Zig version to the specified one.
 // If the version is not installed, it prompts the user to install it.
-func (z *ZVM) Use(ver string) error {
+// Returns the resolved version string (which may differ from input if shorthand was used).
+func (z *ZVM) Use(ver string) (string, error) {
+	// Resolve shorthand against locally installed versions
+	if installedVersions, err := z.GetInstalledVersions(); err == nil {
+		if resolved, resolveErr := resolveVersionShorthand(ver, installedVersions); resolveErr == nil && resolved != ver {
+			log.Debug("resolved version shorthand", "input", ver, "resolved", resolved)
+			fmt.Printf("Resolved %q to %s\n", ver, resolved)
+			ver = resolved
+		}
+	}
+
 	if err := z.getVersion(ver); err != nil {
 		if errors.Is(err, os.ErrNotExist) {
 
 			fmt.Printf("It looks like %s isn't installed. Would you like to install it? [y/n]\n", ver)
 			if getConfirmation() {
-				if err = z.Install(ver, false, true); err != nil {
-					return err
+				if ver, err = z.Install(ver, false, true); err != nil {
+					return ver, err
 				}
 			} else {
-				return fmt.Errorf("version %s is not installed", ver)
+				return ver, fmt.Errorf("version %s is not installed", ver)
 			}
 		}
 	}
 
-	return z.setBin(ver)
+	return ver, z.setBin(ver)
 }
 
 // setBin updates the symbolic link 'bin' in the ZVM base directory to point to the specified version's bin directory.

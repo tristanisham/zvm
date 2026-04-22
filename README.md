@@ -165,6 +165,25 @@ latest version, use "master".
 zvm i master
 ```
 
+### Version Shorthand
+
+You can use abbreviated version numbers and ZVM will resolve them to the latest
+matching release:
+
+```sh
+zvm i 0.13     # Installs 0.13.0
+zvm i .13      # Same as above — leading dot implies "0."
+zvm i 0.15     # Installs 0.15.2 (latest 0.15.x patch)
+```
+
+Use `stable` to install the latest non-dev release:
+
+```sh
+zvm i stable   # Installs the latest stable release (e.g. 0.16.0)
+```
+
+Version shorthand works with all commands: `install`, `use`, `run`, and `rm`.
+
 ### Force Install
 
 As of `v0.7.6` ZVM will now skip downloading a version if it is already

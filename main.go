@@ -125,14 +125,14 @@ var zvmApp = &opts.Command{
 				}
 
 				// Install Zig
-				err := zvm.Install(req.Package, force, !cmd.Bool("nomirror"))
+				resolvedVersion, err := zvm.Install(req.Package, force, !cmd.Bool("nomirror"))
 				if err != nil {
 					return err
 				}
 
 				// Install ZLS (if requested)
 				if cmd.Bool("zls") {
-					if err := zvm.InstallZls(req.Package, zlsCompat, force); err != nil {
+					if err := zvm.InstallZls(resolvedVersion, zlsCompat, force); err != nil {
 						return err
 					}
 				}
@@ -171,11 +171,12 @@ var zvmApp = &opts.Command{
 
 					}
 
-					if err := zvm.Use(versionArg); err != nil {
+					resolvedVer, err := zvm.Use(versionArg)
+					if err != nil {
 						return err
 					}
 
-					fmt.Printf("Now using Zig %s\n", versionArg)
+					fmt.Printf("Now using Zig %s\n", resolvedVer)
 					return nil
 				}
 			},

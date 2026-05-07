@@ -5,6 +5,7 @@
 package cli
 
 import (
+	"archive/tar"
 	"archive/zip"
 	"crypto/sha256"
 	"crypto/tls"
@@ -27,6 +28,7 @@ import (
 	"github.com/jedisct1/go-minisign"
 	"github.com/schollz/progressbar/v3"
 	"github.com/tristanisham/zvm/cli/meta"
+	"github.com/ulikunitz/xz"
 
 	"github.com/charmbracelet/log"
 
@@ -739,14 +741,169 @@ func ExtractBundle(bundle, out string) error {
 	return fmt.Errorf("unknown format %v", extension)
 }
 
-// untarXZ extracts a .tar.xz file to the specified output directory using the 'tar' command.
+// Backends for untarXZ. Vars (not consts) so tests can swap them.
+var (
+	nativeXZBackend = untarXZNative
+	systemXZBackend = untarXZSystem
+)
+
+// untarXZ extracts a .tar.xz file to the specified output directory.
+// It tries a pure-Go xz+tar pipeline first so platforms whose system tar
+// lacks xz support (e.g. OpenBSD, NetBSD) work without external tooling.
+// On any error from the native path, it falls back to the system 'tar'
+// binary so users who relied on that path don't regress.
 func untarXZ(in, out string) error {
-	tar := exec.Command("tar", "-xf", in, "-C", out)
-	tar.Stdout = os.Stdout
-	tar.Stderr = os.Stderr
-	if err := tar.Run(); err != nil {
+	if err := nativeXZBackend(in, out); err != nil {
+		log.Debug("native xz extraction failed, falling back to system tar", "err", err)
+		return systemXZBackend(in, out)
+	}
+	return nil
+}
+
+func untarXZNative(in, out string) error {
+	f, err := os.Open(in)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+
+	xzr, err := xz.NewReader(f)
+	if err != nil {
+		return err
+	}
+	return extractTarStream(xzr, out)
+}
+
+func untarXZSystem(in, out string) error {
+	cmd := exec.Command("tar", "-xf", in, "-C", out)
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	if err := cmd.Run(); err != nil {
 		log.Debug("Error untarring bundle")
 		return err
+	}
+	return nil
+}
+
+// extractTarStream walks an uncompressed tar stream and writes its entries
+// under target. Path-traversal containment (entry names, symlink targets,
+// hardlink targets) is enforced by os.Root rather than string-prefix checks,
+// matching the pattern already used in cli/config.go and cli/uninstall.go.
+// Preserves regular-file mode bits and creates symlinks/hardlinks (Zig
+// tarballs contain symlinks under lib/).
+func extractTarStream(r io.Reader, target string) error {
+	if err := os.MkdirAll(target, 0o755); err != nil {
+		return err
+	}
+	root, err := os.OpenRoot(target)
+	if err != nil {
+		return err
+	}
+	defer root.Close()
+
+	tr := tar.NewReader(r)
+	for {
+		header, err := tr.Next()
+		switch {
+		case err == io.EOF:
+			return nil
+		case err != nil:
+			return err
+		case header == nil:
+			continue
+		}
+
+		name := normalizeTarPath(header.Name)
+		if name == "" {
+			continue
+		}
+
+		mode := os.FileMode(header.Mode) & os.ModePerm
+
+		switch header.Typeflag {
+		case tar.TypeDir:
+			if err := root.MkdirAll(name, 0o755); err != nil {
+				return err
+			}
+		case tar.TypeReg:
+			if err := mkdirParent(root, name); err != nil {
+				return err
+			}
+			f, err := root.OpenFile(name, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, mode|0o600)
+			if err != nil {
+				return err
+			}
+			if _, err := io.Copy(f, tr); err != nil {
+				f.Close()
+				return err
+			}
+			if err := f.Close(); err != nil {
+				return err
+			}
+		case tar.TypeSymlink:
+			// os.Root blocks *traversal* through escaping symlinks, but
+			// Root.Symlink does not validate the target string itself —
+			// a link pointing outside the root will still land on disk.
+			// Once extraction finishes, ZVM uses the directory via plain
+			// os.* calls, which would follow such a link. Reject these
+			// at creation as defense in depth.
+			if err := validateSymlinkTarget(name, header.Linkname); err != nil {
+				return err
+			}
+			if err := mkdirParent(root, name); err != nil {
+				return err
+			}
+			_ = root.Remove(name)
+			if err := root.Symlink(header.Linkname, name); err != nil {
+				return err
+			}
+		case tar.TypeLink:
+			if err := mkdirParent(root, name); err != nil {
+				return err
+			}
+			_ = root.Remove(name)
+			if err := root.Link(normalizeTarPath(header.Linkname), name); err != nil {
+				return err
+			}
+		}
+	}
+}
+
+// normalizeTarPath converts a tar entry name to a Root-compatible path:
+// forward-slash to OS separator, leading separators trimmed, "." collapsed
+// to "". Tar paths are always /-separated by the spec.
+func normalizeTarPath(name string) string {
+	clean := filepath.FromSlash(name)
+	clean = strings.TrimLeft(clean, "/"+string(os.PathSeparator))
+	if clean == "." {
+		return ""
+	}
+	return clean
+}
+
+// mkdirParent creates the parent directory chain of name within root,
+// no-op if the entry sits at the root.
+func mkdirParent(root *os.Root, name string) error {
+	dir := filepath.Dir(name)
+	if dir == "." || dir == "" {
+		return nil
+	}
+	return root.MkdirAll(dir, 0o755)
+}
+
+// validateSymlinkTarget rejects symlinks whose target is absolute or
+// resolves outside the extraction root. linkPath is the path of the
+// symlink itself (relative to the root), linkTarget is what it points to.
+func validateSymlinkTarget(linkPath, linkTarget string) error {
+	if linkTarget == "" {
+		return fmt.Errorf("symlink %s has empty target", linkPath)
+	}
+	if filepath.IsAbs(linkTarget) || strings.HasPrefix(linkTarget, "/") {
+		return fmt.Errorf("illegal symlink target (absolute): %s -> %s", linkPath, linkTarget)
+	}
+	resolved := filepath.Clean(filepath.Join(filepath.Dir(linkPath), filepath.FromSlash(linkTarget)))
+	if resolved == ".." || strings.HasPrefix(resolved, ".."+string(os.PathSeparator)) {
+		return fmt.Errorf("illegal symlink target (escapes root): %s -> %s", linkPath, linkTarget)
 	}
 	return nil
 }

@@ -201,6 +201,8 @@ func (z *ZVM) Install(version string, force bool, mirror bool) (string, error) {
 	if err := ExtractBundle(tempFile.Name(), z.baseDir); err != nil {
 		log.Fatal(err)
 	}
+
+	// TODO investigate why the CI thinks this is an error.
 	var tarName string
 
 	resultUrl, err := url.Parse(tarPath)

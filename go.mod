@@ -9,6 +9,7 @@ require (
 	github.com/nyaosorg/go-windows-junction v0.2.0
 	github.com/schollz/progressbar/v3 v3.19.0
 	github.com/tristanisham/clr v0.0.0-20221004001624-00ee60046d85
+	github.com/ulikunitz/xz v0.5.15
 	golang.org/x/mod v0.36.0
 	golang.org/x/sys v0.45.0
 )
@@ -21,7 +22,6 @@ require (
 	github.com/charmbracelet/x/term v0.2.2 // indirect
 	github.com/clipperhouse/displaywidth v0.11.0 // indirect
 	github.com/clipperhouse/uax29/v2 v2.7.0 // indirect
-	github.com/ulikunitz/xz v0.5.15 // indirect
 	github.com/xo/terminfo v0.0.0-20220910002029-abceb7e1c41e // indirect
 	golang.org/x/crypto v0.52.0 // indirect
 )

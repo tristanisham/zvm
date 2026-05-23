@@ -764,6 +764,16 @@ func untarXZ(in, out string) error {
 
 	tarReader := tar.NewReader(xzReader)
 
+	if err := os.MkdirAll(out); err != nil {
+		return fmt.Errorf("failed to create output directory: %w", err)
+	}
+
+	root, err := os.OpenRoot(out)
+	if err != nil {
+		return fmt.Errorf("failed to open root: %w", err)
+	}
+	defer root.Close()
+
 	for {
 		header, err := tarReader.Next()
 		if err == io.EOF {
@@ -777,17 +787,17 @@ func untarXZ(in, out string) error {
 
 		switch header.Typeflag {
 		case tar.TypeDir:
-			if err := os.MkdirAll(target, header.FileInfo().Mode()); err != nil {
+			if err := root.MkdirAll(target, header.FileInfo().Mode()); err != nil {
 				return fmt.Errorf("failed to create directory: %w", err)
 			}
 
 		case tar.TypeReg:
 			// Should the mode just be 0755?
-			if err := os.MkdirAll(filepath.Dir(target), header.FileInfo().Mode()); err != nil {
+			if err := root.MkdirAll(filepath.Dir(target), 0755); err != nil {
 				return fmt.Errorf("failed to create parent directory: %w", err)
 			}
 
-			outFile, err := os.OpenFile(target, os.O_CREATE|os.O_RDWR|os.O_TRUNC, header.FileInfo().Mode())
+			outFile, err := root.OpenFile(target, os.O_CREATE|os.O_RDWR|os.O_TRUNC, header.FileInfo().Mode())
 			if err != nil {
 				return fmt.Errorf("failed to create file: %w", err)
 			}
@@ -798,6 +808,15 @@ func untarXZ(in, out string) error {
 				return fmt.Errorf("failed to write file content: %w", err)
 			}
 			outFile.Close()
+
+		case tar.TypeSymlink:
+			if err := root.MkdirAll(filepath.Dir(target), 0755); err != nil {
+				return fmt.Errorf("failed to create parent directory: %w", err)
+			}
+
+			if err := root.Symlink(header.Linkname, target); err != nil {
+				return fmt.Errorf("failed to create symlink: %w", err)
+			}
 		}
 	}
 

@@ -782,12 +782,11 @@ func untarXZ(in, out string) error {
 			}
 
 		case tar.TypeReg:
-			// Should the mode just be 0755?
-			if err := os.MkdirAll(filepath.Dir(target), header.FileInfo().Mode()); err != nil {
+if err := os.MkdirAll(filepath.Dir(target), 0755); err != nil {
 				return fmt.Errorf("failed to create parent directory: %w", err)
 			}
 
-			outFile, err := os.OpenFile(target, os.O_CREATE|os.O_RDWR|os.O_TRUNC, header.FileInfo().Mode())
+			outFile, err := os.OpenFile(target, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, header.FileInfo().Mode())
 			if err != nil {
 				return fmt.Errorf("failed to create file: %w", err)
 			}

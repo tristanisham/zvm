@@ -5,6 +5,7 @@ package meta
 
 import (
 	"fmt"
+	"os"
 	"runtime"
 )
 
@@ -16,3 +17,11 @@ const (
 )
 
 var VerCopy = fmt.Sprintf("%s %s/%s", VERSION, runtime.GOOS, runtime.GOARCH)
+
+var Debug bool
+
+func init() {
+	if _, ok := os.LookupEnv("ZVM_DEBUG"); ok {
+		Debug = true
+	}
+}

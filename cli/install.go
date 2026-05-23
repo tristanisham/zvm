@@ -5,6 +5,7 @@
 package cli
 
 import (
+	"archive/tar"
 	"archive/zip"
 	"crypto/sha256"
 	"crypto/tls"
@@ -23,10 +24,12 @@ import (
 	"runtime"
 	"slices"
 	"strings"
+	"time"
 
 	"github.com/jedisct1/go-minisign"
 	"github.com/schollz/progressbar/v3"
 	"github.com/tristanisham/zvm/cli/meta"
+	"github.com/ulikunitz/xz"
 
 	"github.com/charmbracelet/log"
 
@@ -739,14 +742,65 @@ func ExtractBundle(bundle, out string) error {
 	return fmt.Errorf("unknown format %v", extension)
 }
 
-// untarXZ extracts a .tar.xz file to the specified output directory using the 'tar' command.
+// untarXZ extracts a .tar.xz file to the specified output directory.
 func untarXZ(in, out string) error {
-	tar := exec.Command("tar", "-xf", in, "-C", out)
-	tar.Stdout = os.Stdout
-	tar.Stderr = os.Stderr
-	if err := tar.Run(); err != nil {
-		log.Debug("Error untarring bundle")
-		return err
+	var timer time.Time
+	if meta.Debug {
+		timer = time.Now()
+	}
+
+	file, err := os.Open(in)
+	if err != nil {
+		return fmt.Errorf("failed to open archive %w", err)
+	}
+	defer file.Close()
+
+	xzReader, err := xz.NewReader(file)
+	if err != nil {
+		return fmt.Errorf("failed to initalize xz reader %w", err)
+	}
+
+	tarReader := tar.NewReader(xzReader)
+
+	for {
+		header, err := tarReader.Next()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return fmt.Errorf("failed to read tar header %w", err)
+		}
+
+		target := filepath.Join(out, filepath.Clean(header.Name))
+
+		switch header.Typeflag {
+		case tar.TypeDir:
+			if err := os.MkdirAll(target, header.FileInfo().Mode()); err != nil {
+				return fmt.Errorf("failed to create directory: %w", err)
+			}
+
+		case tar.TypeReg:
+			// Should the mode just be 0755?
+			if err := os.MkdirAll(filepath.Dir(target), header.FileInfo().Mode()); err != nil {
+				return fmt.Errorf("failed to create parent directory: %w", err)
+			}
+
+			outFile, err := os.OpenFile(target, os.O_CREATE|os.O_RDWR|os.O_TRUNC, header.FileInfo().Mode())
+			if err != nil {
+				return fmt.Errorf("failed to create file: %w", err)
+			}
+
+			// Copy contents streaming from the tar reader
+			if _, err := io.Copy(outFile, tarReader); err != nil {
+				outFile.Close()
+				return fmt.Errorf("failed to write file content: %w", err)
+			}
+			outFile.Close()
+		}
+	}
+
+	if meta.Debug {
+		log.Debugf("untarXZ took %s", time.Since(timer))
 	}
 	return nil
 }

@@ -764,7 +764,7 @@ func untarXZ(in, out string) error {
 
 	tarReader := tar.NewReader(xzReader)
 
-	if err := os.MkdirAll(out); err != nil {
+	if err := os.MkdirAll(out, 0755); err != nil {
 		return fmt.Errorf("failed to create output directory: %w", err)
 	}
 

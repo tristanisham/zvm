@@ -5,14 +5,23 @@ package meta
 
 import (
 	"fmt"
+	"os"
 	"runtime"
 )
 
 const (
-	VERSION = "v0.8.20"
+	VERSION = "v0.8.21"
 
 	// VERSION = "v0.0.0" // For testing zvm upgrade
 
 )
 
 var VerCopy = fmt.Sprintf("%s %s/%s", VERSION, runtime.GOOS, runtime.GOARCH)
+
+var Debug bool
+
+func init() {
+	if _, ok := os.LookupEnv("ZVM_DEBUG"); ok {
+		Debug = true
+	}
+}

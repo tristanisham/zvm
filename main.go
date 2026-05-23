@@ -26,12 +26,12 @@ var (
 )
 
 var zvmApp = &opts.Command{
-	Name:        "zvm",
-	Usage:       "Zig Version Manager",
-	Description: "zvm lets you easily install, upgrade, and switch between different versions of Zig.",
-	Version:     meta.VerCopy,
-	Copyright:   fmt.Sprintf("Copyright © %d Tristan Isham", time.Now().Year()),
-	Suggest:     true,
+	Name:                  "zvm",
+	Usage:                 "Zig Version Manager",
+	Description:           "zvm lets you easily install, upgrade, and switch between different versions of Zig.",
+	Version:               meta.VerCopy,
+	Copyright:             fmt.Sprintf("Copyright © %d Tristan Isham", time.Now().Year()),
+	Suggest:               true,
 	EnableShellCompletion: true,
 	ConfigureShellCompletionCommand: func(cmd *opts.Command) {
 		cmd.Hidden = false
@@ -389,7 +389,7 @@ var zvmApp = &opts.Command{
 }
 
 func main() {
-	if _, ok := os.LookupEnv("ZVM_DEBUG"); ok {
+	if meta.Debug {
 		log.SetLevel(log.DebugLevel)
 	}
 

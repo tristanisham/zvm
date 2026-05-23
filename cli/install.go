@@ -208,7 +208,6 @@ func (z *ZVM) Install(version string, force bool, mirror bool) (string, error) {
 	resultUrl, err := url.Parse(tarPath)
 	if err != nil {
 		log.Error(err)
-		tarName = version
 	}
 
 	// Maybe think of a better algorithm
@@ -216,6 +215,10 @@ func (z *ZVM) Install(version string, force bool, mirror bool) (string, error) {
 	tarName = urlPath[len(urlPath)-1]
 	tarName = strings.TrimSuffix(tarName, ".tar.xz")
 	tarName = strings.TrimSuffix(tarName, ".zip")
+
+	if tarName == "" {
+		tarName = version
+	}
 
 	if err := os.Rename(filepath.Join(z.baseDir, tarName), filepath.Join(z.baseDir, version)); err != nil {
 		if _, err := os.Stat(filepath.Join(z.baseDir, version)); err == nil {

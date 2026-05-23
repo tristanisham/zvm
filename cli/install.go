@@ -860,17 +860,19 @@ func unzipSource(source, destination string) error {
 		}()
 
 		path := filepath.Join(destination, f.Name)
-		if !strings.HasPrefix(path, filepath.Clean(destination)+string(os.PathSeparator)) {
-			return fmt.Errorf("illegal file path: %s", path)
+		// TODO look into how to make this more efficient and to trim excess calls.
+		root, err := os.OpenRoot(path)
+		if err != nil {
+			return fmt.Errorf("failed to open root %w", err)
 		}
 
 		if f.FileInfo().IsDir() {
-			os.MkdirAll(path, f.Mode())
+			root.MkdirAll(path, f.Mode())
 		} else {
-			os.MkdirAll(filepath.Dir(path), f.Mode())
-			f, err := os.OpenFile(path, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, f.Mode())
+			root.MkdirAll(filepath.Dir(path), f.Mode())
+			f, err := root.OpenFile(path, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, f.Mode())
 			if err != nil {
-				return err
+				return fmt.Errorf("failed to open file %w", err)
 			}
 
 			defer func() {
@@ -881,7 +883,7 @@ func unzipSource(source, destination string) error {
 
 			_, err = io.Copy(f, rc)
 			if err != nil {
-				return err
+				return fmt.Errorf("failed to copy zip archive %w", err)
 			}
 		}
 

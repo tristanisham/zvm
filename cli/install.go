@@ -786,11 +786,11 @@ func untarXZ(in, out string) error {
 			return fmt.Errorf("failed to read tar header %w", err)
 		}
 
-		target := filepath.Join(out, filepath.Clean(header.Name))
+		target := filepath.Clean(header.Name)
 
 		switch header.Typeflag {
 		case tar.TypeDir:
-			if err := root.MkdirAll(target, header.FileInfo().Mode()); err != nil {
+			if err := root.MkdirAll(target, header.FileInfo().Mode()&(^fs.ModeDir)); err != nil {
 				return fmt.Errorf("failed to create directory: %w", err)
 			}
 

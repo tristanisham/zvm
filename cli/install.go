@@ -790,7 +790,7 @@ func untarXZ(in, out string) error {
 
 		switch header.Typeflag {
 		case tar.TypeDir:
-			if err := root.MkdirAll(target, header.FileInfo().Mode()); err != nil {
+			if err := root.MkdirAll(target, header.FileInfo().Mode()&(^fs.ModeDir)); err != nil {
 				return fmt.Errorf("failed to create directory: %w", err)
 			}
 

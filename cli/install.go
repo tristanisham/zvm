@@ -7,11 +7,13 @@ package cli
 import (
 	"archive/tar"
 	"archive/zip"
+	"bytes"
 	"crypto/sha256"
 	"crypto/tls"
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"hash"
 	"io"
 	"io/fs"
 	"math/rand"
@@ -35,6 +37,8 @@ import (
 
 	"github.com/tristanisham/clr"
 )
+
+const DEFAULT_HTTP_TIMEOUT = 30 * time.Second
 
 // Install downloads and installs the specified Zig version.
 // It handles checking for existing installations, verifying checksums,
@@ -105,20 +109,6 @@ func (z *ZVM) Install(version string, force bool, mirror bool) (string, error) {
 
 	log.Debug("tarPath", "url", tarPath)
 
-	var tarResp *http.Response
-	var minisig minisign.Signature
-	mirror = mirror && z.Settings.UseMirrorList() && z.Settings.VersionMapUrl == DefaultSettings.VersionMapUrl
-	if mirror {
-		tarResp, minisig, err = attemptMirrorDownload(z.Settings.MirrorListUrl, tarPath)
-	} else {
-		tarResp, err = attemptDownload(tarPath)
-	}
-
-	if err != nil {
-		return version, err
-	}
-	defer tarResp.Body.Close()
-
 	_, targetOS := zigStyleSysInfo()
 	var pathEnding string
 	if targetOS == "windows" {
@@ -142,13 +132,16 @@ func (z *ZVM) Install(version string, force bool, mirror bool) (string, error) {
 		clrOptVerStr = version
 	}
 
-	pbar := progressbar.DefaultBytes(
-		int64(tarResp.ContentLength),
-		fmt.Sprintf("Downloading %s:", clrOptVerStr),
-	)
+	var minisig minisign.Signature
+	var checksum hash.Hash
+	mirror = mirror && z.Settings.UseMirrorList() && z.Settings.VersionMapUrl == DefaultSettings.VersionMapUrl
+	if mirror {
+		checksum, minisig, err = attemptMirrorDownload(z.Settings.MirrorListUrl, tempFile, tarPath, clrOptVerStr)
+	} else {
+		var buf bytes.Buffer
+		checksum, err = attemptDownload(&buf, tarPath, clrOptVerStr, true, DEFAULT_HTTP_TIMEOUT)
+	}
 
-	hash := sha256.New()
-	_, err = io.Copy(io.MultiWriter(tempFile, pbar, hash), tarResp.Body)
 	if err != nil {
 		return version, err
 	}
@@ -162,7 +155,7 @@ func (z *ZVM) Install(version string, force bool, mirror bool) (string, error) {
 
 	fmt.Println("Checking shasum...")
 	if len(shasum) > 0 {
-		ourHexHash := hex.EncodeToString(hash.Sum(nil))
+		ourHexHash := hex.EncodeToString(checksum.Sum(nil))
 		log.Debug("shasum check:", "theirs", shasum, "ours", ourHexHash)
 		if ourHexHash != shasum {
 			// TODO (tristan)
@@ -256,9 +249,20 @@ func (z *ZVM) Install(version string, force bool, mirror bool) (string, error) {
 	return version, nil
 }
 
+// Truncate does not reset the offset, so we also need to seek to the beginning.
+func resetTempDownloadFile(f *os.File) error {
+	err := f.Truncate(0)
+	if err != nil {
+		return fmt.Errorf("error truncating file: %w", err)
+	}
+
+	_, err = f.Seek(0, 0)
+	return err
+}
+
 // attemptMirrorDownload HTTP requests Zig downloads from the community mirrorlist.
 // Returns a tuple of (response, minisig, error).
-func attemptMirrorDownload(mirrorListURL string, tarURL string) (*http.Response, minisign.Signature, error) {
+func attemptMirrorDownload(mirrorListURL string, tempFile *os.File, tarURL string, clrOptVerStr string) (hash.Hash, minisign.Signature, error) {
 	log.Debug("attemptMirrorDownload", "mirrorListURL", mirrorListURL, "tarURL", tarURL)
 	tarURLParsed, err := url.Parse(tarURL)
 	if err != nil {
@@ -266,18 +270,13 @@ func attemptMirrorDownload(mirrorListURL string, tarURL string) (*http.Response,
 	}
 	tarName := path.Base(tarURLParsed.Path)
 
-	resp, err := attemptDownload(mirrorListURL)
+	var buf bytes.Buffer
+	_, err = attemptDownload(&buf, mirrorListURL, "", false, DEFAULT_HTTP_TIMEOUT)
 	if err != nil {
 		return nil, minisign.Signature{}, fmt.Errorf("%w: %w", ErrDownloadFail, err)
 	}
-	defer resp.Body.Close()
 
-	mirrorBytes, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, minisign.Signature{}, err
-	}
-
-	mirrors := strings.Split(string(mirrorBytes), "\n")
+	mirrors := strings.Split(buf.String(), "\n")
 	// Pop empty field after terminating newline
 	mirrors = mirrors[:len(mirrors)-1]
 	rand.Shuffle(len(mirrors), func(i, j int) { mirrors[i], mirrors[j] = mirrors[j], mirrors[i] })
@@ -292,20 +291,21 @@ func attemptMirrorDownload(mirrorListURL string, tarURL string) (*http.Response,
 		}
 
 		log.Debug("attemptMirrorDownload", "mirror", i, "mirrorURL", mirrorTarURL)
-		tarResp, err := attemptDownload(mirrorTarURL)
+		checksum, err := attemptDownload(tempFile, mirrorTarURL, clrOptVerStr, true, DEFAULT_HTTP_TIMEOUT)
 		if err != nil {
 			log.Debug("mirror tar error", "mirror", mirror, "error", err)
+			resetTempDownloadFile(tempFile)
 			continue
 		}
 
 		minisig, err := attemptMinisigDownload(mirrorTarURL)
 		if err != nil {
 			log.Debug("mirror minisig error", "mirror", mirror, "error", err)
-			tarResp.Body.Close()
+			resetTempDownloadFile(tempFile)
 			continue
 		}
 
-		return tarResp, minisig, nil
+		return checksum, minisig, nil
 	}
 
 	return nil, minisign.Signature{}, fmt.Errorf("%w: %w: %w", ErrDownloadFail, errors.New("all download attempts failed"), err)
@@ -313,13 +313,13 @@ func attemptMirrorDownload(mirrorListURL string, tarURL string) (*http.Response,
 
 // attemptMinisigDownload downloads the minisign signature for a given tarball URL.
 func attemptMinisigDownload(tarURL string) (minisign.Signature, error) {
-	minisigResp, err := attemptDownload(tarURL + ".minisig")
+	var buf bytes.Buffer
+	_, err := attemptDownload(&buf, tarURL+".minisig", "", false, DEFAULT_HTTP_TIMEOUT)
 	if err != nil {
 		return minisign.Signature{}, err
 	}
-	defer minisigResp.Body.Close()
 
-	minisigBytes, err := io.ReadAll(minisigResp.Body)
+	minisigBytes, err := io.ReadAll(&buf)
 	if err != nil {
 		return minisign.Signature{}, err
 	}
@@ -328,7 +328,7 @@ func attemptMinisigDownload(tarURL string) (minisign.Signature, error) {
 }
 
 // attemptDownload creates a generic http request for ZVM.
-func attemptDownload(url string) (*http.Response, error) {
+func attemptDownload(w io.Writer, url string, clrOptVerStr string, useProgressBar bool, clientTimeout time.Duration) (hash.Hash, error) {
 	req, err := createDownloadReq(url)
 	if err != nil {
 		return nil, fmt.Errorf("%w: %w", ErrDownloadFail, err)
@@ -355,6 +355,7 @@ func attemptDownload(url string) (*http.Response, error) {
 		log.Debug("ZVM_SKIP_TLS_VERIFY", "enabled", false)
 	}
 
+	client.Timeout = clientTimeout
 	resp, err := client.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("%w: %w", ErrDownloadFail, err)
@@ -364,7 +365,26 @@ func attemptDownload(url string) (*http.Response, error) {
 		return nil, fmt.Errorf("%w: %s", ErrDownloadFail, resp.Status)
 	}
 
-	return resp, nil
+	checksum := sha256.New()
+	var multiWriter io.Writer
+	if useProgressBar {
+		pbar := progressbar.DefaultBytes(
+			int64(resp.ContentLength),
+			fmt.Sprintf("Downloading %s:", clrOptVerStr),
+		)
+		multiWriter = io.MultiWriter(w, checksum, pbar)
+	} else {
+		multiWriter = io.MultiWriter(w, checksum)
+
+	}
+	_, err = io.Copy(multiWriter, resp.Body)
+	if err != nil {
+		resp.Body.Close()
+		return nil, err
+	}
+	resp.Body.Close()
+
+	return checksum, nil
 }
 
 // createDownloadReq creates a new HTTP GET request for downloading Zig or ZLS,
@@ -497,12 +517,6 @@ func (z *ZVM) InstallZls(requestedVersion string, compatMode string, force bool)
 
 	log.Debug("tarPath", "url", tarPath)
 
-	tarResp, err := attemptDownload(tarPath)
-	if err != nil {
-		return err
-	}
-	defer tarResp.Body.Close()
-
 	_, zlsTargetOS := zigStyleSysInfo()
 	var pathEnding string
 	if zlsTargetOS == "windows" {
@@ -511,13 +525,13 @@ func (z *ZVM) InstallZls(requestedVersion string, compatMode string, force bool)
 		pathEnding = "*.tar.xz"
 	}
 
-	tempDir, err := os.CreateTemp(z.baseDir, pathEnding)
+	tempFile, err := os.CreateTemp(z.baseDir, pathEnding)
 	if err != nil {
 		return err
 	}
 
-	defer tempDir.Close()
-	defer os.RemoveAll(tempDir.Name())
+	defer tempFile.Close()
+	defer os.RemoveAll(tempFile.Name())
 
 	var clr_opt_ver_str string
 	if z.Settings.UseColor {
@@ -526,20 +540,14 @@ func (z *ZVM) InstallZls(requestedVersion string, compatMode string, force bool)
 		clr_opt_ver_str = zlsVersion
 	}
 
-	pbar := progressbar.DefaultBytes(
-		int64(tarResp.ContentLength),
-		fmt.Sprintf("Downloading ZLS %s:", clr_opt_ver_str),
-	)
-
-	hash := sha256.New()
-	_, err = io.Copy(io.MultiWriter(tempDir, pbar, hash), tarResp.Body)
+	checksum, err := attemptDownload(tempFile, tarPath, clr_opt_ver_str, true, DEFAULT_HTTP_TIMEOUT)
 	if err != nil {
 		return err
 	}
 
 	fmt.Println("Checking ZLS shasum...")
 	if len(shasum) > 0 {
-		ourHexHash := hex.EncodeToString(hash.Sum(nil))
+		ourHexHash := hex.EncodeToString(checksum.Sum(nil))
 		log.Debug("shasum check:", "theirs", shasum, "ours", ourHexHash)
 		if ourHexHash != shasum {
 			// TODO (tristan)
@@ -561,7 +569,7 @@ func (z *ZVM) InstallZls(requestedVersion string, compatMode string, force bool)
 	}
 	defer os.RemoveAll(zlsTempDir)
 
-	if err := ExtractBundle(tempDir.Name(), zlsTempDir); err != nil {
+	if err := ExtractBundle(tempFile.Name(), zlsTempDir); err != nil {
 		log.Fatal(err)
 	}
 

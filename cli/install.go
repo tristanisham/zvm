@@ -38,7 +38,7 @@ import (
 	"github.com/tristanisham/clr"
 )
 
-const DEFAULT_HTTP_TIMEOUT = 30 * time.Second
+const defaultHTTPTimeout = 30 * time.Second
 
 // Install downloads and installs the specified Zig version.
 // It handles checking for existing installations, verifying checksums,
@@ -138,8 +138,7 @@ func (z *ZVM) Install(version string, force bool, mirror bool) (string, error) {
 	if mirror {
 		checksum, minisig, err = attemptMirrorDownload(z.Settings.MirrorListUrl, tempFile, tarPath, clrOptVerStr)
 	} else {
-		var buf bytes.Buffer
-		checksum, err = attemptDownload(&buf, tarPath, clrOptVerStr, true, DEFAULT_HTTP_TIMEOUT)
+		checksum, err = attemptDownload(tempFile, tarPath, clrOptVerStr, true, defaultHTTPTimeout)
 	}
 
 	if err != nil {
@@ -271,7 +270,7 @@ func attemptMirrorDownload(mirrorListURL string, tempFile *os.File, tarURL strin
 	tarName := path.Base(tarURLParsed.Path)
 
 	var buf bytes.Buffer
-	_, err = attemptDownload(&buf, mirrorListURL, "", false, DEFAULT_HTTP_TIMEOUT)
+	_, err = attemptDownload(&buf, mirrorListURL, "", false, defaultHTTPTimeout)
 	if err != nil {
 		return nil, minisign.Signature{}, fmt.Errorf("%w: %w", ErrDownloadFail, err)
 	}
@@ -291,17 +290,21 @@ func attemptMirrorDownload(mirrorListURL string, tempFile *os.File, tarURL strin
 		}
 
 		log.Debug("attemptMirrorDownload", "mirror", i, "mirrorURL", mirrorTarURL)
-		checksum, err := attemptDownload(tempFile, mirrorTarURL, clrOptVerStr, true, DEFAULT_HTTP_TIMEOUT)
+		checksum, err := attemptDownload(tempFile, mirrorTarURL, clrOptVerStr, true, defaultHTTPTimeout)
 		if err != nil {
 			log.Debug("mirror tar error", "mirror", mirror, "error", err)
-			resetTempDownloadFile(tempFile)
+			if err = resetTempDownloadFile(tempFile); err != nil {
+				log.Debug("failed to reset temporary file", err)
+			}
 			continue
 		}
 
 		minisig, err := attemptMinisigDownload(mirrorTarURL)
 		if err != nil {
 			log.Debug("mirror minisig error", "mirror", mirror, "error", err)
-			resetTempDownloadFile(tempFile)
+			if err = resetTempDownloadFile(tempFile); err != nil {
+				log.Debug("failed to reset temporary file", err)
+			}
 			continue
 		}
 
@@ -314,7 +317,7 @@ func attemptMirrorDownload(mirrorListURL string, tempFile *os.File, tarURL strin
 // attemptMinisigDownload downloads the minisign signature for a given tarball URL.
 func attemptMinisigDownload(tarURL string) (minisign.Signature, error) {
 	var buf bytes.Buffer
-	_, err := attemptDownload(&buf, tarURL+".minisig", "", false, DEFAULT_HTTP_TIMEOUT)
+	_, err := attemptDownload(&buf, tarURL+".minisig", "", false, defaultHTTPTimeout)
 	if err != nil {
 		return minisign.Signature{}, err
 	}
@@ -360,6 +363,7 @@ func attemptDownload(w io.Writer, url string, clrOptVerStr string, useProgressBa
 	if err != nil {
 		return nil, fmt.Errorf("%w: %w", ErrDownloadFail, err)
 	}
+	defer resp.Body.Close()
 
 	if resp.StatusCode != 200 {
 		return nil, fmt.Errorf("%w: %s", ErrDownloadFail, resp.Status)
@@ -379,10 +383,8 @@ func attemptDownload(w io.Writer, url string, clrOptVerStr string, useProgressBa
 	}
 	_, err = io.Copy(multiWriter, resp.Body)
 	if err != nil {
-		resp.Body.Close()
 		return nil, err
 	}
-	resp.Body.Close()
 
 	return checksum, nil
 }
@@ -540,7 +542,7 @@ func (z *ZVM) InstallZls(requestedVersion string, compatMode string, force bool)
 		clr_opt_ver_str = zlsVersion
 	}
 
-	checksum, err := attemptDownload(tempFile, tarPath, clr_opt_ver_str, true, DEFAULT_HTTP_TIMEOUT)
+	checksum, err := attemptDownload(tempFile, tarPath, clr_opt_ver_str, true, defaultHTTPTimeout)
 	if err != nil {
 		return err
 	}

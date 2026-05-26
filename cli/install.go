@@ -847,7 +847,23 @@ func unzipSource(source, destination string) error {
 
 	os.MkdirAll(destination, 0755)
 
+	root, err := os.OpenRoot(destination)
+	if err != nil {
+		return fmt.Errorf("failed to open root %w", err)
+	}
+
 	extractAndWriteFile := func(f *zip.File) error {
+		fpath := path.Clean(f.Name)
+		mode := f.Mode().Perm()
+		if f.FileInfo().IsDir() {
+			err := root.MkdirAll(fpath, mode)
+			if err != nil {
+				return err
+			}
+
+			return nil
+		}
+
 		rc, err := f.Open()
 		if err != nil {
 			return err
@@ -859,32 +875,20 @@ func unzipSource(source, destination string) error {
 			}
 		}()
 
-		path := filepath.Join(destination, f.Name)
-		// TODO look into how to make this more efficient and to trim excess calls.
-		root, err := os.OpenRoot(path)
+		outFile, err := root.OpenFile(fpath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, mode)
 		if err != nil {
-			return fmt.Errorf("failed to open root %w", err)
+			return fmt.Errorf("failed to open file %w", err)
 		}
 
-		if f.FileInfo().IsDir() {
-			root.MkdirAll(path, f.Mode())
-		} else {
-			root.MkdirAll(filepath.Dir(path), f.Mode())
-			f, err := root.OpenFile(path, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, f.Mode())
-			if err != nil {
-				return fmt.Errorf("failed to open file %w", err)
+		defer func() {
+			if err := outFile.Close(); err != nil {
+				panic(err)
 			}
+		}()
 
-			defer func() {
-				if err := f.Close(); err != nil {
-					panic(err)
-				}
-			}()
-
-			_, err = io.Copy(f, rc)
-			if err != nil {
-				return fmt.Errorf("failed to copy zip archive %w", err)
-			}
+		_, err = io.Copy(outFile, rc)
+		if err != nil {
+			return fmt.Errorf("failed to copy zip archive %w", err)
 		}
 
 		return nil

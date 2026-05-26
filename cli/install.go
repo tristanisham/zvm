@@ -831,72 +831,104 @@ func untarXZ(in, out string) error {
 
 // unzipSource extracts a .zip file to the specified destination directory.
 func unzipSource(source, destination string) error {
-	// 1. Open the zip file
+	var timer time.Time
+	if meta.Debug {
+		timer = time.Now()
+	}
+
 	reader, err := zip.OpenReader(source)
 	if err != nil {
 		return err
 	}
-
 	defer reader.Close()
 
-	// 2. Get the absolute destination path
 	destination, err = filepath.Abs(destination)
 	if err != nil {
 		return err
 	}
 
-	os.MkdirAll(destination, 0755)
-
-	extractAndWriteFile := func(f *zip.File) error {
-		rc, err := f.Open()
-		if err != nil {
-			return err
-		}
-
-		defer func() {
-			if err := rc.Close(); err != nil {
-				panic(err)
-			}
-		}()
-
-		path := filepath.Join(destination, f.Name)
-		// TODO look into how to make this more efficient and to trim excess calls.
-		root, err := os.OpenRoot(path)
-		if err != nil {
-			return fmt.Errorf("failed to open root %w", err)
-		}
-
-		if f.FileInfo().IsDir() {
-			root.MkdirAll(path, f.Mode())
-		} else {
-			root.MkdirAll(filepath.Dir(path), f.Mode())
-			f, err := root.OpenFile(path, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, f.Mode())
-			if err != nil {
-				return fmt.Errorf("failed to open file %w", err)
-			}
-
-			defer func() {
-				if err := f.Close(); err != nil {
-					panic(err)
-				}
-			}()
-
-			_, err = io.Copy(f, rc)
-			if err != nil {
-				return fmt.Errorf("failed to copy zip archive %w", err)
-			}
-		}
-
-		return nil
+	if err := os.MkdirAll(destination, 0755); err != nil {
+		return fmt.Errorf("failed to create destination directory: %w", err)
 	}
 
-	// 3. Iterate over zip files inside the archive and unzip each of them
+	root, err := os.OpenRoot(destination)
+	if err != nil {
+		return fmt.Errorf("failed to open root %w", err)
+	}
+	defer root.Close()
+
 	for _, f := range reader.File {
-		err := extractAndWriteFile(f)
-		if err != nil {
-			return err
+		name := filepath.Clean(f.Name)
+		mode := f.Mode()
+		perm := mode.Perm()
+
+		if mode.IsDir() {
+			if perm == 0 {
+				perm = 0755
+			}
+
+			if err := root.MkdirAll(name, perm); err != nil {
+				return fmt.Errorf("failed to create directory %q: %w", f.Name, err)
+			}
+			continue
 		}
 
+		if err := root.MkdirAll(filepath.Dir(name), 0755); err != nil {
+			return fmt.Errorf("failed to create parent directory for %q: %w", f.Name, err)
+		}
+
+		if mode&os.ModeSymlink != 0 {
+			src, err := f.Open()
+			if err != nil {
+				return fmt.Errorf("failed to open symlink %q: %w", f.Name, err)
+			}
+
+			targetBytes, readErr := io.ReadAll(src)
+			closeErr := src.Close()
+			if readErr != nil {
+				return fmt.Errorf("failed to read symlink %q: %w", f.Name, readErr)
+			}
+			if closeErr != nil {
+				return fmt.Errorf("failed to close symlink %q: %w", f.Name, closeErr)
+			}
+
+			if err := root.Symlink(string(targetBytes), name); err != nil {
+				return fmt.Errorf("failed to create symlink %q: %w", f.Name, err)
+			}
+			continue
+		}
+
+		if perm == 0 {
+			perm = 0644
+		}
+
+		src, err := f.Open()
+		if err != nil {
+			return fmt.Errorf("failed to open file %q: %w", f.Name, err)
+		}
+
+		outFile, err := root.OpenFile(name, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, perm)
+		if err != nil {
+			src.Close()
+			return fmt.Errorf("failed to create file %q: %w", f.Name, err)
+		}
+
+		_, copyErr := io.Copy(outFile, src)
+		closeOutErr := outFile.Close()
+		closeSrcErr := src.Close()
+		if copyErr != nil {
+			return fmt.Errorf("failed to write file %q: %w", f.Name, copyErr)
+		}
+		if closeOutErr != nil {
+			return fmt.Errorf("failed to close file %q: %w", f.Name, closeOutErr)
+		}
+		if closeSrcErr != nil {
+			return fmt.Errorf("failed to close zip entry %q: %w", f.Name, closeSrcErr)
+		}
+	}
+
+	if meta.Debug {
+		log.Debug("unzipSource", "duration", time.Since(timer))
 	}
 
 	return nil

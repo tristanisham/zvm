@@ -852,8 +852,11 @@ func unzipSource(source, destination string) error {
 		return fmt.Errorf("failed to open root %w", err)
 	}
 
+	defer root.Close()
+
 	extractAndWriteFile := func(f *zip.File) error {
 		fpath := path.Clean(f.Name)
+		fpath = strings.TrimPrefix(fpath, "/")
 		mode := f.Mode().Perm()
 		if f.FileInfo().IsDir() {
 			err := root.MkdirAll(fpath, mode)
@@ -869,22 +872,21 @@ func unzipSource(source, destination string) error {
 			return err
 		}
 
-		defer func() {
-			if err := rc.Close(); err != nil {
-				panic(err)
+		defer rc.Close()
+
+		parent := path.Dir(fpath)
+		if parent != "." {
+			if err := root.MkdirAll(parent, 0755); err != nil {
+				return fmt.Errorf("failed to create parent directory %w", err)
 			}
-		}()
+		}
 
 		outFile, err := root.OpenFile(fpath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, mode)
 		if err != nil {
 			return fmt.Errorf("failed to open file %w", err)
 		}
 
-		defer func() {
-			if err := outFile.Close(); err != nil {
-				panic(err)
-			}
-		}()
+		defer outFile.Close()
 
 		_, err = io.Copy(outFile, rc)
 		if err != nil {

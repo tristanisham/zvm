@@ -360,7 +360,8 @@ func attemptDownload(url string) (*http.Response, error) {
 		return nil, fmt.Errorf("%w: %w", ErrDownloadFail, err)
 	}
 
-	if resp.StatusCode != 200 {
+	if resp.StatusCode != http.StatusOK {
+		resp.Body.Close()
 		return nil, fmt.Errorf("%w: %s", ErrDownloadFail, resp.Status)
 	}
 

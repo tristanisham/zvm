@@ -7,6 +7,7 @@ package cli
 import (
 	"archive/tar"
 	"archive/zip"
+	"bufio"
 	"crypto/sha256"
 	"crypto/tls"
 	"encoding/hex"
@@ -761,7 +762,9 @@ func untarXZ(in, out string) error {
 	}
 	defer file.Close()
 
-	xzReader, err := xz.NewReader(file)
+	bufferedReader := bufio.NewReaderSize(file, 256*1024)
+
+	xzReader, err := xz.NewReader(bufferedReader)
 	if err != nil {
 		return fmt.Errorf("failed to initalize xz reader %w", err)
 	}

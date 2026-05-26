@@ -836,78 +836,95 @@ func unzipSource(source, destination string) error {
 		timer = time.Now()
 	}
 
-	// 1. Open the zip file
 	reader, err := zip.OpenReader(source)
 	if err != nil {
 		return err
 	}
-
 	defer reader.Close()
 
-	// 2. Get the absolute destination path
 	destination, err = filepath.Abs(destination)
 	if err != nil {
 		return err
 	}
 
-	os.MkdirAll(destination, 0755)
+	if err := os.MkdirAll(destination, 0755); err != nil {
+		return fmt.Errorf("failed to create destination directory: %w", err)
+	}
 
 	root, err := os.OpenRoot(destination)
 	if err != nil {
 		return fmt.Errorf("failed to open root %w", err)
 	}
-
 	defer root.Close()
 
-	extractAndWriteFile := func(f *zip.File) error {
-		fpath := path.Clean(f.Name)
-		fpath = strings.TrimPrefix(fpath, "/")
-		mode := f.Mode().Perm()
-		if f.FileInfo().IsDir() {
-			err := root.MkdirAll(fpath, mode)
-			if err != nil {
-				return err
-			}
-
-			return nil
-		}
-
-		rc, err := f.Open()
-		if err != nil {
-			return err
-		}
-
-		defer rc.Close()
-
-		parent := path.Dir(fpath)
-		if parent != "." {
-			if err := root.MkdirAll(parent, 0755); err != nil {
-				return fmt.Errorf("failed to create parent directory %w", err)
-			}
-		}
-
-		outFile, err := root.OpenFile(fpath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, mode)
-		if err != nil {
-			return fmt.Errorf("failed to open file %w", err)
-		}
-
-		defer outFile.Close()
-
-		_, err = io.Copy(outFile, rc)
-		if err != nil {
-			return fmt.Errorf("failed to copy zip archive %w", err)
-		}
-
-		return nil
-	}
-
-	// 3. Iterate over zip files inside the archive and unzip each of them
 	for _, f := range reader.File {
-		err := extractAndWriteFile(f)
-		if err != nil {
-			return err
+		name := filepath.Clean(f.Name)
+		mode := f.Mode()
+		perm := mode.Perm()
+
+		if mode.IsDir() {
+			if perm == 0 {
+				perm = 0755
+			}
+
+			if err := root.MkdirAll(name, perm); err != nil {
+				return fmt.Errorf("failed to create directory %q: %w", f.Name, err)
+			}
+			continue
 		}
 
+		if err := root.MkdirAll(filepath.Dir(name), 0755); err != nil {
+			return fmt.Errorf("failed to create parent directory for %q: %w", f.Name, err)
+		}
+
+		if mode&os.ModeSymlink != 0 {
+			src, err := f.Open()
+			if err != nil {
+				return fmt.Errorf("failed to open symlink %q: %w", f.Name, err)
+			}
+
+			targetBytes, readErr := io.ReadAll(src)
+			closeErr := src.Close()
+			if readErr != nil {
+				return fmt.Errorf("failed to read symlink %q: %w", f.Name, readErr)
+			}
+			if closeErr != nil {
+				return fmt.Errorf("failed to close symlink %q: %w", f.Name, closeErr)
+			}
+
+			if err := root.Symlink(string(targetBytes), name); err != nil {
+				return fmt.Errorf("failed to create symlink %q: %w", f.Name, err)
+			}
+			continue
+		}
+
+		if perm == 0 {
+			perm = 0644
+		}
+
+		src, err := f.Open()
+		if err != nil {
+			return fmt.Errorf("failed to open file %q: %w", f.Name, err)
+		}
+
+		outFile, err := root.OpenFile(name, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, perm)
+		if err != nil {
+			src.Close()
+			return fmt.Errorf("failed to create file %q: %w", f.Name, err)
+		}
+
+		_, copyErr := io.Copy(outFile, src)
+		closeOutErr := outFile.Close()
+		closeSrcErr := src.Close()
+		if copyErr != nil {
+			return fmt.Errorf("failed to write file %q: %w", f.Name, copyErr)
+		}
+		if closeOutErr != nil {
+			return fmt.Errorf("failed to close file %q: %w", f.Name, closeOutErr)
+		}
+		if closeSrcErr != nil {
+			return fmt.Errorf("failed to close zip entry %q: %w", f.Name, closeSrcErr)
+		}
 	}
 
 	if meta.Debug {

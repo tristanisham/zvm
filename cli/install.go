@@ -831,6 +831,11 @@ func untarXZ(in, out string) error {
 
 // unzipSource extracts a .zip file to the specified destination directory.
 func unzipSource(source, destination string) error {
+	var timer time.Time
+	if meta.Debug {
+		timer = time.Now()
+	}
+
 	// 1. Open the zip file
 	reader, err := zip.OpenReader(source)
 	if err != nil {
@@ -903,6 +908,10 @@ func unzipSource(source, destination string) error {
 			return err
 		}
 
+	}
+
+	if meta.Debug {
+		log.Debug("unzipSource", "duration", time.Since(timer))
 	}
 
 	return nil

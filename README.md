@@ -232,6 +232,13 @@ zvm i --force master
 You can also enable the old behavior by setting the new `alwaysForceInstall`
 field to `true` in `~/.zvm/settings.json`.
 
+### Customize HTTP Timeout
+You can pass a custom HTTP timeout (in seconds) for `zvm i` using the `--http.timeout` flag or by setting the `ZVM_HTTP_TIMEOUT` environment variable.
+
+```sh
+zvm i --http.timeout 30
+```
+
 ### Install ZLS with ZVM
 
 You can now install ZLS with your Zig download! To install ZLS with ZVM, simply

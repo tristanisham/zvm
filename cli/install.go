@@ -24,6 +24,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"slices"
+	"strconv"
 	"strings"
 	"time"
 
@@ -37,14 +38,16 @@ import (
 	"github.com/tristanisham/clr"
 )
 
+const HTTP_DEFAULT_TIMEOUT = 30 * time.Second
+
 // Install downloads and installs the specified Zig version.
 // It handles checking for existing installations, verifying checksums,
 // and extracting the downloaded bundle.
 func (z *ZVM) Install(version string, force bool, mirror bool) (string, error) {
-	err := os.MkdirAll(z.baseDir, 0755)
-	if err != nil {
+	if err := os.MkdirAll(z.baseDir, 0755); err != nil {
 		return version, err
 	}
+
 	rawVersionStructure, err := z.fetchVersionMap()
 	if err != nil {
 		return version, err
@@ -112,7 +115,7 @@ func (z *ZVM) Install(version string, force bool, mirror bool) (string, error) {
 	if mirror {
 		tarResp, minisig, err = attemptMirrorDownload(z.Settings.MirrorListUrl, tarPath)
 	} else {
-		tarResp, err = attemptDownload(tarPath)
+		tarResp, err = attemptDownload(tarPath, nil)
 	}
 
 	if err != nil {
@@ -267,7 +270,7 @@ func attemptMirrorDownload(mirrorListURL string, tarURL string) (*http.Response,
 	}
 	tarName := path.Base(tarURLParsed.Path)
 
-	resp, err := attemptDownload(mirrorListURL)
+	resp, err := attemptDownload(mirrorListURL, nil)
 	if err != nil {
 		return nil, minisign.Signature{}, fmt.Errorf("%w: %w", ErrDownloadFail, err)
 	}
@@ -293,13 +296,13 @@ func attemptMirrorDownload(mirrorListURL string, tarURL string) (*http.Response,
 		}
 
 		log.Debug("attemptMirrorDownload", "mirror", i, "mirrorURL", mirrorTarURL)
-		tarResp, err := attemptDownload(mirrorTarURL)
+		tarResp, err := attemptDownload(mirrorTarURL, nil)
 		if err != nil {
 			log.Debug("mirror tar error", "mirror", mirror, "error", err)
 			continue
 		}
 
-		minisig, err := attemptMinisigDownload(mirrorTarURL)
+		minisig, err := attemptMinisigDownload(mirrorTarURL, nil)
 		if err != nil {
 			log.Debug("mirror minisig error", "mirror", mirror, "error", err)
 			tarResp.Body.Close()
@@ -313,8 +316,8 @@ func attemptMirrorDownload(mirrorListURL string, tarURL string) (*http.Response,
 }
 
 // attemptMinisigDownload downloads the minisign signature for a given tarball URL.
-func attemptMinisigDownload(tarURL string) (minisign.Signature, error) {
-	minisigResp, err := attemptDownload(tarURL + ".minisig")
+func attemptMinisigDownload(tarURL string, client *http.Client) (minisign.Signature, error) {
+	minisigResp, err := attemptDownload(tarURL+".minisig", client)
 	if err != nil {
 		return minisign.Signature{}, err
 	}
@@ -329,13 +332,27 @@ func attemptMinisigDownload(tarURL string) (minisign.Signature, error) {
 }
 
 // attemptDownload creates a generic http request for ZVM.
-func attemptDownload(url string) (*http.Response, error) {
+func attemptDownload(url string, client *http.Client) (*http.Response, error) {
 	req, err := createDownloadReq(url)
 	if err != nil {
 		return nil, fmt.Errorf("%w: %w", ErrDownloadFail, err)
 	}
 
-	client := http.DefaultClient
+	if client == nil {
+		client = http.DefaultClient
+
+		envTimeout := os.Getenv("ZVM_HTTP_TIMEOUT")
+		if envTimeout != "" {
+			timeout, err := strconv.Atoi(envTimeout)
+			if err == nil {
+				client.Timeout = time.Duration(timeout) * time.Second
+			}
+		} else {
+			client.Timeout = HTTP_DEFAULT_TIMEOUT
+		}
+	}
+
+	log.Debug("using client", "timeout", client.Timeout.String())
 
 	// Checks the ZVM_SKIP_TLS_VERIFY environment variable and
 	// toggles verifying a secure connection.
@@ -499,7 +516,7 @@ func (z *ZVM) InstallZls(requestedVersion string, compatMode string, force bool)
 
 	log.Debug("tarPath", "url", tarPath)
 
-	tarResp, err := attemptDownload(tarPath)
+	tarResp, err := attemptDownload(tarPath, nil)
 	if err != nil {
 		return err
 	}

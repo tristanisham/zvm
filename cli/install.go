@@ -340,16 +340,18 @@ func attemptDownload(url string, client *http.Client) (*http.Response, error) {
 
 	if client == nil {
 		client = http.DefaultClient
+	}
 
-		envTimeout := os.Getenv("ZVM_HTTP_TIMEOUT")
-		if envTimeout != "" {
-			timeout, err := strconv.Atoi(envTimeout)
-			if err == nil {
-				client.Timeout = time.Duration(timeout) * time.Second
-			}
+	envTimeout := os.Getenv("ZVM_HTTP_TIMEOUT")
+	if envTimeout != "" {
+		timeout, err := strconv.Atoi(envTimeout)
+		if err == nil {
+			client.Timeout = time.Duration(timeout) * time.Second
 		} else {
 			client.Timeout = HTTP_DEFAULT_TIMEOUT
 		}
+	} else {
+		client.Timeout = HTTP_DEFAULT_TIMEOUT
 	}
 
 	log.Debug("using client", "timeout", client.Timeout.String())
@@ -363,10 +365,8 @@ func attemptDownload(url string, client *http.Client) (*http.Response, error) {
 		}
 
 		log.Debug("ZVM_SKIP_TLS_VERIFY", "enabled", true)
-		client = &http.Client{
-			Transport: &http.Transport{
-				TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
-			},
+		client.Transport = &http.Transport{
+			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
 		}
 	} else {
 		// Yeah, yeah. Just an easy way to do the call.

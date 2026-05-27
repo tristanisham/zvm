@@ -140,6 +140,7 @@ var zvmApp = &opts.Command{
 					os.Setenv("ZVM_TARGET_ARCH", v)
 				}
 
+				// HTTP Settings
 				if v := cmd.Int("http.timeout"); v != 0 {
 					os.Setenv("ZVM_HTTP_TIMEOUT", strconv.Itoa(v))
 				}

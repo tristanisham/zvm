@@ -141,7 +141,7 @@ var zvmApp = &opts.Command{
 				}
 
 				if v := cmd.Int("http.timeout"); v != 0 {
-					os.Setenv("ZVM_HTTP_TIMEOUT", strconv.Itoa(v))
+					os.Setenv("ZVM_HTTP_TIMEOUT", strconv.FormatInt(v, 10))
 				}
 
 				// Install Zig

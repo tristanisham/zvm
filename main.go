@@ -141,7 +141,7 @@ var zvmApp = &opts.Command{
 				}
 
 				// HTTP Settings
-				if v := cmd.Int("http.timeout"); v != 0 {
+				if v := cmd.Int64("http.timeout"); v != 0 {
 					os.Setenv("ZVM_HTTP_TIMEOUT", strconv.FormatInt(v, 10))
 				}
 

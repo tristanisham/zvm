@@ -348,10 +348,10 @@ func attemptDownload(url string, client *http.Client) (*http.Response, error) {
 		if err == nil {
 			client.Timeout = time.Duration(timeout) * time.Second
 		} else {
-			client.Timeout = HTTP_DEFAULT_TIMEOUT
+			client.Timeout = httpDefaultTimeout
 		}
 	} else {
-		client.Timeout = HTTP_DEFAULT_TIMEOUT
+		client.Timeout = httpDefaultTimeout
 	}
 
 	log.Debug("using client", "timeout", client.Timeout.String())

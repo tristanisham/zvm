@@ -339,7 +339,7 @@ func attemptDownload(url string, client *http.Client) (*http.Response, error) {
 	}
 
 	if client == nil {
-		client = http.DefaultClient
+		client = &http.Client{}
 	}
 
 	envTimeout := os.Getenv("ZVM_HTTP_TIMEOUT")

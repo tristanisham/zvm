@@ -38,7 +38,7 @@ import (
 	"github.com/tristanisham/clr"
 )
 
-const httpDefaultTimeout = 30 * time.Second
+const httpDefaultTimeout = (60 * 3) * time.Second
 
 // Install downloads and installs the specified Zig version.
 // It handles checking for existing installations, verifying checksums,

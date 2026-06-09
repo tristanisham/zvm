@@ -9,6 +9,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 
@@ -101,6 +102,11 @@ var zvmApp = &opts.Command{
 					Usage:   "override the target architecture (e.g., x86_64, aarch64, arm, riscv64)",
 					Sources: opts.EnvVars("ZVM_TARGET_ARCH"),
 				},
+				&opts.IntFlag{
+					Name:    "http.timeout",
+					Usage:   "set a custom timeout for http requests",
+					Sources: opts.EnvVars("ZVM_HTTP_TIMEOUT"),
+				},
 			},
 			Description: "To install the latest version, use `master`",
 			// Args:        true,
@@ -129,8 +135,14 @@ var zvmApp = &opts.Command{
 				if v := cmd.String("target-os"); v != "" {
 					os.Setenv("ZVM_TARGET_OS", v)
 				}
+
 				if v := cmd.String("target-arch"); v != "" {
 					os.Setenv("ZVM_TARGET_ARCH", v)
+				}
+
+				// HTTP Settings
+				if v := cmd.Int64("http.timeout"); v != 0 {
+					os.Setenv("ZVM_HTTP_TIMEOUT", strconv.FormatInt(v, 10))
 				}
 
 				// Install Zig

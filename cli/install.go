@@ -108,11 +108,28 @@ func (z *ZVM) Install(version string, force bool, mirror bool) (string, error) {
 
 	var tarResp *http.Response
 	var minisig minisign.Signature
-	mirror = mirror && z.Settings.UseMirrorList() && z.Settings.VersionMapUrl == DefaultSettings.VersionMapUrl
+	var verifyMinisig bool
+
+	// Only the official version map serves builds signed with the pinned
+	// minisign key; custom version maps distribute their own builds, so
+	// signature verification can't apply to them.
+	isOfficialVMUSet := z.Settings.VersionMapUrl == DefaultSettings.VersionMapUrl
+	mirror = mirror && z.Settings.UseMirrorList() && isOfficialVMUSet
 	if mirror {
 		tarResp, minisig, err = attemptMirrorDownload(z.Settings.MirrorListUrl, tarPath)
+		verifyMinisig = err == nil
 	} else {
 		tarResp, err = attemptDownload(tarPath)
+		if err == nil && isOfficialVMUSet {
+			// ziglang.org publishes a .minisig for every build, so a missing
+			// signature is a failed download, not a reason to skip verification.
+			minisig, err = attemptMinisigDownload(tarPath)
+			if err != nil {
+				tarResp.Body.Close()
+				err = fmt.Errorf("minisign signature download failed: %w", err)
+			}
+			verifyMinisig = err == nil
+		}
 	}
 
 	if err != nil {
@@ -177,7 +194,7 @@ func (z *ZVM) Install(version string, force bool, mirror bool) (string, error) {
 		log.Warnf("No shasum provided by host")
 	}
 
-	if mirror {
+	if verifyMinisig {
 		fmt.Println("Checking minisign signature...")
 		pubkey, err := minisign.NewPublicKey(z.Settings.MinisignPubKey)
 		if err != nil {

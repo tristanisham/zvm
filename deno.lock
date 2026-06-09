@@ -6,6 +6,8 @@
     "jsr:@std/fmt@^1.0.9": "1.0.9",
     "jsr:@std/internal@^1.0.12": "1.0.12",
     "jsr:@std/path@~0.219.1": "0.219.1",
+    "jsr:@std/streams@^1.0.17": "1.1.1",
+    "jsr:@std/tar@~0.1.10": "0.1.10",
     "jsr:@zip-js/zip-js@*": "2.7.72",
     "jsr:@zip-js/zip-js@^2.8.24": "2.8.24"
   },
@@ -30,6 +32,15 @@
       "integrity": "e5c0ffef3a8ef2b48e9e3d88a1489320e8fb2cc7be767b17c91a1424ffb4c8ed",
       "dependencies": [
         "jsr:@std/assert"
+      ]
+    },
+    "@std/streams@1.1.1": {
+      "integrity": "92556d350e537e9dce527a6d08f6f15be3ff65e656079dea69d15252187c7613"
+    },
+    "@std/tar@0.1.10": {
+      "integrity": "6bf907f3a4bc8bfef42973ba132d946756a6161ef6b914a9e1c06debe664db17",
+      "dependencies": [
+        "jsr:@std/streams"
       ]
     },
     "@zip-js/zip-js@2.7.72": {
@@ -126,6 +137,7 @@
     "dependencies": [
       "jsr:@std/cli@^1.0.28",
       "jsr:@std/path@~0.219.1",
+      "jsr:@std/tar@~0.1.10",
       "jsr:@zip-js/zip-js@^2.8.24"
     ]
   }

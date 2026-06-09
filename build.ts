@@ -1,11 +1,9 @@
-// deno-lint-ignore-file no-import-prefix
 // Copyright 2025 Tristan Isham. All rights reserved.
 // Use of this source code is governed by the MIT
 // license that can be found in the LICENSE file.
 
-import { Tar } from "https://deno.land/std@0.184.0/archive/mod.ts";
-import { copy } from "https://deno.land/std@0.184.0/streams/copy.ts";
 import { parseArgs } from "@std/cli/parse-args";
+import { TarStream, type TarStreamInput } from "@std/tar";
 import * as zip from "@zip-js/zip-js";
 
 // Command to count final build results
@@ -25,7 +23,7 @@ if (!args.autoUpgrades) {
     "%cBuilding without autoUpgrades (noAutoUpgrades)",
     "color: yellow;",
   );
-  if (BuildUpgradeMessage === "" || BuildUpgradeMessage === undefined) {
+  if (BuildUpgradeMessage === "") {
     console.warn(
       "%cbuildUpgradeMessage not set, falling back to default message",
       "color: red;",
@@ -75,132 +73,107 @@ function getTargets(): Target[] {
   return targets;
 }
 
-const projectRoot = Deno.cwd();
+const buildDir = `${Deno.cwd()}/build`;
+await Deno.mkdir(buildDir, { recursive: true });
 
-await Deno.mkdir("./build", { recursive: true });
+// Snapshot the environment once; per-target GOOS/GOARCH are layered on top.
+const baseEnv = { ...Deno.env.toObject(), CGO_ENABLED: "0" };
 
-console.time("Built zvm");
-Deno.env.set("CGO_ENABLED", "0");
+// Build, archive, and clean up a single target. Pipelining the three steps
+// per target lets compression of finished builds overlap with in-flight
+// compiles, and removing each directory as soon as it's archived keeps peak
+// disk usage to one uncompressed binary per worker.
+async function buildTarget({ os, arch, label }: Target): Promise<void> {
+  const outDir = `${buildDir}/${label}`;
+  const binName = `zvm${os === "windows" ? ".exe" : ""}`;
+  const binPath = `${outDir}/${binName}`;
+
+  console.time(`Build zvm: ${label}`);
+  const { code, stderr } = await new Deno.Command("go", {
+    args: [
+      "build",
+      ...(args.autoUpgrades ? [] : ["-tags", "noAutoUpgrades"]),
+      "-o",
+      binPath,
+      `-ldflags=-w -s -X 'main.BuildUpgradeMessage=${BuildUpgradeMessage}'`,
+      "-trimpath",
+    ],
+    env: { ...baseEnv, GOOS: os, GOARCH: arch },
+  }).output();
+  if (code !== 0) {
+    throw new Error(
+      `Failed to build ${label}:\n${new TextDecoder().decode(stderr)}`,
+    );
+  }
+  console.timeEnd(`Build zvm: ${label}`);
+
+  console.time(`Compress zvm: ${label}`);
+  if (os === "windows") {
+    await zipFile(binPath, binName, `${buildDir}/${label}.zip`);
+  } else {
+    await tarFile(binPath, binName, `${buildDir}/${label}.tar`);
+  }
+  console.timeEnd(`Compress zvm: ${label}`);
+
+  await Deno.remove(outDir, { recursive: true });
+}
+
+async function tarFile(
+  src: string,
+  entryName: string,
+  dest: string,
+): Promise<void> {
+  const file = await Deno.open(src);
+  const { size } = await file.stat();
+  await ReadableStream.from<TarStreamInput>([
+    { type: "file", path: entryName, size, readable: file.readable },
+  ])
+    .pipeThrough(new TarStream())
+    .pipeTo((await Deno.create(dest)).writable);
+}
+
+async function zipFile(
+  src: string,
+  entryName: string,
+  dest: string,
+): Promise<void> {
+  const writer = new zip.ZipWriter(new zip.BlobWriter("application/zip"));
+  const file = await Deno.open(src);
+  await writer.add(entryName, file.readable);
+  const blob = await writer.close();
+  await blob.stream().pipeTo((await Deno.create(dest)).writable);
+}
 
 const targets = getTargets();
 
-// Compile step — all targets in parallel
-const compileResults = await Promise.all(
-  targets.map(async ({ os, arch, label }) => {
-    console.time(`Build zvm: ${label}`);
-
-    const buildPath = `build/${label}/zvm${os === "windows" ? ".exe" : ""}`;
-
-    const build_cmd = new Deno.Command("go", {
-      args: [
-        "build",
-        ...(args.autoUpgrades ? [] : ["-tags", "noAutoUpgrades"]),
-        "-o",
-        buildPath,
-        `-ldflags=-w -s -X 'main.BuildUpgradeMessage=${BuildUpgradeMessage}'`,
-        "-trimpath",
-      ],
-      env: {
-        ...Deno.env.toObject(),
-        GOOS: os,
-        GOARCH: arch,
-      },
-    });
-
-    const { code, stderr } = await build_cmd.output();
-    if (code !== 0) {
-      console.error(`Failed to build ${label}:`);
-      console.error(new TextDecoder().decode(stderr));
-      Deno.exit(1);
-    }
-
-    console.timeEnd(`Build zvm: ${label}`);
-    return `${projectRoot}/build/${label}`;
-  }),
+// Each `go build` parallelizes internally, so cap concurrent targets at the
+// CPU count instead of launching all of them at once.
+const concurrency = Math.min(
+  Math.max(1, navigator.hardwareConcurrency ?? 4),
+  targets.length,
 );
 
-// Bundle step — all targets in parallel
+console.time("Built zvm");
+
+const queue = [...targets];
+const failures: string[] = [];
 await Promise.all(
-  // deno-lint-ignore no-unused-vars
-  targets.map(async ({ os, arch, label }) => {
-    const buildDir = `${projectRoot}/build`;
-
-    if (os === "windows") {
-      console.time(`Compress zvm (zip): ${label}`);
-
-      const targets: ZipFile[] = [
-        // { path: `${label}.zip`, mimetype: "application/zip" },
-        {
-          path: `${buildDir}/${label}/zvm.exe`,
-          mimetype: "application/octet-stream",
-        },
-        // {
-        //   path: `${buildDir}/${label}/elevate.cmd`,
-        //   mimetype: "application/x-msdos-program",
-        // },
-        // {
-        //   path: `${buildDir}/${label}/elevate.vbs`,
-        //   mimetype: "application/x-vbs",
-        // },
-      ];
-
-      for (const f of targets) {
-        f.path = await Deno.realPath(f.path);
+  Array.from({ length: concurrency }, async () => {
+    for (let t = queue.shift(); t !== undefined; t = queue.shift()) {
+      try {
+        await buildTarget(t);
+      } catch (err) {
+        failures.push(err instanceof Error ? err.message : String(err));
       }
-
-      const zipBlob = await zipFiles(targets);
-
-      const zipSlice = await zipBlob.arrayBuffer();
-
-      console.timeEnd(`Compress zvm (zip): ${label}`);
-      await Deno.writeFile(
-        `${buildDir}/${label}.zip`,
-        new Uint8Array(zipSlice),
-      );
-
-      return;
     }
-
-    console.time(`Compress zvm (tar): ${label}`);
-    const tar = new Tar();
-    await tar.append("zvm", {
-      filePath: `${buildDir}/${label}/zvm`,
-    });
-
-    const writer = await Deno.open(`${buildDir}/${label}.tar`, {
-      write: true,
-      create: true,
-    });
-    await copy(tar.getReader(), writer);
-    writer.close();
-    console.timeEnd(`Compress zvm (tar): ${label}`);
   }),
 );
 
 console.timeEnd("Built zvm");
 
-// Cleanup uncompressed directories
-console.time("Remove build artifacts");
-await Promise.all(
-  compileResults.map((dir) => Deno.remove(dir, { recursive: true })),
-);
-console.timeEnd("Remove build artifacts");
-
-interface ZipFile {
-  path: string;
-  mimetype: string;
-}
-
-async function zipFiles(files: ZipFile[]): Promise<Blob> {
-  const blobWriter = new zip.BlobWriter("applicaton/zip");
-  const writer = new zip.ZipWriter(blobWriter);
-
-  for (const file of files) {
-    const f_bytes = await Deno.readFile(file.path);
-    const f_blob = new Blob([f_bytes], { type: file.mimetype });
-    const entryName = file.path.split(/[/\\]/).pop()!;
-    await writer.add(entryName, new zip.BlobReader(f_blob));
+if (failures.length > 0) {
+  for (const failure of failures) {
+    console.error(`%c${failure}`, "color: red;");
   }
-
-  return writer.close();
+  Deno.exit(1);
 }

@@ -14,3 +14,4 @@ zvm-*
 .gemini
 .codex
 .claude
+__pycache__

@@ -115,8 +115,10 @@ if [ "$NO_ENV" -eq 0 ]; then
                 echo
                 echo "# ZVM"
                 echo 'set -gx ZVM_INSTALL "$HOME/.zvm/self"'
-                echo 'set -gx PATH $PATH "$HOME/.zvm/bin"'
-                echo 'set -gx PATH $PATH "$ZVM_INSTALL/"'
+                echo 'if test -d "$ZVM_INSTALL"'
+                echo '    set -gx PATH $PATH "$HOME/.zvm/bin"'
+                echo '    set -gx PATH $PATH "$ZVM_INSTALL"'
+                echo 'end'
             } >>"$TARGET_FILE"
             echo "Restart fish or run 'source $TARGET_FILE' to start using ZVM in this shell!"
         else
@@ -124,8 +126,10 @@ if [ "$NO_ENV" -eq 0 ]; then
                 echo
                 echo "# ZVM"
                 echo 'export ZVM_INSTALL="$HOME/.zvm/self"'
-                echo 'export PATH="$PATH:$HOME/.zvm/bin"'
-                echo 'export PATH="$PATH:$ZVM_INSTALL/"'
+                echo 'if [ -d "$ZVM_INSTALL" ]; then'
+                echo '  export PATH="$PATH:$HOME/.zvm/bin"'
+                echo '  export PATH="$PATH:$ZVM_INSTALL"'
+                echo 'fi'
             } >>"$TARGET_FILE"
             echo "Run 'source $TARGET_FILE' to start using ZVM in this shell!"
         fi
@@ -142,22 +146,30 @@ if [ "$NO_ENV" -eq 0 ]; then
             NC='\033[0m'
             if [[ "$SHELL" == */fish ]]; then
                 echo -e "${GREEN}set -gx${NC} ${BLUE}ZVM_INSTALL${NC}${GREEN} ${NC}${RED}\"\$HOME/.zvm/self\"${NC}"
-                echo -e "${GREEN}set -gx${NC} ${BLUE}PATH${NC}${GREEN} ${NC}${RED}\"\$PATH:\$HOME/.zvm/bin\"${NC}"
-                echo -e "${GREEN}set -gx${NC} ${BLUE}PATH${NC}${GREEN} ${NC}${RED}\"\$PATH:\$ZVM_INSTALL/\"${NC}"
+                echo -e "${GREEN}if${NC} test -d ${RED}\"\$ZVM_INSTALL\"${NC}"
+                echo -e "    ${GREEN}set -gx${NC} ${BLUE}PATH${NC}${GREEN} ${NC}${RED}\"\$PATH:\$HOME/.zvm/bin\"${NC}"
+                echo -e "    ${GREEN}set -gx${NC} ${BLUE}PATH${NC}${GREEN} ${NC}${RED}\"\$PATH:\$ZVM_INSTALL\"${NC}"
+                echo -e "${GREEN}end${NC}"
             else
                 echo -e "${GREEN}export${NC} ${BLUE}ZVM_INSTALL${NC}${GREEN}=${NC}${RED}\"\$HOME/.zvm/self\"${NC}"
-                echo -e "${GREEN}export${NC} ${BLUE}PATH${NC}${GREEN}=${NC}${RED}\"\$PATH:\$HOME/.zvm/bin\"${NC}"
-                echo -e "${GREEN}export${NC} ${BLUE}PATH${NC}${GREEN}=${NC}${RED}\"\$PATH:\$ZVM_INSTALL/\"${NC}"
+                echo -e "${GREEN}if${NC} [ -d ${RED}\"\$ZVM_INSTALL\"${NC} ]; ${GREEN}then${NC}"
+                echo -e "  ${GREEN}export${NC} ${BLUE}PATH${NC}${GREEN}=${NC}${RED}\"\$PATH:\$HOME/.zvm/bin\"${NC}"
+                echo -e "  ${GREEN}export${NC} ${BLUE}PATH${NC}${GREEN}=${NC}${RED}\"\$PATH:\$ZVM_INSTALL\"${NC}"
+                echo -e "${GREEN}fi${NC}"
             fi
         else
             if [[ "$SHELL" == */fish ]]; then
                 echo 'set -gx ZVM_INSTALL "$HOME/.zvm/self"'
-                echo 'set -gx PATH $PATH "$HOME/.zvm/bin"'
-                echo 'set -gx PATH $PATH "$ZVM_INSTALL/"'
+                echo 'if test -d "$ZVM_INSTALL"'
+                echo '    set -gx PATH $PATH "$HOME/.zvm/bin"'
+                echo '    set -gx PATH $PATH "$ZVM_INSTALL"'
+                echo 'end'
             else
                 echo 'export ZVM_INSTALL="$HOME/.zvm/self"'
-                echo 'export PATH="$PATH:$HOME/.zvm/bin"'
-                echo 'export PATH="$PATH:$ZVM_INSTALL/"'
+                echo 'if [ -d "$ZVM_INSTALL" ]; then'
+                echo '  export PATH="$PATH:$HOME/.zvm/bin"'
+                echo '  export PATH="$PATH:$ZVM_INSTALL"'
+                echo 'fi'
             fi
         fi
         echo "Run 'zvm i master' to install Zig"

@@ -36,7 +36,7 @@ var zvmApp = &opts.Command{
 	EnableShellCompletion: true,
 	ConfigureShellCompletionCommand: func(cmd *opts.Command) {
 		cmd.Hidden = false
-		cmd.Usage = "generate a shell completion script"
+		cmd.Usage = "Generate a shell completion script"
 		cmd.Description = "Emit a completion script for bash, zsh, fish, or pwsh (PowerShell).\n" +
 			"Example: source <(zvm completion bash)   # bash\n" +
 			"         zvm completion zsh > _zvm       # zsh, place on $fpath\n" +
@@ -71,7 +71,7 @@ var zvmApp = &opts.Command{
 	Commands: []*opts.Command{
 		{
 			Name:    "install",
-			Usage:   "download and install a version of Zig",
+			Usage:   "Download and install a version of Zig",
 			Aliases: []string{"i"},
 			Flags: []opts.Flag{
 				&opts.BoolFlag{
@@ -163,7 +163,7 @@ var zvmApp = &opts.Command{
 		},
 		{
 			Name:  "use",
-			Usage: "switch between versions of Zig",
+			Usage: "Switch between versions of Zig",
 			// Args:  true,
 			Flags: []opts.Flag{
 				&opts.BoolFlag{
@@ -204,7 +204,7 @@ var zvmApp = &opts.Command{
 		},
 		{
 			Name:  "run",
-			Usage: "run a command with the given Zig version",
+			Usage: "Run a command with the given Zig version",
 			// Args:  true,
 			SkipFlagParsing: true,
 			Action: func(ctx context.Context, cmd *opts.Command) error {
@@ -233,8 +233,16 @@ var zvmApp = &opts.Command{
 			},
 		},
 		{
+			Name:    "list-remote",
+			Usage:   "List all remote Zig versions",
+			Aliases: []string{"ls-remote"},
+			Action: func(ctx context.Context, cmd *opts.Command) error {
+				return zvm.ListRemoteAvailable()
+			},
+		},
+		{
 			Name:    "list",
-			Usage:   "list installed Zig versions. Flag `--all` to see remote options",
+			Usage:   "List installed Zig versions.",
 			Aliases: []string{"ls"},
 			// Args:    true,
 			Flags: []opts.Flag{
@@ -277,7 +285,7 @@ var zvmApp = &opts.Command{
 		},
 		{
 			Name:    "uninstall",
-			Usage:   "remove an installed version of Zig",
+			Usage:   "Remove an installed version of Zig",
 			Aliases: []string{"rm"},
 			// Args:    true,
 			Action: func(ctx context.Context, cmd *opts.Command) error {
@@ -287,14 +295,14 @@ var zvmApp = &opts.Command{
 		},
 		{
 			Name:  "clean",
-			Usage: "remove build artifacts (good if you're a scrub)",
+			Usage: "Remove build artifacts (good if you're a scrub)",
 			Action: func(ctx context.Context, cmd *opts.Command) error {
 				return zvm.Clean()
 			},
 		},
 		{
 			Name:  "upgrade",
-			Usage: "self-upgrade ZVM",
+			Usage: "Self-upgrade ZVM",
 			Action: func(ctx context.Context, cmd *opts.Command) error {
 				if meta.NoAutoUpgrades {
 					// This is where you as a distributor or builder can specify how to upgrade
@@ -308,7 +316,7 @@ var zvmApp = &opts.Command{
 		},
 		{
 			Name:  "mirrorlist",
-			Usage: "set ZVM's mirror list URL for custom Zig distribution servers, or set to \"disabled\" to download directly from ziglang.org",
+			Usage: "Set ZVM's mirror list URL for custom Zig distribution servers, or set to \"disabled\" to download directly from ziglang.org",
 			Action: func(ctx context.Context, cmd *opts.Command) error {
 				url := cmd.Args().First()
 				log.Debug("user passed mirrorlist", "url", url)
@@ -332,7 +340,7 @@ var zvmApp = &opts.Command{
 		},
 		{
 			Name:  "version",
-			Usage: "print the current version of ZVM",
+			Usage: "Print the current version of ZVM",
 			Action: func(ctx context.Context, cmd *opts.Command) error {
 				fmt.Println("zvm version " + meta.VerCopy)
 				return nil
@@ -340,12 +348,12 @@ var zvmApp = &opts.Command{
 		},
 		{
 			Name:  "vmu",
-			Usage: "set ZVM's version map URL for custom Zig distribution servers",
+			Usage: "Set ZVM's version map URL for custom Zig distribution servers",
 			// Args:  true,
 			Commands: []*opts.Command{
 				{
 					Name:  "zig",
-					Usage: "set ZVM's version map URL for custom Zig distribution servers",
+					Usage: "Set ZVM's version map URL for custom Zig distribution servers",
 					// Args:      true,
 					ArgsUsage: "",
 
@@ -375,7 +383,7 @@ var zvmApp = &opts.Command{
 				},
 				{
 					Name:  "zls",
-					Usage: "set ZVM's version map URL for custom ZLS Release Workers",
+					Usage: "Set ZVM's version map URL for custom ZLS Release Workers",
 					// Args:  true,
 					Action: func(ctx context.Context, cmd *opts.Command) error {
 						url := cmd.Args().First()

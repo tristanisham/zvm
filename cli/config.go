@@ -15,6 +15,7 @@ import (
 	"strings"
 
 	"github.com/charmbracelet/log"
+	"gorm.io/gorm"
 )
 
 var ErrNoSettings = errors.New("settings.json not found")
@@ -59,6 +60,12 @@ func Initialize() *ZVM {
 		}
 	}
 
+	if zvm.db == nil {
+		if err := zvm.initializeDatabase(); err != nil {
+			log.Error("failed to initialize the alias database: %s\n", err)
+		}
+	}
+
 	return zvm
 }
 
@@ -66,6 +73,7 @@ func Initialize() *ZVM {
 // and state, including the base directory for installations and settings.
 type ZVM struct {
 	baseDir  string
+	db       *gorm.DB
 	Settings Settings
 }
 

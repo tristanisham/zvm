@@ -13,6 +13,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/tristanisham/clr"
 	"github.com/tristanisham/zvm/cli"
 	"github.com/tristanisham/zvm/cli/meta"
 	opts "github.com/urfave/cli/v3"
@@ -233,6 +234,14 @@ var zvmApp = &opts.Command{
 			},
 		},
 		{
+			Name:  "alias",
+			Usage: "Alias a version to a common name",
+			// Aliases: []string{},
+			Action: func(ctx context.Context, cmd *opts.Command) error {
+
+			},
+		},
+		{
 			Name:    "list-remote",
 			Usage:   "List all remote Zig versions",
 			Aliases: []string{"ls-remote"},
@@ -259,6 +268,7 @@ var zvmApp = &opts.Command{
 			Action: func(ctx context.Context, cmd *opts.Command) error {
 				log.Debug("Version Map", "url", zvm.Settings.VersionMapUrl, "cmd", "list/ls")
 				if cmd.Bool("all") {
+					log.Warnf("this flag is depreciated. Please use the %s command", clr.Yellow("ls-remote"))
 					return zvm.ListRemoteAvailable()
 				} else if cmd.Bool("vmu") {
 					if len(zvm.Settings.VersionMapUrl) == 0 {

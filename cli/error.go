@@ -37,4 +37,6 @@ var (
 	ErrMissingArgument = errors.New("missing argument")
 
 	ErrInvalidAlias = errors.New("invalid version alias")
+
+	ErrBadDatabase = errors.New("bad database")
 )

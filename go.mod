@@ -11,13 +11,8 @@ require (
 	github.com/schollz/progressbar/v3 v3.19.1
 	github.com/tristanisham/clr v0.0.0-20221004001624-00ee60046d85
 	github.com/ulikunitz/xz v0.5.15
-<<<<<<< HEAD
 	golang.org/x/mod v0.38.0
 	golang.org/x/sys v0.47.0
-=======
-	golang.org/x/mod v0.37.0
-	golang.org/x/sys v0.46.0
->>>>>>> 5f864278d94055ea7b86d2d33600a80af0590bba
 	gorm.io/gorm v1.31.2
 )
 
@@ -37,13 +32,8 @@ require (
 	github.com/remyoudompheng/bigfft v0.0.0-20230129092748-24d4a6f8daec // indirect
 	github.com/xo/terminfo v0.0.0-20220910002029-abceb7e1c41e // indirect
 	golang.org/x/crypto v0.53.0 // indirect
-<<<<<<< HEAD
 	golang.org/x/text v0.40.0 // indirect
 	modernc.org/libc v1.74.1 // indirect
-=======
-	golang.org/x/text v0.39.0 // indirect
-	modernc.org/libc v1.74.0 // indirect
->>>>>>> 5f864278d94055ea7b86d2d33600a80af0590bba
 	modernc.org/mathutil v1.7.1 // indirect
 	modernc.org/memory v1.11.0 // indirect
 	modernc.org/sqlite v1.53.0 // indirect

@@ -7,6 +7,8 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"slices"
+	"strings"
 
 	"github.com/charmbracelet/log"
 	"github.com/libtnb/sqlite"
@@ -32,11 +34,42 @@ func (z *ZVM) Alias(ctx context.Context, key string, val *string) error {
 		return nil
 	}
 
-	if err := z.db.WithContext(ctx).Where("key = ?", key).Assign(Alias{Value: *val}).FirstOrCreate(&Alias{Key: key}).Error; err != nil {
+	normalizedVal := strings.TrimPrefix(*val, "v")
+	installedVersions, err := z.GetInstalledVersions()
+	if err != nil {
+		return err
+	}
+
+	resolvedVal, err := resolveVersionShorthand(normalizedVal, installedVersions)
+	if err != nil {
+		return err
+	}
+
+	if !slices.Contains(installedVersions, resolvedVal) {
+		return ErrInvalidAliasValue
+	}
+
+	if err := z.db.WithContext(ctx).Where("key = ?", key).Assign(Alias{Value: resolvedVal}).FirstOrCreate(&Alias{Key: key}).Error; err != nil {
 		return fmt.Errorf("%w: %w", ErrFailedAliasSave, err)
 	}
 
 	return nil
+}
+
+func (z *ZVM) ResolveAlias(ctx context.Context, key string) (string, bool, error) {
+	if key == "" {
+		return "", false, nil
+	}
+
+	var alias Alias
+	if err := z.db.WithContext(ctx).Where("key = ?", key).First(&alias).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return "", false, nil
+		}
+		return "", false, fmt.Errorf("%w: %w", ErrBadDatabase, err)
+	}
+
+	return alias.Value, true, nil
 }
 
 func (z *ZVM) DeleteAlias(ctx context.Context, key string) error {

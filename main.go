@@ -113,7 +113,15 @@ var zvmApp = &opts.Command{
 			// Args:        true,
 			ArgsUsage: " <ZIG VERSION>",
 			Action: func(ctx context.Context, cmd *opts.Command) error {
-				versionArg := strings.TrimPrefix(cmd.Args().First(), "v")
+				versionArg := cmd.Args().First()
+				if aliasValue, ok, err := zvm.ResolveAlias(ctx, versionArg); err != nil {
+					return err
+				} else if ok {
+					versionArg = aliasValue
+				}
+
+				// Is this going to potentially break some aliases?
+				versionArg = strings.TrimPrefix(versionArg, "v")
 
 				if versionArg == "" {
 					return errors.New("no version provided")
@@ -176,7 +184,14 @@ var zvmApp = &opts.Command{
 				if cmd.Bool("sync") {
 					return zvm.Sync()
 				} else {
-					versionArg := strings.TrimPrefix(cmd.Args().First(), "v")
+					versionArg := cmd.Args().First()
+					if aliasValue, ok, err := zvm.ResolveAlias(ctx, versionArg); err != nil {
+						return err
+					} else if ok {
+						versionArg = aliasValue
+					}
+
+					versionArg = strings.TrimPrefix(versionArg, "v")
 
 					if versionArg == "" {
 						emptyArgErrs := fmt.Errorf("command 'use' requires 1 valid Zig version as an argument")

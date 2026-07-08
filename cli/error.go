@@ -37,6 +37,8 @@ var (
 	ErrMissingArgument = errors.New("missing argument")
 	// ErrInvalidAlias is returned when a version alias is malformed or unsupported.
 	ErrInvalidAlias = errors.New("invalid version alias")
+	// ErrInvalidAliasValue is returned when an alias value does not match an installed Zig version.
+	ErrInvalidAliasValue = errors.New("invalid value for alias")
 	// ErrFailedAliasSave is returned when a version alias cannot be saved.
 	ErrFailedAliasSave = errors.New("failed to save alias")
 	// ErrFailedAliasClear is returned when a version alias cannot be cleared.

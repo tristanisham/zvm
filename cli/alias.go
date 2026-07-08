@@ -15,21 +15,45 @@ import (
 )
 
 func (z *ZVM) Alias(ctx context.Context, key string, val *string) error {
-	if key != "" {
-		if val == nil {
-			gorm.G[Alias](z.db).Select("where name = ?", key).Find(ctx)
-		} else {
-			if *val == "" {
-				if err := z.db.Delete(&Alias{Name: key}); err.Error != nil {
-					
-				}
-			} else {
-				if err := z.db.FirstOrCreate(NewAlias(key, *val)); err.Error != nil {
-					return fmt.Errorf("%w. %w", ErrFailedAliasSave, err.Error)
-				}
+	if key == "" {
+		return ErrMissingArgument
+	}
+
+	if val == nil {
+		var alias Alias
+		if err := z.db.WithContext(ctx).Where("key = ?", key).First(&alias).Error; err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return ErrInvalidAlias
 			}
-			
+			return fmt.Errorf("%w: %w", ErrBadDatabase, err)
 		}
+
+		PrintAliases([]Alias{alias})
+		return nil
+	}
+
+	if err := z.db.WithContext(ctx).Where("key = ?", key).Assign(Alias{Value: *val}).FirstOrCreate(&Alias{Key: key}).Error; err != nil {
+		return fmt.Errorf("%w: %w", ErrFailedAliasSave, err)
+	}
+
+	return nil
+}
+
+func (z *ZVM) DeleteAlias(ctx context.Context, key string) error {
+	if key == "" {
+		return ErrMissingArgument
+	}
+
+	if err := z.db.WithContext(ctx).Where("key = ?", key).Delete(&Alias{}).Error; err != nil {
+		return fmt.Errorf("%w: %w", ErrFailedAliasClear, err)
+	}
+
+	return nil
+}
+
+func (z *ZVM) ClearAliases(ctx context.Context) error {
+	if err := z.db.WithContext(ctx).Where("1 = 1").Delete(&Alias{}).Error; err != nil {
+		return fmt.Errorf("%w: %w", ErrFailedAliasClear, err)
 	}
 
 	return nil
@@ -59,16 +83,15 @@ func (z *ZVM) initializeDatabase() error {
 
 type Alias struct {
 	gorm.Model
-	Name  string `gorm:"index"`
-	Value string `gorm:"index"`
+	Key   string `gorm:"index" json:"key"`
+	Value string `gorm:"index" json:"value"`
 }
 
 func PrintAliases(aliases []Alias) {
-	fmt.Printf("%s %s\n", clr.Blue("key"), clr.White("value"))
 	for _, v := range aliases {
-		fmt.Printf("\t%s %s\n", clr.Blue(v.Name), clr.White(v.Value))
+		fmt.Printf("%s %s\n", clr.Blue(v.Key), clr.White(v.Value))
 	}
 }
 func NewAlias(key, val string) *Alias {
-	return &Alias{Name: key, Value: val}
+	return &Alias{Key: key, Value: val}
 }

@@ -49,6 +49,29 @@ func TestAliasSaveInstalledVersionNormalizesValue(t *testing.T) {
 	}
 }
 
+func TestAliasSaveVersionShorthandResolvesAndStoresFullVersion(t *testing.T) {
+	ctx := context.Background()
+	z := newTestAliasZVM(t)
+	installTestVersion(t, z, "0.16.0")
+	installTestVersion(t, z, "0.16.1")
+
+	val := ".16"
+	if err := z.Alias(ctx, "sixteen", &val); err != nil {
+		t.Fatalf("save alias: %v", err)
+	}
+
+	got, ok, err := z.ResolveAlias(ctx, "sixteen")
+	if err != nil {
+		t.Fatalf("resolve alias: %v", err)
+	}
+	if !ok {
+		t.Fatal("expected alias to exist")
+	}
+	if got != "0.16.1" {
+		t.Fatalf("expected resolved alias value %q, got %q", "0.16.1", got)
+	}
+}
+
 func TestAliasSaveNonInstalledVersionReturnsInvalidAliasValueAndDoesNotSave(t *testing.T) {
 	ctx := context.Background()
 	z := newTestAliasZVM(t)

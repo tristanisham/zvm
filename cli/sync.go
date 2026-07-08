@@ -10,6 +10,8 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/charmbracelet/log"
 )
 
 // Sync parses the build.zig file in the current directory to find a "zvm-lock" configuration
@@ -53,6 +55,10 @@ func (z *ZVM) Sync() error {
 				return err
 			}
 		}
+	}
+
+	if scanner.Err() != nil {
+		log.Debug("scanner error", "err", err)
 	}
 
 	return nil

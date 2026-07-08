@@ -33,10 +33,14 @@ var (
 	ErrMissingShasum = errors.New("shasum not found")
 	// ErrZigNotInstalled is returned when the `zig` executable cannot be found in the PATH.
 	ErrZigNotInstalled = errors.New("exec `zig` not found on $PATH")
-
+	// ErrMissingArgument is returned when a required command argument is not provided.
 	ErrMissingArgument = errors.New("missing argument")
-
+	// ErrInvalidAlias is returned when a version alias is malformed or unsupported.
 	ErrInvalidAlias = errors.New("invalid version alias")
-
+	// ErrFailedAliasSave is returned when a version alias cannot be saved.
+	ErrFailedAliasSave = errors.New("failed to save alias")
+	// ErrFailedAliasClear is returned when a version alias cannot be cleared.
+	ErrFailedAliasClear = errors.New("failed to clear alias")
+	// ErrBadDatabase is returned when the local database is invalid or cannot be read.
 	ErrBadDatabase = errors.New("bad database")
 )

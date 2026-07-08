@@ -234,11 +234,46 @@ var zvmApp = &opts.Command{
 			},
 		},
 		{
-			Name:  "alias",
-			Usage: "Alias a version to a common name",
-			// Aliases: []string{},
+			Name:    "alias",
+			Usage:   "Alias a version to a common name",
+			Aliases: []string{"kv"},
+			Flags: []opts.Flag{
+				&opts.BoolFlag{
+					Name:  "clear",
+					Usage: "clear all aliases",
+				},
+				&opts.BoolFlag{
+					Name:    "delete",
+					Aliases: []string{"d"},
+					Usage:   "delete the alias for the given key",
+				},
+			},
 			Action: func(ctx context.Context, cmd *opts.Command) error {
+				first := cmd.Args().First()
+				second := cmd.Args().Get(1)
 
+				if cmd.Bool("clear") {
+					return zvm.ClearAliases(ctx)
+				}
+
+				if cmd.Bool("delete") {
+					return zvm.DeleteAlias(ctx, first)
+				}
+
+				if argLen := cmd.Args().Len(); argLen == 1 {
+					return zvm.Alias(ctx, first, nil)
+				} else if argLen == 2 {
+					return zvm.Alias(ctx, first, &second)
+				} else {
+					aliases, err := zvm.ListAliases(ctx)
+					if err != nil {
+						return err
+					}
+
+					cli.PrintAliases(aliases)
+				}
+
+				return nil
 			},
 		},
 		{

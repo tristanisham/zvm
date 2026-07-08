@@ -238,7 +238,23 @@ var zvmApp = &opts.Command{
 			Usage: "Alias a version to a common name",
 			// Aliases: []string{},
 			Action: func(ctx context.Context, cmd *opts.Command) error {
+				first := cmd.Args().First()
+				second := cmd.Args().Get(1)
 
+				if argLen := cmd.Args().Len(); argLen == 1 {
+					return zvm.Alias(ctx, first, nil)
+				} else if argLen == 2 {
+					return zvm.Alias(ctx, first, &second)
+				} else {
+					aliases, err := zvm.ListAliases(ctx)
+					if err != nil {
+						return err
+					}
+
+					cli.PrintAliases(aliases)
+				}
+
+				return nil
 			},
 		},
 		{

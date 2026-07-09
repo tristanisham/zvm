@@ -113,15 +113,10 @@ var zvmApp = &opts.Command{
 			// Args:        true,
 			ArgsUsage: " <ZIG VERSION>",
 			Action: func(ctx context.Context, cmd *opts.Command) error {
-				versionArg := cmd.Args().First()
-				if aliasValue, ok, err := zvm.ResolveAlias(ctx, versionArg); err != nil {
+				versionArg, err := resolveVersionArg(ctx, cmd.Args().First())
+				if err != nil {
 					return err
-				} else if ok {
-					versionArg = aliasValue
 				}
-
-				// Is this going to potentially break some aliases?
-				versionArg = strings.TrimPrefix(versionArg, "v")
 
 				if versionArg == "" {
 					return errors.New("no version provided")
@@ -184,14 +179,10 @@ var zvmApp = &opts.Command{
 				if cmd.Bool("sync") {
 					return zvm.Sync()
 				} else {
-					versionArg := cmd.Args().First()
-					if aliasValue, ok, err := zvm.ResolveAlias(ctx, versionArg); err != nil {
+					versionArg, err := resolveVersionArg(ctx, cmd.Args().First())
+					if err != nil {
 						return err
-					} else if ok {
-						versionArg = aliasValue
 					}
-
-					versionArg = strings.TrimPrefix(versionArg, "v")
 
 					if versionArg == "" {
 						emptyArgErrs := fmt.Errorf("command 'use' requires 1 valid Zig version as an argument")
@@ -224,7 +215,10 @@ var zvmApp = &opts.Command{
 			// Args:  true,
 			SkipFlagParsing: true,
 			Action: func(ctx context.Context, cmd *opts.Command) error {
-				versionArg := strings.TrimPrefix(cmd.Args().First(), "v")
+				versionArg, err := resolveVersionArg(ctx, cmd.Args().First())
+				if err != nil {
+					return err
+				}
 				cmds := cmd.Args().Tail()
 
 				log.Debug("run cmd", "version", versionArg, "args...", cmds)
@@ -295,7 +289,17 @@ var zvmApp = &opts.Command{
 			Name:    "list-remote",
 			Usage:   "List all remote Zig versions",
 			Aliases: []string{"ls-remote"},
+			Flags: []opts.Flag{
+				&opts.BoolFlag{
+					Name:  "json",
+					Usage: "print remote Zig versions as JSON",
+				},
+			},
 			Action: func(ctx context.Context, cmd *opts.Command) error {
+				if cmd.Bool("json") {
+					return zvm.ListRemoteAvailableJSON()
+				}
+
 				return zvm.ListRemoteAvailable()
 			},
 		},
@@ -349,7 +353,10 @@ var zvmApp = &opts.Command{
 			Aliases: []string{"rm"},
 			// Args:    true,
 			Action: func(ctx context.Context, cmd *opts.Command) error {
-				versionArg := strings.TrimPrefix(cmd.Args().First(), "v")
+				versionArg, err := resolveVersionArg(ctx, cmd.Args().First())
+				if err != nil {
+					return err
+				}
 				return zvm.Uninstall(versionArg)
 			},
 		},
@@ -524,4 +531,16 @@ func main() {
 		}
 
 	}
+}
+
+func resolveVersionArg(ctx context.Context, versionArg string) (string, error) {
+	if aliasValue, ok, err := zvm.ResolveAlias(ctx, versionArg); err != nil {
+		return "", err
+	} else if ok {
+		versionArg = aliasValue
+	} else if versionArg != "" {
+		fmt.Println("Alias not found:", versionArg)
+	}
+
+	return strings.TrimPrefix(versionArg, "v"), nil
 }

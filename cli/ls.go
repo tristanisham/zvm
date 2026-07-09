@@ -5,17 +5,21 @@
 package cli
 
 import (
+	"context"
+	"encoding/json"
 	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"slices"
+	"sort"
 	"strings"
 
 	"github.com/charmbracelet/log"
 	"golang.org/x/mod/semver"
 
 	"github.com/tristanisham/clr"
+	"github.com/tristanisham/zvm/cli/meta"
 )
 
 // ListVersions prints the installed Zig versions and marks the current version.
@@ -84,6 +88,16 @@ func (z *ZVM) GetInstalledVersions() ([]string, error) {
 	return versions, nil
 }
 
+type RemoteVersionJSON struct {
+	Version       string   `json:"version"`
+	Installed     bool     `json:"installed"`
+	ZLS           bool     `json:"zls"`
+	Aliases       []string `json:"aliases,omitempty"`
+	RemoteVersion string   `json:"remoteVersion,omitempty"`
+	LocalVersion  string   `json:"localVersion,omitempty"`
+	Outdated      bool     `json:"outdated,omitempty"`
+}
+
 // ListRemoteAvailable lists all available Zig versions from the remote version map,
 // indicating which ones are already installed and which have ZLS support.
 func (z ZVM) ListRemoteAvailable() error {
@@ -112,7 +126,7 @@ func (z ZVM) ListRemoteAvailable() error {
 	semver.Sort(options)
 	slices.Reverse(options)
 
-	fmt.Printf("%-12s%-12s%s\n", "Version", "Installed", "ZLS")
+	fmt.Printf("%s%s%s\n", meta.TableVersionHeaderStyle.Render("Version"), meta.TableInstalledHeaderStyle.Render("Installed"), meta.TableHeaderStyle.Render("ZLS"))
 
 	for _, version := range options {
 		stripped := version[1:]
@@ -123,12 +137,20 @@ func (z ZVM) ListRemoteAvailable() error {
 
 		installed := ""
 		if slices.Contains(installedVersions, stripped) {
-			installed = "[installed]"
+			if z.Settings.UseColor {
+				installed = "installed"
+				coloredStr := meta.TableInstalledVersionStyle.Render(installed)
+				// keep the extra space. It fixes a rendering bug.
+				installed = fmt.Sprintf("[%s] ", coloredStr)
+			} else {
+				installed = "[installed]"
+
+			}
 		}
 
 		zlsInfo := ""
 		if _, ok := zlsVersions[stripped]; ok {
-			zlsInfo = "(zls tagged)"
+			zlsInfo = "(tagged)"
 		}
 
 		fmt.Printf("%-12s%-12s%s\n", stripped, installed, zlsInfo)
@@ -144,9 +166,13 @@ func (z ZVM) ListRemoteAvailable() error {
 
 		zlsInfo := ""
 		if _, ok := zlsVersions["master"]; ok {
-			zlsInfo = "(zls tagged)"
+			zlsInfo = "(tagged)"
 		}
-		fmt.Printf("%-12s%-12s%s\n", fmt.Sprintf("master (remote) (%s)", remoteVersion), "", zlsInfo)
+		remoteLabel := "remote"
+		if z.Settings.UseColor {
+			remoteLabel = meta.TableRemoteVersionStyle.Render(remoteLabel)
+		}
+		fmt.Printf("%-12s%-12s%s\n", fmt.Sprintf("master (%s) (%s)", remoteLabel, remoteVersion), "", zlsInfo)
 
 		// Check if master is installed and print local version
 		if slices.Contains(installedVersions, "master") {
@@ -162,15 +188,138 @@ func (z ZVM) ListRemoteAvailable() error {
 
 				outDated := ""
 				if localVersion != remoteVersion {
-					outDated = "[outdated]"
+					if z.Settings.UseColor {
+						outDated = fmt.Sprintf("[%s] ", meta.TableOutdatedVersionStyle.Render("outdated"))
+					} else {
+						outDated = "[outdated]"
+					}
+				}
+
+				localLabel := "local"
+				installed := "[installed]"
+				if z.Settings.UseColor {
+					localLabel = meta.TableLocalVersionStyle.Render(localLabel)
+					installed = fmt.Sprintf("[%s] ", meta.TableInstalledVersionStyle.Render("installed"))
 				}
 
 				fmt.Println("--------------------------------------------")
-				fmt.Printf("%-15s (%-15s) %-10s %-10s\n", "master (local)", localVersion, "[installed]", outDated)
+				fmt.Printf("%-15s (%-15s) %-10s %-10s\n", fmt.Sprintf("master (%s)", localLabel), localVersion, installed, outDated)
 
 			}
 		}
 	}
 
 	return nil
+}
+
+func (z ZVM) ListRemoteAvailableJSON() error {
+	zigVersions, err := z.fetchVersionMap()
+	if err != nil {
+		return err
+	}
+
+	zlsVersions, err := z.fetchZlsTaggedVersionMap()
+	if err != nil {
+		return err
+	}
+
+	installedVersions, err := z.GetInstalledVersions()
+	if err != nil {
+		return err
+	}
+
+	aliasesByVersion, err := z.aliasesByVersion(context.Background())
+	if err != nil {
+		return err
+	}
+
+	options := make([]string, 0, len(zigVersions))
+	for key := range zigVersions {
+		options = append(options, "v"+key)
+	}
+
+	semver.Sort(options)
+	slices.Reverse(options)
+
+	versions := make([]RemoteVersionJSON, 0, len(options))
+	for _, version := range options {
+		stripped := version[1:]
+		if stripped == "master" {
+			continue
+		}
+
+		_, hasZLS := zlsVersions[stripped]
+		versions = append(versions, RemoteVersionJSON{
+			Version:   stripped,
+			Installed: slices.Contains(installedVersions, stripped),
+			ZLS:       hasZLS,
+			Aliases:   aliasesByVersion[stripped],
+		})
+	}
+
+	if master, ok := zigVersions["master"]; ok {
+		var remoteVersion string
+		if versionInfo, ok := master["version"].(string); ok {
+			remoteVersion = versionInfo
+		}
+
+		_, hasZLS := zlsVersions["master"]
+		masterVersion := RemoteVersionJSON{
+			Version:       "master",
+			Installed:     slices.Contains(installedVersions, "master"),
+			ZLS:           hasZLS,
+			Aliases:       aliasesByVersion["master"],
+			RemoteVersion: remoteVersion,
+		}
+
+		if masterVersion.Installed {
+			targetZig := strings.TrimSpace(filepath.Join(z.baseDir, "master", "zig"))
+			cmd := exec.Command(targetZig, "version")
+			var zigVersion strings.Builder
+			cmd.Stdout = &zigVersion
+			if err := cmd.Run(); err != nil {
+				log.Warn(err)
+			} else {
+				localVersion := strings.TrimSpace(zigVersion.String())
+				masterVersion.LocalVersion = localVersion
+				masterVersion.Outdated = localVersion != remoteVersion
+			}
+		}
+
+		versions = append(versions, masterVersion)
+	}
+
+	return json.NewEncoder(os.Stdout).Encode(versions)
+}
+
+func (z *ZVM) aliasesByVersion(ctx context.Context) (map[string][]string, error) {
+	aliases, err := z.ListAliases(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	aliasesByVersion := make(map[string][]string, len(aliases))
+	for _, alias := range aliases {
+		aliasesByVersion[alias.Value] = append(aliasesByVersion[alias.Value], alias.Key)
+	}
+
+	for version := range aliasesByVersion {
+		sort.Strings(aliasesByVersion[version])
+	}
+
+	return aliasesByVersion, nil
+}
+
+func formatAliasColumn(aliases []string) string {
+	const maxAliases = 3
+
+	if len(aliases) == 0 {
+		return ""
+	}
+
+	if len(aliases) <= maxAliases {
+		return strings.Join(aliases, ", ")
+	}
+
+	return fmt.Sprintf("%s... (%d)", strings.Join(aliases[:maxAliases], ", "), len(aliases))
 }

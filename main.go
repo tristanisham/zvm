@@ -108,7 +108,7 @@ var zvmApp = &opts.Command{
 				},
 				&opts.BoolFlag{
 					Name:  "full",
-					Usage: "use the 'full' zls compatibility mode",
+					Usage: "use the 'full' ZLS compatibility mode",
 				},
 				&opts.BoolFlag{
 					Name:  "nomirror",
@@ -165,7 +165,7 @@ var zvmApp = &opts.Command{
 					os.Setenv("ZVM_TARGET_ARCH", v)
 				}
 
-				// HTTP Settings
+				// HTTP settings
 				if v := cmd.Int64("http.timeout"); v != 0 {
 					os.Setenv("ZVM_HTTP_TIMEOUT", strconv.FormatInt(v, 10))
 				}
@@ -343,7 +343,7 @@ var zvmApp = &opts.Command{
 			Action: func(ctx context.Context, cmd *opts.Command) error {
 				log.Debug("Version Map", "url", zvm.Settings.VersionMapUrl, "cmd", "list/ls")
 				if cmd.Bool("all") {
-					log.Warnf("this flag is depreciated. Please use the %s command", clr.Yellow("ls-remote"))
+					log.Warnf("this flag is deprecated. Please use the %s command", clr.Yellow("ls-remote"))
 					return zvm.ListRemoteAvailable()
 				} else if cmd.Bool("vmu") {
 					if len(zvm.Settings.VersionMapUrl) == 0 {
@@ -461,7 +461,7 @@ var zvmApp = &opts.Command{
 
 						default:
 							if err := zvm.Settings.SetVersionMapUrl(url); err != nil {
-								fmt.Println("Run `zvm vmu zig default` to reset your verison map.")
+								fmt.Println("Run `zvm vmu zig default` to reset your version map.")
 								return err
 							}
 						}
@@ -471,7 +471,7 @@ var zvmApp = &opts.Command{
 				},
 				{
 					Name:  "zls",
-					Usage: "Set ZVM's version map URL for custom ZLS Release Workers",
+					Usage: "Set ZVM's version map URL for custom ZLS release workers",
 					// Args:  true,
 					Action: func(ctx context.Context, cmd *opts.Command) error {
 						url := cmd.Args().First()

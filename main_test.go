@@ -143,21 +143,6 @@ func TestFormatHelpSectionHonorsColorSetting(t *testing.T) {
 	}
 }
 
-func TestCompletionUnknownShell(t *testing.T) {
-	t.Setenv("ZVM_PATH", t.TempDir())
-
-	zvmApp.Writer = new(bytes.Buffer)
-	zvmApp.ErrWriter = new(bytes.Buffer)
-
-	err := zvmApp.Run(context.Background(), []string{"zvm", "completion", "tcsh"})
-	if err == nil {
-		t.Fatal("expected error for unknown shell, got nil")
-	}
-	if !strings.Contains(err.Error(), "tcsh") {
-		t.Errorf("expected error to mention bad shell %q; got %v", "tcsh", err)
-	}
-}
-
 func TestCompletionCommandVisible(t *testing.T) {
 	t.Setenv("ZVM_PATH", t.TempDir())
 

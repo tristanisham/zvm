@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-ZVM (Zig Version Manager) is a CLI tool written in Go for installing and managing multiple Zig compiler versions. It also supports installing ZLS (Zig Language Server). Built with `urfave/cli/v3`.
+ZVM (Zig Version Manager) is a CLI tool written in Go for installing and managing multiple Zig compiler versions. It also supports installing ZLS (Zig Language Server).
 
 ## Build & Test Commands
 
@@ -14,12 +14,15 @@ go test -v ./...                 # Run all tests
 go test -v ./cli/ -run TestName  # Run a single test
 go vet ./...                     # Static analysis
 go fmt ./...                     # Format code
+go run .                         # Build and run the binary
 ```
 
 Build without self-upgrade capability (for package manager distributions):
 ```bash
 go build -tags noAutoUpgrades .
 ```
+
+Build for production by using Deno and the `deno task build` and `deno task clean` commands.
 
 ## Architecture
 
@@ -33,9 +36,11 @@ go build -tags noAutoUpgrades .
 - **Upgrade** (`cli/upgrade.go`): self-upgrade from GitHub releases. Guarded by `!noAutoUpgrades` build tag.
 - **Sync** (`cli/sync.go`): reads `build.zig.zon` for `//! zvm-lock: <version>` and switches to that version.
 
+Each command line action accepted by zvm is stored in the cli/ package, and generally follows a rule of mostly existing in files that start with the action's name. For example, you can find most of the install command's logic in cli/install.go.
+
 **Platform abstraction:** `cli/meta/link_unix.go` and `cli/meta/link_win.go` abstract symlinks (Unix) vs junctions (Windows). Similarly `cli/fileperms_unix.go` / `cli/fileperms_win.go` for permission checks.
 
-**Version constant:** `cli/meta/version.go` — bump `VERSION` here for releases.
+**Version constant:** `cli/meta/version.go` — bump `VERSION` here for releases. ZVM follows the Go semvar best practices guiede. Do not bump major versions above 0. 
 
 ## Environment Variables
 
@@ -51,3 +56,7 @@ go build -tags noAutoUpgrades .
 - Download integrity is verified with minisign signatures using Zig's public key, then SHA256 checksums.
 - Errors are defined as sentinel values in `cli/error.go` and composed with `errors.Join()`.
 - Tests use table-driven patterns with struct slices.
+
+# Personal Preferences
+
+## General Preferences

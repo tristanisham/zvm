@@ -57,6 +57,22 @@ Each command line action accepted by zvm is stored in the cli/ package, and gene
 - Errors are defined as sentinel values in `cli/error.go` and composed with `errors.Join()`.
 - Tests use table-driven patterns with struct slices.
 
-# Personal Preferences
+## Delegation (driver/worker loop)
 
-## General Preferences
+Delegated implementation work uses an adversarial driver/worker loop, defined in `.claude/skills/delegate/SKILL.md` (`/delegate <task>`). The session model (currently Claude) is the driver: it writes an explicit, single-task brief, dispatches implementation to a worker, reviews the diff and test results adversarially, and returns numbered critiques until the work is mergeable. The driver does not write implementation code during the loop and owns all git operations; workers never commit.
+
+Workers, in order of preference:
+1. **codex CLI** (`codex exec --sandbox workspace-write`, critiques via `codex exec resume --last`). Codex needs direct, explicit, focused instructions — exact files, behavior, and acceptance commands. Invoke through a login shell (`bash -lc`); its PATH comes from fnm.
+2. **`implementer` subagent** (`.claude/agents/implementer.md`) — the fallback when `codex` is not on the machine (zvm is developed across several); same loop over the Agent tool.
+
+The worker-side contract is the "Worker Protocol" section below (AGENTS.md, which codex reads, is a symlink to this file).
+
+## Worker Protocol (driven runs)
+
+When you are invoked as the implementation worker in a driver/worker loop (e.g. via `codex exec` dispatched by another agent), the driver's brief is your entire scope:
+
+- Implement exactly what the brief specifies — nothing more. Flag ambiguity in your final message instead of expanding scope.
+- Run the acceptance commands from the brief (typically `go build -v .`, `go vet ./...`, `go test ./...`) before finishing, and report their real results.
+- Never commit, branch, push, or otherwise touch git state. The driver owns version control.
+- End with: files changed (one line each), acceptance results, and any assumptions.
+- Expect adversarial review. A resumed session message will carry a numbered critique — address every item, rerun acceptance, and report again.

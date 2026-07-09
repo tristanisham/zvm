@@ -237,6 +237,9 @@ zvm i master        # Install the current master nightly
 `stable` is especially useful in automation — you don't have to know the exact
 version number to grab the newest release.
 
+You can also create your own named aliases with the
+[`alias` command](#alias-your-zig-versions).
+
 ### Force Install
 
 As of `v0.7.6` ZVM will now skip downloading a version if it is already
@@ -317,6 +320,36 @@ zvm use stable     # Switch to the latest installed stable release
 zvm use 0.13       # Resolves to 0.13.x (latest installed patch)
 zvm use .14        # Same — leading dot implies "0."
 ```
+
+## Alias your Zig versions
+
+```sh
+zvm alias <name> <version>
+# Or
+zvm kv <name> <version>
+```
+
+Use `alias` (or `kv`) to give an installed version of Zig a name of your own.
+Aliases work anywhere a version is accepted — `install`, `use`, `run`, and `rm`.
+
+```sh
+zvm alias work 0.13.0    # Point "work" at 0.13.0
+zvm alias play .14       # Shorthand works — resolves to your installed 0.14.x
+zvm use work             # Switch to 0.13.0 by name
+zvm run play version     # Run a command with the aliased version
+```
+
+The version you're aliasing must already be installed. Aliasing an existing name
+updates it to point at the new version.
+
+```sh
+zvm alias                # List all of your aliases
+zvm alias work           # Print what "work" points to
+zvm alias -d work        # Delete the "work" alias
+zvm alias --clear        # Remove all aliases
+```
+
+Each version's aliases are also included in the `zvm ls-remote --json` output.
 
 ## List installed Zig versions
 

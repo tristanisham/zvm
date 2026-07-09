@@ -50,20 +50,45 @@ func (z *ZVM) ListVersions() error {
 		fmt.Printf("No local Zig installs. Run `%s` to list all available-to-install versions of Zig.\n", cmdHelp)
 	}
 
-	for _, key := range installedVersions {
-		if key == strings.TrimSpace(version) || key == "master" && strings.Contains(version, "-dev.") {
-			if z.Settings.UseColor {
-				// Should just check bin for used version
-				fmt.Println(clr.Green(key))
-			} else {
-				fmt.Println(key + " [x]")
-			}
-		} else {
-			fmt.Println(key)
+	var aliasesByVersion map[string][]string
+	if z.db == nil {
+		log.Debug("alias database unavailable; listing versions without aliases")
+	} else {
+		aliasesByVersion, err = z.aliasesByVersion(context.Background())
+		if err != nil {
+			return err
 		}
 	}
 
+	for _, key := range installedVersions {
+		active := key == strings.TrimSpace(version) || key == "master" && strings.Contains(version, "-dev.")
+		fmt.Println(formatVersionLine(key, formatAliasColumn(aliasesByVersion[key]), active, z.Settings.UseColor))
+	}
+
 	return nil
+}
+
+// formatVersionLine renders a single line of `zvm ls` output for an installed
+// version, optionally marking it active and appending an alias column.
+func formatVersionLine(version, aliasCol string, active, useColor bool) string {
+	var line string
+	switch {
+	case active && useColor:
+		line = clr.Green(version)
+	case active && !useColor:
+		line = version + " [x]"
+	default:
+		line = version
+	}
+
+	if aliasCol != "" {
+		if useColor {
+			aliasCol = clr.Blue(aliasCol)
+		}
+		line += "  " + aliasCol
+	}
+
+	return line
 }
 
 // GetInstalledVersions returns a slice of strings containing the names of

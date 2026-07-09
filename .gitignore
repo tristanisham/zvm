@@ -12,7 +12,6 @@ testdata/
 zvm-*
 .idea/
 .gemini
-.codex
 .claude/worktrees/
 .claude/settings.local.json
 __pycache__

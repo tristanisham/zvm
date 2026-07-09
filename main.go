@@ -8,6 +8,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"os"
 	"strconv"
 	"strings"
@@ -22,10 +23,14 @@ import (
 )
 
 var (
-	zvm                 cli.ZVM
+	zvm                      = *cli.Initialize()
 	printUpgradeNotice  bool = true
 	BuildUpgradeMessage      = "You should probably use your system package manager to update ZVM."
 )
+
+func init() {
+	opts.HelpPrinter = printZVMHelp
+}
 
 var zvmApp = &opts.Command{
 	Name:                  "zvm",
@@ -42,10 +47,21 @@ var zvmApp = &opts.Command{
 			"Example: source <(zvm completion bash)   # bash\n" +
 			"         zvm completion zsh > _zvm       # zsh, place on $fpath\n" +
 			"         zvm completion pwsh > zvm.ps1   # PowerShell, dot-source in profile"
-	},
-	Before: func(ctx context.Context, cmd *opts.Command) (context.Context, error) {
-		zvm = *cli.Initialize()
-		return nil, nil
+
+		for _, shellCmd := range cmd.Commands {
+			if shellCmd.Name != "fish" {
+				continue
+			}
+
+			shellCmd.Action = func(_ context.Context, command *opts.Command) error {
+				completion, err := command.Root().ToFishCompletion()
+				if err != nil {
+					return err
+				}
+				_, err = fmt.Fprint(command.Root().Writer, completion)
+				return err
+			}
+		}
 	},
 	// app-global flags
 	Flags: []opts.Flag{
@@ -84,6 +100,11 @@ var zvmApp = &opts.Command{
 					Name:    "force",
 					Aliases: []string{"f"},
 					Usage:   "force installation even if the version is already installed",
+				},
+				&opts.BoolFlag{
+					Name:    "skip-shasum",
+					Aliases: []string{"s"},
+					Usage:   "skip SHA-256 verification and the unverified-download confirmation",
 				},
 				&opts.BoolFlag{
 					Name:  "full",
@@ -150,14 +171,14 @@ var zvmApp = &opts.Command{
 				}
 
 				// Install Zig
-				resolvedVersion, err := zvm.Install(req.Package, force, !cmd.Bool("nomirror"))
+				resolvedVersion, err := zvm.Install(req.Package, force, cmd.Bool("skip-shasum"), !cmd.Bool("nomirror"))
 				if err != nil {
 					return err
 				}
 
 				// Install ZLS (if requested)
 				if cmd.Bool("zls") {
-					if err := zvm.InstallZls(resolvedVersion, zlsCompat, force); err != nil {
+					if err := zvm.InstallZls(resolvedVersion, zlsCompat, force, cmd.Bool("skip-shasum")); err != nil {
 						return err
 					}
 				}
@@ -531,6 +552,31 @@ func main() {
 		}
 
 	}
+}
+
+func formatHelpSection(section string) string {
+	if !zvm.Settings.UseColor {
+		return section
+	}
+	return clr.Blue(section)
+}
+
+func printZVMHelp(w io.Writer, templ string, data any) {
+	styledTemplate := strings.NewReplacer(
+		"GLOBAL OPTIONS:", `{{section "GLOBAL OPTIONS:"}}`,
+		"NAME:", `{{section "NAME:"}}`,
+		"USAGE:", `{{section "USAGE:"}}`,
+		"VERSION:", `{{section "VERSION:"}}`,
+		"DESCRIPTION:", `{{section "DESCRIPTION:"}}`,
+		"COMMANDS:", `{{section "COMMANDS:"}}`,
+		"OPTIONS:", `{{section "OPTIONS:"}}`,
+		"CATEGORY:", `{{section "CATEGORY:"}}`,
+		"COPYRIGHT:", `{{section "COPYRIGHT:"}}`,
+	).Replace(templ)
+
+	opts.HelpPrinterCustom(w, styledTemplate, data, map[string]any{
+		"section": formatHelpSection,
+	})
 }
 
 func resolveVersionArg(ctx context.Context, versionArg string) (string, error) {

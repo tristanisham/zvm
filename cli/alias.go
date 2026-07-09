@@ -13,7 +13,9 @@ import (
 	"github.com/charmbracelet/log"
 	"github.com/libtnb/sqlite"
 	"github.com/tristanisham/clr"
+	"github.com/tristanisham/zvm/cli/meta"
 	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
 )
 
 func (z *ZVM) Alias(ctx context.Context, key string, val *string) error {
@@ -102,7 +104,14 @@ func (z *ZVM) initializeDatabase() error {
 		log.Debug("No database found")
 	}
 
-	db, err := gorm.Open(sqlite.Open(dbPath), &gorm.Config{})
+	logLevel := logger.Silent
+	if meta.Debug {
+		logLevel = logger.Info
+	}
+
+	db, err := gorm.Open(sqlite.Open(dbPath), &gorm.Config{
+		Logger: logger.Default.LogMode(logLevel),
+	})
 	if err != nil {
 		return errors.Join(ErrBadDatabase, err)
 	}

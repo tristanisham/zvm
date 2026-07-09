@@ -13,5 +13,6 @@ zvm-*
 .idea/
 .gemini
 .codex
-.claude
+.claude/worktrees/
+.claude/settings.local.json
 __pycache__

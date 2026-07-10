@@ -182,6 +182,9 @@ func (z *ZVM) Install(version string, force bool, skipShasum bool, mirror bool) 
 		verifyMinisig = err == nil
 	} else {
 		tarResp, err = attemptDownload(tarPath, nil)
+		if isDevelopmentVersion && err != nil && strings.Contains(err.Error(), "404") {
+			fmt.Println("This version of Zig may be no longer available.")
+		}
 		if err == nil && isOfficialSource {
 			// ziglang.org publishes a .minisig for every build, so a missing
 			// signature is a failed download, not a reason to skip verification.

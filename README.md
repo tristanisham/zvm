@@ -216,8 +216,8 @@ zvm rm .11      # uninstall
 ```
 
 For `use` and `rm`, shorthand is resolved against your **locally installed**
-versions. For `install` and `run`, it resolves against the **remote** version
-map.
+versions. For `install` it resolves against the **remote** version
+map. The `run` command will first check your local installs before expanding to remote versions.
 
 ### Version Aliases
 

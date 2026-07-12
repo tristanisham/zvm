@@ -42,6 +42,11 @@ var zvmApp = &opts.Command{
 			"         zvm completion zsh > _zvm       # zsh, place on $fpath\n" +
 			"         zvm completion pwsh > zvm.ps1   # PowerShell, dot-source in profile"
 	},
+	// Route errors back through main() so they are reported via meta.CtaFatal
+	// instead of urfave/cli calling os.Exit itself. Without this, ExitCoder
+	// errors (e.g. an unknown completion shell) exit the process mid-Run,
+	// bypassing our error reporting and making Run untestable.
+	ExitErrHandler: func(ctx context.Context, cmd *opts.Command, err error) {},
 	Before: func(ctx context.Context, cmd *opts.Command) (context.Context, error) {
 		zvm = *cli.Initialize()
 		return nil, nil

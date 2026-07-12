@@ -85,6 +85,11 @@ func TestCopyFile_unwritable_destination(t *testing.T) {
 	if runtime.GOOS == "windows" {
 		t.Skip("Windows file permission model differs")
 	}
+	// root bypasses directory write permission checks (DAC), so os.Create
+	// inside a 0555 directory succeeds and no error is produced.
+	if os.Geteuid() == 0 {
+		t.Skip("running as root bypasses directory permission checks")
+	}
 
 	dir := t.TempDir()
 	src := filepath.Join(dir, "src")

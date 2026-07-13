@@ -8,6 +8,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"os"
 	"strconv"
 	"strings"
@@ -22,10 +23,14 @@ import (
 )
 
 var (
-	zvm                 cli.ZVM
+	zvm                      = *cli.Initialize()
 	printUpgradeNotice  bool = true
 	BuildUpgradeMessage      = "You should probably use your system package manager to update ZVM."
 )
+
+func init() {
+	opts.HelpPrinter = printZVMHelp
+}
 
 var zvmApp = &opts.Command{
 	Name:                  "zvm",
@@ -42,16 +47,27 @@ var zvmApp = &opts.Command{
 			"Example: source <(zvm completion bash)   # bash\n" +
 			"         zvm completion zsh > _zvm       # zsh, place on $fpath\n" +
 			"         zvm completion pwsh > zvm.ps1   # PowerShell, dot-source in profile"
+
+		for _, shellCmd := range cmd.Commands {
+			if shellCmd.Name != "fish" {
+				continue
+			}
+
+			shellCmd.Action = func(_ context.Context, command *opts.Command) error {
+				completion, err := command.Root().ToFishCompletion()
+				if err != nil {
+					return err
+				}
+				_, err = fmt.Fprint(command.Root().Writer, completion)
+				return err
+			}
+		}
 	},
 	// Route errors back through main() so they are reported via meta.CtaFatal
 	// instead of urfave/cli calling os.Exit itself. Without this, ExitCoder
 	// errors (e.g. an unknown completion shell) exit the process mid-Run,
 	// bypassing our error reporting and making Run untestable.
 	ExitErrHandler: func(ctx context.Context, cmd *opts.Command, err error) {},
-	Before: func(ctx context.Context, cmd *opts.Command) (context.Context, error) {
-		zvm = *cli.Initialize()
-		return nil, nil
-	},
 	// app-global flags
 	Flags: []opts.Flag{
 		&opts.StringFlag{
@@ -496,4 +512,29 @@ func main() {
 		}
 
 	}
+}
+
+func formatHelpSection(section string) string {
+	if !zvm.Settings.UseColor {
+		return section
+	}
+	return clr.Blue(section)
+}
+
+func printZVMHelp(w io.Writer, templ string, data any) {
+	styledTemplate := strings.NewReplacer(
+		"GLOBAL OPTIONS:", `{{section "GLOBAL OPTIONS:"}}`,
+		"NAME:", `{{section "NAME:"}}`,
+		"USAGE:", `{{section "USAGE:"}}`,
+		"VERSION:", `{{section "VERSION:"}}`,
+		"DESCRIPTION:", `{{section "DESCRIPTION:"}}`,
+		"COMMANDS:", `{{section "COMMANDS:"}}`,
+		"OPTIONS:", `{{section "OPTIONS:"}}`,
+		"CATEGORY:", `{{section "CATEGORY:"}}`,
+		"COPYRIGHT:", `{{section "COPYRIGHT:"}}`,
+	).Replace(templ)
+
+	opts.HelpPrinterCustom(w, styledTemplate, data, map[string]any{
+		"section": formatHelpSection,
+	})
 }

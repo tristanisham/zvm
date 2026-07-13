@@ -241,7 +241,17 @@ var zvmApp = &opts.Command{
 			Name:    "list-remote",
 			Usage:   "List all remote Zig versions",
 			Aliases: []string{"ls-remote"},
+			Flags: []opts.Flag{
+				&opts.BoolFlag{
+					Name:  "json",
+					Usage: "print remote Zig versions as JSON",
+				},
+			},
 			Action: func(ctx context.Context, cmd *opts.Command) error {
+				if cmd.Bool("json") {
+					return zvm.ListRemoteAvailableJSON()
+				}
+
 				return zvm.ListRemoteAvailable()
 			},
 		},

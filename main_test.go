@@ -101,6 +101,48 @@ func TestCompletionOutput(t *testing.T) {
 	}
 }
 
+func TestFishCompletionIsStatic(t *testing.T) {
+	t.Setenv("ZVM_PATH", t.TempDir())
+
+	var runErr error
+	got := captureStdout(t, func(w io.Writer) {
+		zvmApp.Writer = w
+		for _, c := range zvmApp.Commands {
+			if c.Name == "completion" {
+				c.Writer = w
+			}
+		}
+		runErr = zvmApp.Run(context.Background(), []string{"zvm", "completion", "fish"})
+	})
+	if runErr != nil {
+		t.Fatalf("unexpected error generating fish completion: %v", runErr)
+	}
+	if strings.Contains(got, "__zvm_perform_completion") {
+		t.Fatal("fish completion should use static definitions, not dynamic completion")
+	}
+	if !strings.Contains(got, "complete -c zvm") {
+		t.Fatal("fish completion is missing zvm completion definitions")
+	}
+	if !strings.Contains(got, "-l json") {
+		t.Fatal("fish completion is missing the list-remote --json flag")
+	}
+}
+
+func TestFormatHelpSectionHonorsColorSetting(t *testing.T) {
+	original := zvm.Settings.UseColor
+	t.Cleanup(func() { zvm.Settings.UseColor = original })
+
+	zvm.Settings.UseColor = false
+	if got := formatHelpSection("NAME:"); got != "NAME:" {
+		t.Errorf("plain help section = %q, want NAME:", got)
+	}
+
+	zvm.Settings.UseColor = true
+	if got := formatHelpSection("NAME:"); got == "NAME:" {
+		t.Error("colored help section did not contain ANSI styling")
+	}
+}
+
 func TestCompletionUnknownShell(t *testing.T) {
 	t.Setenv("ZVM_PATH", t.TempDir())
 

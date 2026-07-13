@@ -34,9 +34,9 @@ func (z *ZVM) Use(ver string) (string, error) {
 	if err := z.getVersion(ver); err != nil {
 		if errors.Is(err, os.ErrNotExist) {
 
-			fmt.Printf("It looks like %s isn't installed. Would you like to install it? [y/n]\n", ver)
+			fmt.Printf("It looks like %s isn't installed. Would you like to install it? [y/N]\n", ver)
 			if getConfirmation() {
-				if ver, err = z.Install(ver, false, true); err != nil {
+				if ver, err = z.Install(ver, false, false, true); err != nil {
 					return ver, err
 				}
 			} else {

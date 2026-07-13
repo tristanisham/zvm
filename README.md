@@ -249,6 +249,27 @@ zvm i --force master
 You can also enable the old behavior by setting the new `alwaysForceInstall`
 field to `true` in `~/.zvm/settings.json`.
 
+### Install a Specific Development Build
+
+Zig development builds can be installed by their full build identifier, such as
+`0.16.0-dev.1334+06d08daba`. ZVM downloads these builds directly from
+`ziglang.org/builds` because they are not listed in the release version map.
+
+Development builds do not have a version-map SHA-256 checksum. ZVM warns about
+this and asks for confirmation before continuing:
+
+```sh
+zvm i 0.16.0-dev.1334+06d08daba
+```
+
+For an explicit non-interactive install, pass `--skip-shasum` (or `-s`). This
+also skips SHA-256 verification for regular Zig and ZLS installations, so use
+it only when you accept that risk:
+
+```sh
+zvm i --skip-shasum 0.16.0-dev.1334+06d08daba
+```
+
 ### Customize HTTP Timeout
 You can pass a custom HTTP timeout (in seconds) for `zvm i` using the `--http.timeout` flag or by setting the `ZVM_HTTP_TIMEOUT` environment variable.
 

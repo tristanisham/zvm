@@ -37,34 +37,35 @@ func (z *ZVM) Run(version string, cmd []string) error {
 	if slices.Contains(installedVersions, version) {
 		return z.runZig(version, cmd)
 	} else {
-		rawVersionStructure, err := z.fetchVersionMap()
-		if err != nil {
-			return err
-		}
+		if !IsDevelopmentVersion(version) {
+			rawVersionStructure, err := z.fetchVersionMap()
+			if err != nil {
+				return err
+			}
 
-		// Also resolve against remote versions if not found locally
-		remoteVersions := make([]string, 0, len(rawVersionStructure))
-		for k := range rawVersionStructure {
-			remoteVersions = append(remoteVersions, k)
-		}
-		if resolved, resolveErr := resolveVersionShorthand(version, remoteVersions); resolveErr == nil && resolved != version {
-			log.Debug("resolved version shorthand (remote)", "input", version, "resolved", resolved)
-			version = resolved
-		}
+			// Also resolve against remote versions if not found locally
+			remoteVersions := make([]string, 0, len(rawVersionStructure))
+			for k := range rawVersionStructure {
+				remoteVersions = append(remoteVersions, k)
+			}
+			if resolved, resolveErr := resolveVersionShorthand(version, remoteVersions); resolveErr == nil && resolved != version {
+				log.Debug("resolved version shorthand (remote)", "input", version, "resolved", resolved)
+				version = resolved
+			}
 
-		_, err = getTarPath(version, &rawVersionStructure)
-		if err != nil {
-			if errors.Is(err, ErrUnsupportedVersion) {
-				return fmt.Errorf("%w: %q", err, version)
-			} else {
+			_, err = getTarPath(version, &rawVersionStructure)
+			if err != nil {
+				if errors.Is(err, ErrUnsupportedVersion) {
+					return fmt.Errorf("%w: %q", err, version)
+				}
 				return err
 			}
 		}
 
-		fmt.Printf("It looks like %s isn't installed. Would you like to install it? [y/n]\n", version)
+		fmt.Printf("It looks like %s isn't installed. Would you like to install it? [y/N]\n", version)
 
 		if getConfirmation() {
-			if version, err = z.Install(version, false, true); err != nil {
+			if version, err = z.Install(version, false, false, true); err != nil {
 				return err
 			}
 			return z.runZig(version, cmd)

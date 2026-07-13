@@ -22,6 +22,7 @@ import (
 	"os/exec"
 	"path"
 	"path/filepath"
+	"regexp"
 	"runtime"
 	"slices"
 	"strconv"
@@ -38,30 +39,72 @@ import (
 	"github.com/tristanisham/clr"
 )
 
-const httpDefaultTimeout = (60 * 3) * time.Second
+const (
+	httpDefaultTimeout = (60 * 3) * time.Second
+	zigBuildsBaseURL   = "https://ziglang.org/builds/"
+)
+
+var devVersionRegex = regexp.MustCompile(`^\d+\.\d+\.\d+-dev\.\d+\+[0-9a-f]+$`)
+
+// IsDevelopmentVersion reports whether version names a specific Zig development build.
+func IsDevelopmentVersion(version string) bool {
+	return devVersionRegex.MatchString(version)
+}
+
+func zigArchiveExtension() string {
+	_, osName := zigStyleSysInfo()
+	if osName == "windows" {
+		return ".zip"
+	}
+	return ".tar.xz"
+}
+
+func developmentVersionDownloadURL(version string) string {
+	arch, osName := zigStyleSysInfo()
+	return fmt.Sprintf("%szig-%s-%s-%s%s", zigBuildsBaseURL, arch, osName, version, zigArchiveExtension())
+}
+
+func requiresUnverifiedDownloadConfirmation(shasum string, skipShasum bool) bool {
+	return shasum == "" && !skipShasum
+}
+
+func confirmUnverifiedDownload(artifact string) error {
+	fmt.Printf("%s has no SHA-256 checksum. Continue with this unverified download? [y/N]\n", artifact)
+	if !getConfirmation() {
+		return fmt.Errorf("installation of unverified %s cancelled", artifact)
+	}
+	return nil
+}
 
 // Install downloads and installs the specified Zig version.
 // It handles checking for existing installations, verifying checksums,
 // and extracting the downloaded bundle.
-func (z *ZVM) Install(version string, force bool, mirror bool) (string, error) {
+func (z *ZVM) Install(version string, force bool, skipShasum bool, mirror bool) (string, error) {
 	if err := os.MkdirAll(z.baseDir, 0755); err != nil {
 		return version, err
 	}
 
-	rawVersionStructure, err := z.fetchVersionMap()
-	if err != nil {
-		return version, err
-	}
+	isDevelopmentVersion := IsDevelopmentVersion(version)
+	var rawVersionStructure zigVersionMap
+	var shasum string
+	var err error
 
-	// Resolve version shorthand (e.g. "0.12" -> "0.12.0", "stable" -> latest release)
-	availableVersions := make([]string, 0, len(rawVersionStructure))
-	for k := range rawVersionStructure {
-		availableVersions = append(availableVersions, k)
-	}
-	if resolved, err := resolveVersionShorthand(version, availableVersions); err == nil && resolved != version {
-		log.Debug("resolved version shorthand", "input", version, "resolved", resolved)
-		fmt.Printf("Resolved %q to %s\n", version, resolved)
-		version = resolved
+	if !isDevelopmentVersion {
+		rawVersionStructure, err = z.fetchVersionMap()
+		if err != nil {
+			return version, err
+		}
+
+		// Resolve version shorthand (e.g. "0.12" -> "0.12.0", "stable" -> latest release)
+		availableVersions := make([]string, 0, len(rawVersionStructure))
+		for k := range rawVersionStructure {
+			availableVersions = append(availableVersions, k)
+		}
+		if resolved, err := resolveVersionShorthand(version, availableVersions); err == nil && resolved != version {
+			log.Debug("resolved version shorthand", "input", version, "resolved", resolved)
+			fmt.Printf("Resolved %q to %s\n", version, resolved)
+			version = resolved
+		}
 	}
 
 	if !force {
@@ -98,11 +141,27 @@ func (z *ZVM) Install(version string, force bool, mirror bool) (string, error) {
 		}
 	}
 
-	tarPath, err := getTarPath(version, &rawVersionStructure)
-	if err != nil {
-		if errors.Is(err, ErrUnsupportedVersion) {
-			return version, fmt.Errorf("%s: %q", err, version)
-		} else {
+	var tarPath string
+	if isDevelopmentVersion {
+		tarPath = developmentVersionDownloadURL(version)
+		log.Debug("development version detected", "version", version, "url", tarPath)
+	} else {
+		tarPath, err = getTarPath(version, &rawVersionStructure)
+		if err != nil {
+			if errors.Is(err, ErrUnsupportedVersion) {
+				return version, fmt.Errorf("%s: %q", err, version)
+			}
+			return version, err
+		}
+
+		shasum, err = getVersionShasum(version, &rawVersionStructure)
+		if err != nil {
+			return version, err
+		}
+	}
+
+	if requiresUnverifiedDownloadConfirmation(shasum, skipShasum) {
+		if err := confirmUnverifiedDownload(fmt.Sprintf("Zig version %s", version)); err != nil {
 			return version, err
 		}
 	}
@@ -113,17 +172,20 @@ func (z *ZVM) Install(version string, force bool, mirror bool) (string, error) {
 	var minisig minisign.Signature
 	var verifyMinisig bool
 
-	// Only the official version map serves builds signed with the pinned
-	// minisign key; custom version maps distribute their own builds, so
-	// signature verification can't apply to them.
-	isOfficialVMUSet := z.Settings.VersionMapUrl == DefaultSettings.VersionMapUrl
-	mirror = mirror && z.Settings.UseMirrorList() && isOfficialVMUSet
+	// Official Zig sources serve builds signed with the pinned minisign key;
+	// custom version maps distribute their own builds, so signature verification
+	// cannot apply to them.
+	isOfficialSource := isDevelopmentVersion || z.Settings.VersionMapUrl == DefaultSettings.VersionMapUrl
+	mirror = !isDevelopmentVersion && mirror && z.Settings.UseMirrorList() && isOfficialSource
 	if mirror {
 		tarResp, minisig, err = attemptMirrorDownload(z.Settings.MirrorListUrl, tarPath)
 		verifyMinisig = err == nil
 	} else {
 		tarResp, err = attemptDownload(tarPath, nil)
-		if err == nil && isOfficialVMUSet {
+		if isDevelopmentVersion && err != nil && strings.Contains(err.Error(), "404") {
+			fmt.Println("This version of Zig may be no longer available.")
+		}
+		if err == nil && isOfficialSource {
 			// ziglang.org publishes a .minisig for every build, so a missing
 			// signature is a failed download, not a reason to skip verification.
 			minisig, err = attemptMinisigDownload(tarPath, nil)
@@ -174,15 +236,10 @@ func (z *ZVM) Install(version string, force bool, mirror bool) (string, error) {
 		return version, err
 	}
 
-	var shasum string
-
-	shasum, err = getVersionShasum(version, &rawVersionStructure)
-	if err != nil {
-		return version, err
-	}
-
-	fmt.Println("Checking shasum...")
-	if len(shasum) > 0 {
+	if skipShasum {
+		fmt.Println("Skipping shasum check (user requested)")
+	} else if len(shasum) > 0 {
+		fmt.Println("Checking shasum...")
 		ourHexHash := hex.EncodeToString(hash.Sum(nil))
 		log.Debug("shasum check:", "theirs", shasum, "ours", ourHexHash)
 		if ourHexHash != shasum {
@@ -193,8 +250,6 @@ func (z *ZVM) Install(version string, force bool, mirror bool) (string, error) {
 			return version, fmt.Errorf("shasum for %v does not match expected value", version)
 		}
 		fmt.Println("Shasums match! 🎉")
-	} else {
-		log.Warnf("No shasum provided by host")
 	}
 
 	if verifyMinisig {
@@ -303,7 +358,7 @@ func attemptMirrorDownload(mirrorListURL string, tarURL string) (*http.Response,
 	mirrors = mirrors[:len(mirrors)-1]
 	rand.Shuffle(len(mirrors), func(i, j int) { mirrors[i], mirrors[j] = mirrors[j], mirrors[i] })
 	// Default as fallback
-	mirrors = append(mirrors, "https://ziglang.org/builds/")
+	mirrors = append(mirrors, zigBuildsBaseURL)
 
 	for i, mirror := range mirrors {
 		mirrorTarURL, err := url.JoinPath(mirror, tarName)
@@ -472,7 +527,7 @@ func (z *ZVM) SelectZlsVersion(version string, compatMode string) (string, strin
 }
 
 // InstallZls downloads and installs the Zig Language Server (ZLS) for the specified Zig version.
-func (z *ZVM) InstallZls(requestedVersion string, compatMode string, force bool) error {
+func (z *ZVM) InstallZls(requestedVersion string, compatMode string, force bool, skipShasum bool) error {
 	fmt.Println("Determining installed Zig version...")
 
 	// make sure dir exists
@@ -504,6 +559,11 @@ func (z *ZVM) InstallZls(requestedVersion string, compatMode string, force bool)
 		}
 	}
 	log.Debug("selected zls version", "zigVersion", zigVersion, "zlsVersion", zlsVersion)
+	if requiresUnverifiedDownloadConfirmation(shasum, skipShasum) {
+		if err := confirmUnverifiedDownload(fmt.Sprintf("ZLS version %s", zlsVersion)); err != nil {
+			return err
+		}
+	}
 
 	_, osType := zigStyleSysInfo()
 	filename := "zls"
@@ -573,8 +633,10 @@ func (z *ZVM) InstallZls(requestedVersion string, compatMode string, force bool)
 		return err
 	}
 
-	fmt.Println("Checking ZLS shasum...")
-	if len(shasum) > 0 {
+	if skipShasum {
+		fmt.Println("Skipping ZLS shasum check (user requested)")
+	} else if len(shasum) > 0 {
+		fmt.Println("Checking ZLS shasum...")
 		ourHexHash := hex.EncodeToString(hash.Sum(nil))
 		log.Debug("shasum check:", "theirs", shasum, "ours", ourHexHash)
 		if ourHexHash != shasum {
@@ -585,8 +647,6 @@ func (z *ZVM) InstallZls(requestedVersion string, compatMode string, force bool)
 			return fmt.Errorf("shasum for zls-%v does not match expected value", zlsVersion)
 		}
 		fmt.Println("Shasums for ZLS match! 🎉")
-	} else {
-		log.Warnf("No ZLS shasum provided by host")
 	}
 
 	fmt.Println("Extracting ZLS bundle...")

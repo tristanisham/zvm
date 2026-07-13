@@ -38,3 +38,26 @@ var (
 
 	ErrInvalidAlias = errors.New("invalid version alias")
 )
+
+// Handler-directive errors.
+//
+// Unlike the sentinels above, these errors do not describe *what* went wrong;
+// they instruct the universal error handler in main() on *how* to exit. Wrap
+// one of them into an error (with errors.Join or fmt.Errorf's %w) when a
+// command has already surfaced whatever the user needs to see and only wants
+// to control the process's shutdown behavior.
+//
+// The wrapped message is never printed to the user on its own — it is only
+// emitted via debug logging (ZVM_DEBUG). Callers that also want user-facing
+// output must print it themselves before returning.
+var (
+	// ErrFailQuietly instructs the handler to debug-print the error and exit
+	// without any user-facing output. Use it when the command has already
+	// communicated everything the user needs (or deliberately nothing).
+	ErrFailQuietly = errors.New("fail quietly")
+
+	// ErrFailClean instructs the handler to exit like a normal failure, but
+	// to debug-print the error (rather than showing it) and run Clean to
+	// remove leftover download archives before exiting.
+	ErrFailClean = errors.New("fail clean")
+)

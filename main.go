@@ -42,6 +42,11 @@ var zvmApp = &opts.Command{
 			"         zvm completion zsh > _zvm       # zsh, place on $fpath\n" +
 			"         zvm completion pwsh > zvm.ps1   # PowerShell, dot-source in profile"
 	},
+	// Route errors back through main() so they are reported via meta.CtaFatal
+	// instead of urfave/cli calling os.Exit itself. Without this, ExitCoder
+	// errors (e.g. an unknown completion shell) exit the process mid-Run,
+	// bypassing our error reporting and making Run untestable.
+	ExitErrHandler: func(ctx context.Context, cmd *opts.Command, err error) {},
 	Before: func(ctx context.Context, cmd *opts.Command) (context.Context, error) {
 		zvm = *cli.Initialize()
 		return nil, nil
@@ -450,7 +455,22 @@ func main() {
 		// What happens next: ZVM will automatically use the correct version map the next time you run it
 		// If the issue persists, please double-check your settings and try again, or create a GitHub Issue.`)
 		// 		}
-		meta.CtaFatal(err)
+
+		// Handler-directive errors control how we shut down without showing
+		// the user the wrapped message (it is only debug-logged).
+		switch {
+		case errors.Is(err, cli.ErrFailQuietly):
+			log.Debug("failing quietly", "error", err)
+			os.Exit(1)
+		case errors.Is(err, cli.ErrFailClean):
+			log.Debug("failing clean", "error", err)
+			if cerr := zvm.Clean(); cerr != nil {
+				log.Debug("clean failed while handling ErrFailClean", "error", cerr)
+			}
+			os.Exit(1)
+		default:
+			meta.CtaFatal(err)
+		}
 	}
 
 	if tag := <-upSig; tag != "" {

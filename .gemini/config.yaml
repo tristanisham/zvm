@@ -1,6 +1,0 @@
-have_fun: false
-code_review:
-  disable: true
-pull_request_opened:
-  summary: false
-  code_review: false

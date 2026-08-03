@@ -17,9 +17,18 @@ also uses WingetCreate to open the version-update pull request.
 ## Repository setup
 
 Add a repository secret named `WINGET_CREATE_GITHUB_TOKEN`. It must contain a
-GitHub personal access token (classic) with the `repo` scope, as required by
-WingetCreate's CI documentation. If the secret is absent, MSI creation and
-release uploads still run, but Winget submission is skipped.
+GitHub personal access token (classic). WingetCreate's CI documentation asks
+for the `repo` scope; this repository's secret is scoped to `public_repo`
+instead, on the reasoning that the token only forks `microsoft/winget-pkgs` and
+pushes a branch, and both repositories are public. If an automated submission
+ever fails on permissions, widen the scope to `repo`. If the secret is absent,
+MSI creation and release uploads still run, but Winget submission is skipped.
+
+To rotate the token, create a replacement and overwrite the secret in place:
+
+```bash
+gh secret set WINGET_CREATE_GITHUB_TOKEN --repo tristanisham/zvm
+```
 
 ## First Winget submission
 

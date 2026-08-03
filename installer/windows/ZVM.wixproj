@@ -1,0 +1,15 @@
+<Project Sdk="WixToolset.Sdk/5.0.2">
+  <PropertyGroup>
+    <OutputType>Package</OutputType>
+    <OutputName>$(MsiName)</OutputName>
+    <InstallerPlatform>$(MsiArchitecture)</InstallerPlatform>
+    <DefineConstants>ProductVersion=$(ProductVersion);SourceExe=$(SourceExe)</DefineConstants>
+  </PropertyGroup>
+
+  <Target Name="ValidateBuildProperties" BeforeTargets="BeforeBuild">
+    <Error Condition="'$(ProductVersion)' == ''" Text="ProductVersion is required." />
+    <Error Condition="'$(SourceExe)' == ''" Text="SourceExe is required." />
+    <Error Condition="'$(MsiArchitecture)' == ''" Text="MsiArchitecture is required." />
+    <Error Condition="'$(MsiName)' == ''" Text="MsiName is required." />
+  </Target>
+</Project>

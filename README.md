@@ -651,6 +651,73 @@ checker here. All settings are also exposed as flags or environment variables.
 This file is stateful, and ZVM will create it if it does not exist and utilizes
 it for its operation.
 
+## Uninstalling ZVM
+
+ZVM stores its binaries, installed Zig versions, and settings under
+`$HOME/.zvm` on Unix-like systems and `$HOME\.zvm` on Windows. Remove the
+installer-managed environment configuration before deleting that directory.
+
+### Linux, BSD, macOS, and other Unix-like systems
+
+`install.sh` adds a block beginning with `# ZVM` to one of the following shell
+startup files:
+
+- Fish: `~/.config/fish/config.fish`
+- Zsh: `~/.zshenv`, `~/.zprofile`, or `~/.zshrc`
+- Other shells: `~/.bashrc` or `~/.profile`
+
+Remove that entire block, including the `ZVM_INSTALL` assignment and the lines
+that add `$HOME/.zvm/bin` and `$ZVM_INSTALL` to `PATH`. Then remove ZVM:
+
+```sh
+rm -rf "$HOME/.zvm"
+```
+
+Close and reopen your terminal to clear `ZVM_INSTALL` and the ZVM entries from
+the current environment.
+
+### Windows PowerShell
+
+Run the following in PowerShell to remove the user-level `ZVM_INSTALL`
+variable, remove ZVM's two entries from the user and current-session `Path`,
+and delete ZVM:
+
+```powershell
+$ZvmPaths = @(
+    "$HOME\.zvm\self"
+    "$HOME\.zvm\bin"
+)
+
+[Environment]::SetEnvironmentVariable(
+    "ZVM_INSTALL",
+    $null,
+    [EnvironmentVariableTarget]::User
+)
+
+$UserPath = [Environment]::GetEnvironmentVariable(
+    "Path",
+    [EnvironmentVariableTarget]::User
+) -split ";" | Where-Object {
+    $_ -and $_.TrimEnd("\") -notin $ZvmPaths
+}
+
+[Environment]::SetEnvironmentVariable(
+    "Path",
+    $UserPath -join ";",
+    [EnvironmentVariableTarget]::User
+)
+
+Remove-Item Env:ZVM_INSTALL -ErrorAction SilentlyContinue
+$env:Path = (($env:Path -split ";") | Where-Object {
+    $_ -and $_.TrimEnd("\") -notin $ZvmPaths
+}) -join ";"
+
+Remove-Item -Recurse -Force "$HOME\.zvm"
+```
+
+Restart open terminals and editors so they inherit the updated user
+environment.
+
 ## Please Consider Giving the Repo a Star ⭐
 
 <!-- https://star-history.com/#tristanisham/zvm&Timeline -->

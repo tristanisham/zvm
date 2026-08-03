@@ -25,8 +25,18 @@
 
   <Fragment>
     <DirectoryRef Id="INSTALLFOLDER">
-      <Component Id="ZvmExecutable" Guid="*">
-        <File Id="ZvmExe" Source="$(var.SourceExe)" Name="zvm.exe" KeyPath="yes" />
+      <Component Id="ZvmExecutable" Guid="6c8b1f0e-9a5d-4c2b-8f7a-1d3e5b9c04a7">
+        <!-- ICE38: a component installing into the user profile must key off HKCU. -->
+        <RegistryValue
+          Root="HKCU"
+          Key="Software\TristanIsham\ZVM"
+          Name="InstallFolder"
+          Type="string"
+          Value="[INSTALLFOLDER]"
+          KeyPath="yes" />
+        <File Id="ZvmExe" Source="$(var.SourceExe)" Name="zvm.exe" />
+        <!-- ICE64: user-profile directories must be removed on uninstall. -->
+        <RemoveFolder Id="RemoveZvmSelfFolder" Directory="INSTALLFOLDER" On="uninstall" />
         <Environment
           Id="ZvmInstallEnvironment"
           Name="ZVM_INSTALL"

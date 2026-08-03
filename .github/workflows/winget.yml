@@ -1,0 +1,199 @@
+name: Winget
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Version to embed in the MSI, for example 0.8.28
+        required: true
+        type: string
+  release:
+    types: [published]
+
+permissions:
+  contents: write
+
+jobs:
+  build-msi:
+    if: github.event_name == 'workflow_dispatch' || !github.event.release.prerelease
+    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - go-architecture: amd64
+            msi-architecture: x64
+            msi-name: zvm-windows-amd64
+          - go-architecture: arm64
+            msi-architecture: arm64
+            msi-name: zvm-windows-arm64
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.26"
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: "8.0.x"
+
+      - name: Resolve package version
+        id: version
+        shell: pwsh
+        run: |
+          if ("${{ github.event_name }}" -eq "release") {
+            $version = "${{ github.event.release.tag_name }}"
+          } else {
+            $version = "${{ inputs.version }}"
+          }
+
+          $version = $version.TrimStart("v")
+          if ($version -notmatch '^\d+\.\d+\.\d+$') {
+            throw "MSI versions must contain three numeric parts: $version"
+          }
+
+          "value=$version" >> $env:GITHUB_OUTPUT
+
+      - name: Build ZVM
+        shell: pwsh
+        run: |
+          $env:CGO_ENABLED = "0"
+          $env:GOOS = "windows"
+          $env:GOARCH = "${{ matrix.go-architecture }}"
+          New-Item -ItemType Directory -Force build | Out-Null
+          go build -tags noAutoUpgrades -trimpath -ldflags "-s -w" -o build/zvm.exe .
+
+      - name: Build MSI
+        shell: pwsh
+        run: |
+          $sourceExe = (Resolve-Path build/zvm.exe).Path
+          dotnet build installer/windows/ZVM.wixproj `
+            --configuration Release `
+            --output build/msi `
+            -p:ProductVersion=${{ steps.version.outputs.value }} `
+            -p:SourceExe="$sourceExe" `
+            -p:MsiArchitecture=${{ matrix.msi-architecture }} `
+            -p:MsiName=${{ matrix.msi-name }}
+
+      - name: Test x64 MSI install and uninstall
+        if: matrix.go-architecture == 'amd64'
+        shell: pwsh
+        run: |
+          $msi = (Resolve-Path "build/msi/${{ matrix.msi-name }}.msi").Path
+          $install = Start-Process msiexec.exe -Wait -PassThru -ArgumentList @(
+            "/i", "`"$msi`"", "/qn", "/norestart", "/l*v", "install.log"
+          )
+          if ($install.ExitCode -ne 0) {
+            Get-Content install.log
+            throw "MSI installation failed with exit code $($install.ExitCode)"
+          }
+
+          $installedExe = Join-Path $HOME ".zvm/self/zvm.exe"
+          if (-not (Test-Path $installedExe)) {
+            throw "The MSI did not install zvm.exe at $installedExe"
+          }
+          & $installedExe --version
+
+          $environment = Get-ItemProperty "HKCU:\Environment"
+          $expectedInstall = (Join-Path $HOME ".zvm\self").TrimEnd("\")
+          $actualInstall = $environment.ZVM_INSTALL.TrimEnd("\")
+          if ($actualInstall -ine $expectedInstall) {
+            throw "Unexpected ZVM_INSTALL value: $($environment.ZVM_INSTALL)"
+          }
+          $pathEntries = $environment.Path -split ";" | ForEach-Object { $_.TrimEnd("\") }
+          if ($pathEntries -inotcontains $expectedInstall) {
+            throw "ZVM_INSTALL was not added to the user PATH"
+          }
+          $expectedBin = (Join-Path $HOME ".zvm\bin").TrimEnd("\")
+          if ($pathEntries -inotcontains $expectedBin) {
+            throw "The ZVM bin directory was not added to the user PATH"
+          }
+
+          $uninstall = Start-Process msiexec.exe -Wait -PassThru -ArgumentList @(
+            "/x", "`"$msi`"", "/qn", "/norestart", "/l*v", "uninstall.log"
+          )
+          if ($uninstall.ExitCode -ne 0) {
+            Get-Content uninstall.log
+            throw "MSI uninstallation failed with exit code $($uninstall.ExitCode)"
+          }
+          if (Test-Path $installedExe) {
+            throw "MSI uninstallation did not remove zvm.exe"
+          }
+
+          $environment = Get-ItemProperty "HKCU:\Environment"
+          if ($null -ne $environment.ZVM_INSTALL) {
+            throw "MSI uninstallation did not remove ZVM_INSTALL"
+          }
+          $pathEntries = $environment.Path -split ";" | ForEach-Object { $_.TrimEnd("\") }
+          if ($pathEntries -icontains $expectedInstall -or $pathEntries -icontains $expectedBin) {
+            throw "MSI uninstallation did not remove ZVM's PATH entries"
+          }
+
+      - name: Upload MSI artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.msi-name }}
+          path: build/msi/${{ matrix.msi-name }}.msi
+          if-no-files-found: error
+
+      - name: Attach MSI to release
+        if: github.event_name == 'release'
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release upload "${{ github.event.release.tag_name }}" "build/msi/${{ matrix.msi-name }}.msi" --clobber
+
+  submit-winget:
+    if: github.event_name == 'release' && !github.event.release.prerelease
+    needs: build-msi
+    runs-on: windows-latest
+    env:
+      WINGET_CREATE_GITHUB_TOKEN: ${{ secrets.WINGET_CREATE_GITHUB_TOKEN }}
+
+    steps:
+      - name: Set up .NET 6
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: "6.0.x"
+
+      - name: Download MSI artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: zvm-windows-*
+          path: build
+          merge-multiple: true
+
+      - name: Submit Winget update
+        shell: pwsh
+        run: |
+          if ([string]::IsNullOrWhiteSpace($env:WINGET_CREATE_GITHUB_TOKEN)) {
+            Write-Warning "WINGET_CREATE_GITHUB_TOKEN is not configured; skipping Winget submission."
+            exit 0
+          }
+
+          $packagePath = "https://api.github.com/repos/microsoft/winget-pkgs/contents/manifests/t/TristanIsham/ZVM"
+          try {
+            Invoke-RestMethod -Uri $packagePath -Headers @{ "User-Agent" = "zvm-winget-workflow" } | Out-Null
+          } catch {
+            if ($_.Exception.Response.StatusCode.value__ -eq 404) {
+              Write-Warning "TristanIsham.ZVM has not been accepted into winget-pkgs yet. Complete the one-time initial submission documented in installer/windows/README.md."
+              exit 0
+            }
+            throw
+          }
+
+          $tag = "${{ github.event.release.tag_name }}"
+          $version = $tag.TrimStart("v")
+          $releaseBase = "https://github.com/tristanisham/zvm/releases/download/$tag"
+          $x64Url = "$releaseBase/zvm-windows-amd64.msi"
+          $arm64Url = "$releaseBase/zvm-windows-arm64.msi"
+
+          Invoke-WebRequest https://aka.ms/wingetcreate/latest -OutFile wingetcreate.exe
+          .\wingetcreate.exe update TristanIsham.ZVM `
+            --version $version `
+            --urls $x64Url $arm64Url `
+            --submit

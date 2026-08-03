@@ -3,6 +3,8 @@ zig-out/
 cmake-build/
 build/
 dist/
+installer/windows/bin/
+installer/windows/obj/
 demo/
 zvm
 zvm.exe

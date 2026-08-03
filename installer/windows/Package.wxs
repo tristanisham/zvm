@@ -1,0 +1,53 @@
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
+  <Package
+    Name="ZVM"
+    Manufacturer="Tristan Isham"
+    Version="$(var.ProductVersion)"
+    UpgradeCode="34792705-2eed-480c-ac6b-52b8fbdbbac9"
+    Scope="perUser">
+
+    <SummaryInformation Description="Zig Version Manager" />
+    <MajorUpgrade DowngradeErrorMessage="A newer version of ZVM is already installed." />
+    <MediaTemplate EmbedCab="yes" />
+
+    <Feature Id="Main" Title="ZVM" Level="1">
+      <ComponentRef Id="ZvmExecutable" />
+    </Feature>
+
+    <SetDirectory Id="INSTALLFOLDER" Value="[%USERPROFILE]\.zvm\self" />
+  </Package>
+
+  <Fragment>
+    <StandardDirectory Id="LocalAppDataFolder">
+      <Directory Id="INSTALLFOLDER" />
+    </StandardDirectory>
+  </Fragment>
+
+  <Fragment>
+    <DirectoryRef Id="INSTALLFOLDER">
+      <Component Id="ZvmExecutable" Guid="*">
+        <File Id="ZvmExe" Source="$(var.SourceExe)" Name="zvm.exe" KeyPath="yes" />
+        <Environment
+          Id="ZvmInstallEnvironment"
+          Name="ZVM_INSTALL"
+          Value="[INSTALLFOLDER]"
+          Action="set"
+          System="no" />
+        <Environment
+          Id="ZvmSelfPath"
+          Name="PATH"
+          Value="[INSTALLFOLDER]"
+          Action="set"
+          Part="last"
+          System="no" />
+        <Environment
+          Id="ZvmBinPath"
+          Name="PATH"
+          Value="[%USERPROFILE]\.zvm\bin"
+          Action="set"
+          Part="last"
+          System="no" />
+      </Component>
+    </DirectoryRef>
+  </Fragment>
+</Wix>

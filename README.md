@@ -720,11 +720,11 @@ environment.
 
 ## Please Consider Giving the Repo a Star ⭐
 
-<!-- https://star-history.com/#tristanisham/zvm&Timeline -->
-<a href="https://github.com/tristanisham/zvm">
+<!-- Regenerated daily by .github/workflows/star-history.yml -->
+<a href="https://github.com/tristanisham/zvm/stargazers">
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=tristanisham/zvm&type=Timeline&theme=dark" />
-    <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/svg?repos=tristanisham/zvm&type=Timeline" />
-    <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=tristanisham/zvm&type=Timeline" />
+    <source media="(prefers-color-scheme: dark)" srcset=".github/assets/star-history-dark.svg" />
+    <source media="(prefers-color-scheme: light)" srcset=".github/assets/star-history-light.svg" />
+    <img alt="Star History Chart" src=".github/assets/star-history-light.svg" width="800" />
   </picture>
 </a>

@@ -17,3 +17,4 @@ zvm-*
 .codex
 .claude
 __pycache__
+docs/superpowers/specs/

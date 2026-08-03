@@ -24,6 +24,7 @@ type Settings struct {
 	ZlsVMU             string `json:"zlsVersionMapUrl,omitempty"` // ZLS's version map URL
 	UseColor           bool   `json:"useColor"`
 	AlwaysForceInstall bool   `json:"alwaysForceInstall"`
+	UseXDGSpec         bool   `json:"useXDGSpec,omitempty"` // Use XDG Base Directory paths on Linux
 }
 
 // DefaultSettings defines the default configuration values for ZVM.
@@ -35,6 +36,7 @@ var DefaultSettings = Settings{
 	ZlsVMU:             "https://releases.zigtools.org/",
 	UseColor:           true,
 	AlwaysForceInstall: false,
+	UseXDGSpec:         false,
 }
 
 // UseMirrorList returns true if the mirror list URL is not set to "disabled".

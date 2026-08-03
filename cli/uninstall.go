@@ -22,7 +22,7 @@ func (z *ZVM) Uninstall(version string) error {
 		}
 	}
 
-	root, err := os.OpenRoot(z.baseDir)
+	root, err := os.OpenRoot(z.versionsDir())
 	if err != nil {
 		return err
 	}

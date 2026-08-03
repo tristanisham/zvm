@@ -1,7 +1,8 @@
 {
   "tasks": {
     "build": "deno run -A build.ts",
-    "clean": "rm -r build"
+    "clean": "rm -r build",
+    "star-history": "deno run -A .github/scripts/star-history.ts"
   },
   "imports": {
     "@std/cli": "jsr:@std/cli@^1.0.28",

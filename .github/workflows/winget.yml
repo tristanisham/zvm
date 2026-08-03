@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: Version to embed in the MSI, for example 0.8.28
+        description: Version to embed in the MSI, for example 0.8.29
         required: true
         type: string
   release:

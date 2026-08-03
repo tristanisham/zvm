@@ -29,8 +29,8 @@ a one-time maintainer step after publishing a release:
 ```powershell
 Invoke-WebRequest https://aka.ms/wingetcreate/latest -OutFile wingetcreate.exe
 .\wingetcreate.exe new `
-  https://github.com/tristanisham/zvm/releases/download/v0.8.28/zvm-windows-amd64.msi `
-  https://github.com/tristanisham/zvm/releases/download/v0.8.28/zvm-windows-arm64.msi
+  https://github.com/tristanisham/zvm/releases/download/v0.8.29/zvm-windows-amd64.msi `
+  https://github.com/tristanisham/zvm/releases/download/v0.8.29/zvm-windows-arm64.msi
 ```
 
 Set the package identifier to `TristanIsham.ZVM`, review the generated

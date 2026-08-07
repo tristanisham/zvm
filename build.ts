@@ -126,7 +126,16 @@ async function tarFile(
   const file = await Deno.open(src);
   const { size } = await file.stat();
   await ReadableStream.from<TarStreamInput>([
-    { type: "file", path: entryName, size, readable: file.readable },
+    {
+      type: "file",
+      path: entryName,
+      size,
+      readable: file.readable,
+      options: {
+        // Preserve executable permissions in Unix release archives
+        mode: 0o755,
+      },
+    },
   ])
     .pipeThrough(new TarStream())
     .pipeTo((await Deno.create(dest)).writable);

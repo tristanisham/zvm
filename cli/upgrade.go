@@ -78,7 +78,7 @@ func (z *ZVM) Upgrade() error {
 		return fmt.Errorf("%w: unexpected status code %d", ErrFailedUpgrade, resp.StatusCode)
 	}
 
-	tempDownload, err := os.CreateTemp(z.baseDir, "*."+archive)
+	tempDownload, err := os.CreateTemp(z.cacheDir(), "*."+archive)
 	if err != nil {
 		return err
 	}
@@ -99,7 +99,7 @@ func (z *ZVM) Upgrade() error {
 	zvmPath := filepath.Join(zvmInstallDirENV, zvmBinaryName)
 	log.Debug("zvmPath", "path", zvmPath)
 
-	newTemp, err := os.MkdirTemp(z.baseDir, "zvm-upgrade-*")
+	newTemp, err := os.MkdirTemp(z.cacheDir(), "zvm-upgrade-*")
 	if err != nil {
 		log.Debugf("Failed to create temp directory: %s", newTemp)
 		return fmt.Errorf("%w: %w", ErrFailedUpgrade, err)
@@ -190,19 +190,19 @@ func (z ZVM) getInstallDir() (string, error) {
 	if !ok {
 		this, err := os.Executable()
 		if err != nil {
-			return filepath.Join(z.baseDir, "self"), nil
+			return z.selfDir(), nil
 		}
 
 		itIsASymlink, err := isSymlink(this)
 		if err != nil {
-			return filepath.Join(z.baseDir, "self"), nil
+			return z.selfDir(), nil
 		}
 
 		var finalPath string
 		if itIsASymlink {
 			finalPath, err = resolveSymlink(this)
 			if err != nil {
-				return filepath.Join(z.baseDir, "self"), nil
+				return z.selfDir(), nil
 			}
 		} else {
 			finalPath = this

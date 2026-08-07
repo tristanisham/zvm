@@ -80,7 +80,12 @@ func confirmUnverifiedDownload(artifact string) error {
 // It handles checking for existing installations, verifying checksums,
 // and extracting the downloaded bundle.
 func (z *ZVM) Install(version string, force bool, skipShasum bool, mirror bool) (string, error) {
-	if err := os.MkdirAll(z.baseDir, 0755); err != nil {
+	versionsDir := z.versionsDir()
+	cacheDir := z.cacheDir()
+	if err := os.MkdirAll(versionsDir, 0755); err != nil {
+		return version, err
+	}
+	if err := os.MkdirAll(cacheDir, 0755); err != nil {
 		return version, err
 	}
 
@@ -116,7 +121,7 @@ func (z *ZVM) Install(version string, force bool, skipShasum bool, mirror bool) 
 			alreadyInstalled := true
 			installedVersion := version
 			if version == "master" {
-				targetZig := strings.TrimSpace(filepath.Join(z.baseDir, "master", "zig"))
+				targetZig := strings.TrimSpace(filepath.Join(versionsDir, "master", "zig"))
 				cmd := exec.Command(targetZig, "version")
 				var zigVersion strings.Builder
 				cmd.Stdout = &zigVersion
@@ -210,7 +215,7 @@ func (z *ZVM) Install(version string, force bool, skipShasum bool, mirror bool) 
 		pathEnding = "*.tar.xz"
 	}
 
-	tempFile, err := os.CreateTemp(z.baseDir, pathEnding)
+	tempFile, err := os.CreateTemp(cacheDir, pathEnding)
 	if err != nil {
 		return version, err
 	}
@@ -274,7 +279,7 @@ func (z *ZVM) Install(version string, force bool, skipShasum bool, mirror bool) 
 	// installedVersionPath := filepath.Join(z.zvmBaseDir, version)
 	fmt.Println("Extracting bundle...")
 
-	if err := ExtractBundle(tempFile.Name(), z.baseDir); err != nil {
+	if err := ExtractBundle(tempFile.Name(), versionsDir); err != nil {
 		log.Fatal(err)
 	}
 
@@ -296,33 +301,38 @@ func (z *ZVM) Install(version string, force bool, skipShasum bool, mirror bool) 
 		tarName = version
 	}
 
-	if err := os.Rename(filepath.Join(z.baseDir, tarName), filepath.Join(z.baseDir, version)); err != nil {
-		if _, err := os.Stat(filepath.Join(z.baseDir, version)); err == nil {
+	extractedPath := filepath.Join(versionsDir, tarName)
+	installedPath := filepath.Join(versionsDir, version)
+	if renameErr := os.Rename(extractedPath, installedPath); renameErr != nil {
+		if _, err := os.Stat(installedPath); err == nil {
 			// Room here to make the backup file.
-			log.Debug("removing", "path", filepath.Join(z.baseDir, version))
-			if err := os.RemoveAll(filepath.Join(z.baseDir, version)); err != nil {
-				log.Fatal(err)
+			log.Debug("removing", "path", installedPath)
+			if err := os.RemoveAll(installedPath); err != nil {
+				return version, err
 			} else {
-				oldName := filepath.Join(z.baseDir, tarName)
-				newName := filepath.Join(z.baseDir, version)
+				oldName := extractedPath
+				newName := installedPath
 				log.Debug("renaming", "old", oldName, "new", newName, "identical", oldName == newName)
 				if oldName != newName {
 					if err := os.Rename(oldName, newName); err != nil {
-						log.Fatal(clr.Yellow(err))
+						return version, err
 					}
 				}
 
 			}
-
+		} else {
+			return version, renameErr
 		}
 	}
 
 	// This removes the extra download
-	if err := os.RemoveAll(filepath.Join(z.baseDir, tarName)); err != nil {
+	if err := os.RemoveAll(extractedPath); err != nil {
 		log.Warn(err)
 	}
 
-	z.createSymlink(version)
+	if err := z.createSymlink(version); err != nil {
+		return version, err
+	}
 
 	fmt.Println("Successfully installed Zig!")
 
@@ -531,13 +541,15 @@ func (z *ZVM) InstallZls(requestedVersion string, compatMode string, force bool,
 	fmt.Println("Determining installed Zig version...")
 
 	// make sure dir exists
-	installDir := filepath.Join(z.baseDir, requestedVersion)
+	versionsDir := z.versionsDir()
+	cacheDir := z.cacheDir()
+	installDir := filepath.Join(versionsDir, requestedVersion)
 	err := os.MkdirAll(installDir, 0755)
 	if err != nil {
 		return err
 	}
 
-	targetZig := strings.TrimSpace(filepath.Join(z.baseDir, requestedVersion, "zig"))
+	targetZig := strings.TrimSpace(filepath.Join(versionsDir, requestedVersion, "zig"))
 	cmd := exec.Command(targetZig, "version")
 	var builder strings.Builder
 	cmd.Stdout = &builder
@@ -607,7 +619,7 @@ func (z *ZVM) InstallZls(requestedVersion string, compatMode string, force bool,
 		pathEnding = "*.tar.xz"
 	}
 
-	tempDir, err := os.CreateTemp(z.baseDir, pathEnding)
+	tempDir, err := os.CreateTemp(cacheDir, pathEnding)
 	if err != nil {
 		return err
 	}
@@ -651,7 +663,7 @@ func (z *ZVM) InstallZls(requestedVersion string, compatMode string, force bool,
 
 	fmt.Println("Extracting ZLS bundle...")
 
-	zlsTempDir, err := os.MkdirTemp(z.baseDir, "zls-*")
+	zlsTempDir, err := os.MkdirTemp(versionsDir, "zls-*")
 	if err != nil {
 		return err
 	}
@@ -678,7 +690,9 @@ func (z *ZVM) InstallZls(requestedVersion string, compatMode string, force bool,
 		return err
 	}
 
-	z.createSymlink(requestedVersion)
+	if err := z.createSymlink(requestedVersion); err != nil {
+		return err
+	}
 	fmt.Println("Done! 🎉")
 	return nil
 }
@@ -718,28 +732,8 @@ func findZlsExecutable(dir string) (string, error) {
 
 // createSymlink creates a symbolic link for the installed version
 // pointing to the 'bin' directory in the ZVM base path.
-func (z *ZVM) createSymlink(version string) {
-	// .zvm/master
-	versionPath := filepath.Join(z.baseDir, version)
-	binDir := filepath.Join(z.baseDir, "bin")
-
-	stat, err := os.Lstat(binDir)
-
-	// See zvm.Use() for an explanation.
-	if stat != nil {
-		if err == nil {
-			fmt.Println("Removing old inode link")
-			if err := os.RemoveAll(binDir); err != nil {
-				log.Fatal("could not remove bin", "err", err, "dir", binDir)
-			}
-
-		}
-	}
-
-	if err := meta.Link(versionPath, binDir); err != nil {
-		log.Fatal("meta.Link error", err)
-	}
-
+func (z *ZVM) createSymlink(version string) error {
+	return z.setBin(version)
 }
 
 // getTarPath determines the download URL for the Zig binary based on the version and system architecture.

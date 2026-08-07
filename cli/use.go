@@ -50,9 +50,13 @@ func (z *ZVM) Use(ver string) (string, error) {
 
 // setBin updates the symbolic link 'bin' in the ZVM base directory to point to the specified version's bin directory.
 func (z *ZVM) setBin(ver string) error {
+	if z.usesXDGSpec() {
+		return z.setXDGExecutables(ver)
+	}
+
 	// .zvm/master
-	version_path := filepath.Join(z.baseDir, ver)
-	binDir := filepath.Join(z.baseDir, "bin")
+	versionPath := filepath.Join(z.versionsDir(), ver)
+	binDir := z.binDir()
 
 	// Came across https://pkg.go.dev/os#Lstat
 	// which is specifically to check symbolic links.
@@ -77,12 +81,91 @@ func (z *ZVM) setBin(ver string) error {
 		}
 	}
 
-	if err := meta.Link(version_path, binDir); err != nil {
+	if err := meta.Link(versionPath, binDir); err != nil {
 		return err
 	}
 
 	log.Debug("Use", "version", ver)
 	return nil
+}
+
+func (z *ZVM) setXDGExecutables(version string) error {
+	versionsDir := z.versionsDir()
+	for _, name := range []string{"zig", "zls"} {
+		source := filepath.Join(versionsDir, version, name)
+		destination := filepath.Join(z.binDir(), name)
+
+		_, sourceErr := os.Stat(source)
+		if sourceErr != nil && !errors.Is(sourceErr, os.ErrNotExist) {
+			return sourceErr
+		}
+
+		removed, err := removeZVMManagedLink(destination, versionsDir)
+		if err != nil {
+			return err
+		}
+
+		if errors.Is(sourceErr, os.ErrNotExist) {
+			continue
+		}
+
+		if !removed {
+			if _, err := os.Lstat(destination); err == nil {
+				return fmt.Errorf("%s already exists and is not managed by ZVM", destination)
+			} else if !errors.Is(err, os.ErrNotExist) {
+				return err
+			}
+		}
+
+		if err := meta.Link(source, destination); err != nil {
+			return err
+		}
+	}
+
+	log.Debug("Use", "version", version)
+	return nil
+}
+
+func removeZVMManagedLink(linkPath string, versionsDir string) (bool, error) {
+	info, err := os.Lstat(linkPath)
+	if errors.Is(err, os.ErrNotExist) {
+		return false, nil
+	}
+	if err != nil {
+		return false, err
+	}
+	if info.Mode()&os.ModeSymlink == 0 {
+		return false, nil
+	}
+
+	target, err := os.Readlink(linkPath)
+	if err != nil {
+		return false, err
+	}
+	if !filepath.IsAbs(target) {
+		target = filepath.Join(filepath.Dir(linkPath), target)
+	}
+
+	versionsAbs, err := filepath.Abs(versionsDir)
+	if err != nil {
+		return false, err
+	}
+	targetAbs, err := filepath.Abs(target)
+	if err != nil {
+		return false, err
+	}
+	relative, err := filepath.Rel(versionsAbs, targetAbs)
+	if err != nil {
+		return false, err
+	}
+	if relative == ".." || strings.HasPrefix(relative, ".."+string(filepath.Separator)) {
+		return false, nil
+	}
+
+	if err := os.Remove(linkPath); err != nil {
+		return false, err
+	}
+	return true, nil
 }
 
 // getConfirmation prompts the user for a yes/no confirmation via stdin.

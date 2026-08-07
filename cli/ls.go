@@ -67,7 +67,7 @@ func (z *ZVM) ListVersions() error {
 // GetInstalledVersions returns a slice of strings containing the names of
 // all installed Zig versions found in the base directory.
 func (z *ZVM) GetInstalledVersions() ([]string, error) {
-	dir, err := os.ReadDir(z.baseDir)
+	dir, err := os.ReadDir(z.versionsDir())
 	if err != nil {
 		return nil, err
 	}
@@ -173,7 +173,7 @@ func (z ZVM) ListRemoteAvailable() error {
 
 		// Check if master is installed and print local version
 		if slices.Contains(installedVersions, "master") {
-			targetZig := strings.TrimSpace(filepath.Join(z.baseDir, "master", "zig"))
+			targetZig := strings.TrimSpace(filepath.Join(z.versionsDir(), "master", "zig"))
 			cmd := exec.Command(targetZig, "version")
 			var zigVersion strings.Builder
 			cmd.Stdout = &zigVersion
@@ -263,7 +263,7 @@ func (z ZVM) ListRemoteAvailableJSON() error {
 		}
 
 		if masterVersion.Installed {
-			targetZig := strings.TrimSpace(filepath.Join(z.baseDir, "master", "zig"))
+			targetZig := strings.TrimSpace(filepath.Join(z.versionsDir(), "master", "zig"))
 			cmd := exec.Command(targetZig, "version")
 			var zigVersion strings.Builder
 			cmd.Stdout = &zigVersion

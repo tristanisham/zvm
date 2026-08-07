@@ -5,13 +5,12 @@
 package cli
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
-	"io/fs"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strings"
 
 	"github.com/charmbracelet/log"
@@ -27,35 +26,45 @@ func Initialize() *ZVM {
 	if err != nil {
 		home = "~"
 	}
-	zvmPath := os.Getenv("ZVM_PATH")
-	if zvmPath == "" {
-		zvmPath = filepath.Join(home, ".zvm")
+
+	dirs, discoveredSettings, discoverErr := discoverDirectories(home, runtime.GOOS, os.Getenv)
+	if discoverErr != nil {
+		log.Warn("Unable to read XDG settings; using the default installation", "err", discoverErr)
+	}
+	if dirs.useXDGSpec {
+		warnIfDefaultInstallationExists(filepath.Join(home, ".zvm"))
 	}
 
-	if _, err := os.Stat(zvmPath); errors.Is(err, fs.ErrNotExist) {
-		if err := os.MkdirAll(filepath.Join(zvmPath, "self"), 0775); err != nil {
-			log.Fatal(err)
-		}
+	if err := ensureDirectories(dirs); err != nil {
+		log.Fatal(err)
 	}
 
 	zvm := &ZVM{
-		baseDir: zvmPath,
+		baseDir:     dirs.state,
+		Directories: dirs,
 	}
 
-	zvm.Settings.path = filepath.Join(zvmPath, "settings.json")
+	if discoveredSettings != nil {
+		zvm.Settings = *discoveredSettings
+		if err := zvm.Settings.save(); err != nil {
+			log.Warn("Unable to update XDG settings.json file", "err", err)
+		}
+		return zvm
+	}
+
+	zvm.Settings.path = dirs.settings
 
 	if err := zvm.loadSettings(); err != nil {
 		if errors.Is(err, ErrNoSettings) {
 			zvm.Settings = DefaultSettings
-
-			outSettings, err := json.MarshalIndent(&zvm.Settings, "", "    ")
-			if err != nil {
-				log.Warn("Unable to generate settings.json file", err)
+			zvm.Settings.path = dirs.settings
+			if err := zvm.Settings.save(); err != nil {
+				log.Warn("Unable to create settings.json file", "err", err)
 			}
-
-			if err := os.WriteFile(filepath.Join(zvmPath, "settings.json"), outSettings, 0755); err != nil {
-				log.Warn("Unable to create settings.json file", err)
-			}
+		} else {
+			log.Warn("Unable to load settings.json file; using defaults", "err", err)
+			zvm.Settings = DefaultSettings
+			zvm.Settings.path = dirs.settings
 		}
 	}
 
@@ -65,8 +74,9 @@ func Initialize() *ZVM {
 // ZVM represents the Zig Version Manager and holds its configuration
 // and state, including the base directory for installations and settings.
 type ZVM struct {
-	baseDir  string
-	Settings Settings
+	baseDir     string
+	Directories Directories
+	Settings    Settings
 }
 
 // A representaiton of the offical json schema for Zig versions
@@ -111,8 +121,7 @@ func validVmuAlis(version string) bool {
 // It checks if the version is installed and returns an error if it's not a valid release
 // or if the installed version doesn't match expectations.
 func (z ZVM) getVersion(version string) error {
-
-	root, err := os.OpenRoot(z.baseDir)
+	root, err := os.OpenRoot(z.versionsDir())
 	if err != nil {
 		return err
 	}
@@ -149,21 +158,16 @@ func (z ZVM) getVersion(version string) error {
 // loadSettings loads the ZVM configuration from settings.json.
 // It handles missing settings files and ensures empty fields are reset to defaults.
 func (z *ZVM) loadSettings() error {
-	setPath := z.Settings.path
-	if _, err := os.Stat(setPath); errors.Is(err, os.ErrNotExist) {
-		return ErrNoSettings
-	}
-
-	data, err := os.ReadFile(setPath)
+	settings, err := readSettingsFile(z.Settings.path)
 	if err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			return ErrNoSettings
+		}
 		return err
 	}
 
-	if err = json.Unmarshal(data, &z.Settings); err != nil {
-		return err
-	}
-
-	return z.Settings.ResetEmpty()
+	z.Settings = settings
+	return z.Settings.save()
 }
 
 // func (z *ZVM) AlertIfUpgradable() {

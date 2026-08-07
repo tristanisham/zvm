@@ -23,13 +23,13 @@ a language gets updated frequently.
 
 # Installing ZVM
 
-ZVM lives entirely in `$HOME/.zvm` on all platforms it supports. Inside of the
-directory, ZVM will download new ZIG versions and symlink whichever version you
-specify with `zvm use` to `$HOME/.zvm/bin`. You should add this folder to your
-path. After ZVM 0.2.3, ZVM's installer will now add ZVM to `$HOME/.zvm/self`.
-You should also add this directory as the environment variable `ZVM_INSTALL`.
-The installer scripts should handle this for you automatically on *nix and
-Windows systems.
+By default, ZVM lives entirely in `$HOME/.zvm` on all platforms it supports.
+Inside of the directory, ZVM will download new ZIG versions and symlink
+whichever version you specify with `zvm use` to `$HOME/.zvm/bin`. You should add
+this folder to your path. After ZVM 0.2.3, ZVM's installer will now add ZVM to
+`$HOME/.zvm/self`. You should also add this directory as the environment
+variable `ZVM_INSTALL`. The installer scripts should handle this for you
+automatically on *nix and Windows systems.
 
 If you don't want to use `ZVM_INSTALL` (like you already have ZVM in a place you
 like), then ZVM will update the exact executable you've called `upgrade` from.
@@ -46,6 +46,19 @@ www.zvm.app/install.sh === ./install.sh
 ```sh
 curl https://www.zvm.app/install.sh | bash
 ```
+
+Linux users can opt into the XDG Base Directory Specification during
+installation:
+
+```sh
+curl https://www.zvm.app/install.sh | bash -s -- --use-xdg-spec
+```
+
+The XDG installation places `zvm`, `zig`, and `zls` in `$HOME/.local/bin`,
+stores settings under `$XDG_CONFIG_HOME`, installed Zig versions under
+`$XDG_STATE_HOME`, and temporary downloads and version maps under
+`$XDG_CACHE_HOME`. The standard XDG defaults are used when those variables are
+not set. XDG installation is supported only on Linux.
 
 <!-- This script will **automatically append** ZVM's required environment variables (see below) to `~/.profile` or `~/.bashrc`. -->
 
@@ -112,6 +125,12 @@ export ZVM_INSTALL="$HOME/.zvm/self"
 export PATH="$HOME/.zvm/bin:$ZVM_INSTALL:$PATH"
 ```
 
+An XDG installation only requires `$HOME/.local/bin`:
+
+```sh
+export PATH="$PATH:$HOME/.local/bin"
+```
+
 Then restart your shell or `source` the file for the changes to take effect.
 
 ### Windows
@@ -132,9 +151,9 @@ Append
 
 ## Configure ZVM path
 
-It is possible to overwrite the default behavior of ZVM to adhere to XDG
-specification on Linux. There's an environment variable `ZVM_PATH`. Setting it
-to `$XDG_DATA_HOME/zvm` will do the trick.
+The `ZVM_PATH` environment variable overrides ZVM's default `$HOME/.zvm`
+location with another single directory. `ZVM_PATH` takes precedence over XDG
+settings.
 
 ## Community Package
 
@@ -645,17 +664,20 @@ Enable or disable colored ZVM output. No value toggles colors.
 
 ## Settings
 
-ZVM has additional setting stored in `~/.zvm/settings.json`. You can manually
-update version maps, toggle color support, and disable the automatic upgrade
-checker here. All settings are also exposed as flags or environment variables.
-This file is stateful, and ZVM will create it if it does not exist and utilizes
-it for its operation.
+ZVM stores additional settings in `~/.zvm/settings.json` by default. XDG
+installations use `${XDG_CONFIG_HOME:-$HOME/.config}/zvm/settings.json` and set
+`useXDGSpec` to `true`. You can manually update version maps, toggle color
+support, and disable the automatic upgrade checker here. All settings are also
+exposed as flags or environment variables. ZVM creates the active settings file
+when it does not exist and uses it for its operation.
 
 ## Uninstalling ZVM
 
-ZVM stores its binaries, installed Zig versions, and settings under
-`$HOME/.zvm` on Unix-like systems and `$HOME\.zvm` on Windows. Remove the
-installer-managed environment configuration before deleting that directory.
+By default, ZVM stores its binaries, installed Zig versions, and settings under
+`$HOME/.zvm` on Unix-like systems and `$HOME\.zvm` on Windows. Linux
+installations using the XDG Base Directory Specification store these files
+across the configured XDG directories instead. Remove the installer-managed
+environment configuration before deleting the applicable directories.
 
 ### Linux, BSD, macOS, and other Unix-like systems
 
@@ -675,6 +697,38 @@ rm -rf "$HOME/.zvm"
 
 Close and reopen your terminal to clear `ZVM_INSTALL` and the ZVM entries from
 the current environment.
+
+#### XDG installation on Linux
+
+If ZVM was installed with `install.sh --use-xdg-spec`, remove the `# ZVM` block
+added to your shell startup file. Then remove ZVM's XDG directories and the
+ZVM-managed executables and links from `$HOME/.local/bin`:
+
+```sh
+zvm_xdg_config="${XDG_CONFIG_HOME:-$HOME/.config}/zvm"
+zvm_xdg_data="${XDG_DATA_HOME:-$HOME/.local/share}/zvm"
+zvm_xdg_state="${XDG_STATE_HOME:-$HOME/.local/state}/zvm"
+zvm_xdg_cache="${XDG_CACHE_HOME:-$HOME/.cache}/zvm"
+
+rm -rf "$zvm_xdg_config" "$zvm_xdg_data" "$zvm_xdg_state" "$zvm_xdg_cache"
+rm -f "$HOME/.local/bin/zvm"
+
+for zvm_executable in zig zls; do
+    zvm_link="$HOME/.local/bin/$zvm_executable"
+    if [ -L "$zvm_link" ]; then
+        case "$(readlink "$zvm_link")" in
+            "$zvm_xdg_state"/*) rm -f "$zvm_link" ;;
+        esac
+    fi
+done
+```
+
+To switch back to the default installation, run the installer again without
+`--use-xdg-spec`:
+
+```sh
+curl https://www.zvm.app/install.sh | bash
+```
 
 ### Windows PowerShell
 

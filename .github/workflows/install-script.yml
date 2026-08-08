@@ -55,8 +55,16 @@ jobs:
           # This replaces the install_latest function definition with a stub.
           sed -i 's/install_latest() {/install_latest() {\n  echo "Skipping download in test";\n  return 0;/' install.sh
 
+          # Create a non-executable binary to verify the installer restores its permissions.
+          mkdir -p "$HOME/.zvm/self"
+          touch "$HOME/.zvm/self/zvm"
+          chmod 0644 "$HOME/.zvm/self/zvm"
+
           # Run the install script.
           bash install.sh
+
+          # Verify that zvm is executable after installation.
+          test -x "$HOME/.zvm/self/zvm"
 
           # Determine which configuration file should have been updated and verify the expected content.
           if [ "${{ matrix.shell }}" = "fish" ]; then

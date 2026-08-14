@@ -16,6 +16,18 @@ fi
 
 # echo "Installing zvm-$OS-$ARCH"
 
+extract_and_install_tar() {
+    mkdir -p "$HOME/.zvm/self"
+    tar -xf zvm.tar -C "$HOME/.zvm/self"
+
+    # Ensure installed binary is executable
+    if [ -f "$HOME/.zvm/self/zvm" ]; then
+        chmod +x "$HOME/.zvm/self/zvm"
+    fi
+
+    rm -f "zvm.tar"
+}
+
 install_latest() {
     echo -e "Downloading $1 in $(pwd)"
     if [ "$(uname)" = "Darwin" ]; then
@@ -28,10 +40,7 @@ install_latest() {
             curl -L --max-redirs 5 "https://github.com/tristanisham/zvm/releases/latest/download/$1" -o zvm.tar
         fi
 
-        mkdir -p "$HOME/.zvm/self"
-        tar -xf zvm.tar -C "$HOME/.zvm/self"
-        rm "zvm.tar"
-
+        extract_and_install_tar
     elif [ "$OS" = "Linux" ]; then
         # Do something under GNU/Linux platform
         if command -v wget >/dev/null 2>&1; then
@@ -46,9 +55,7 @@ install_latest() {
             curl -L --max-redirs 5 "https://github.com/tristanisham/zvm/releases/latest/download/$1" -o zvm.tar
         fi
 
-        mkdir -p "$HOME/.zvm/self"
-        tar -xf zvm.tar -C "$HOME/.zvm/self"
-        rm "zvm.tar"
+        extract_and_install_tar
     elif [ "$OS" = "MINGW32_NT" ] || [ "$OS" = "MINGW64_NT" ]; then
         curl -L --max-redirs 5 "https://github.com/tristanisham/zvm/releases/latest/download/$1" -o zvm.zip
         # Additional extraction steps for Windows can be added here

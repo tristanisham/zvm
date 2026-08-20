@@ -7,6 +7,29 @@ on:
     branches: [master]
   workflow_dispatch:
 jobs:
+  test-release-archive:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.26"
+
+      - name: Set up Deno
+        uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+
+      - name: Verify Unix release archive permissions
+        run: |
+          deno task build
+          archive_dir=$(mktemp -d)
+          tar -xf build/zvm-linux-amd64.tar -C "$archive_dir"
+          test -x "$archive_dir/zvm"
+
   test-install:
     runs-on: ubuntu-latest
     strategy:

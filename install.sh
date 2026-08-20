@@ -63,6 +63,11 @@ elif [ "$OS" = "MINGW32_NT" ] || [ "$OS" = "MINGW64_NT" ]; then
     install_latest "zvm-windows-$ARCH.zip"
 fi
 
+# Ensure the installed binary is executable on macOS and Linux
+if [ "$OS" = "Darwin" ] || [ "$OS" = "Linux" ]; then
+    chmod 0755 "$HOME/.zvm/self/zvm"
+fi
+
 ###############################
 # Determine the target file to update based on the user's shell.
 # For Fish, we update ~/.config/fish/config.fish.

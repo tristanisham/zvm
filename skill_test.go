@@ -66,7 +66,7 @@ func renderSkillReference() string {
 	b.WriteString("# zvm command reference\n\n")
 	b.WriteString("Generated from zvm's CLI definition. Every command and flag below is\n")
 	b.WriteString("real; anything not listed here does not exist.\n\n")
-	b.WriteString(fmt.Sprintf("`%s` — %s\n\n", zvmApp.Name, zvmApp.Usage))
+	fmt.Fprintf(&b, "`%s` — %s\n\n", zvmApp.Name, zvmApp.Usage)
 
 	b.WriteString("## Global flags\n\n")
 	if lines := renderFlags(zvmApp.Flags); len(lines) > 0 {
@@ -100,7 +100,7 @@ func writeCommand(b *strings.Builder, command *opts.Command, parent string) {
 
 	full := parent + " " + command.Name
 
-	b.WriteString(fmt.Sprintf("## `%s`\n\n", full))
+	fmt.Fprintf(b, "## `%s`\n\n", full)
 
 	if command.Usage != "" {
 		b.WriteString(command.Usage + "\n\n")
@@ -115,7 +115,7 @@ func writeCommand(b *strings.Builder, command *opts.Command, parent string) {
 	}
 
 	if usage := strings.TrimSpace(command.ArgsUsage); usage != "" {
-		b.WriteString(fmt.Sprintf("Arguments: `%s`\n\n", usage))
+		fmt.Fprintf(b, "Arguments: `%s`\n\n", usage)
 	}
 
 	if description := strings.TrimSpace(command.Description); description != "" {

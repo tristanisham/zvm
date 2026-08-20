@@ -1,0 +1,27 @@
+{
+  "name": "zvm",
+  "description": "Zig Version Manager plugin for Claude Code",
+  "owner": {
+    "name": "Tristan Isham"
+  },
+  "plugins": [
+    {
+      "name": "zvm",
+      "description": "Install, pin, and switch Zig toolchains with zvm (Zig Version Manager).",
+      "version": "0.8.29",
+      "source": "./",
+      "author": {
+        "name": "Tristan Isham"
+      },
+      "homepage": "https://www.zvm.app",
+      "license": "MIT",
+      "keywords": [
+        "zig",
+        "zvm",
+        "version-manager",
+        "toolchain",
+        "zls"
+      ]
+    }
+  ]
+}

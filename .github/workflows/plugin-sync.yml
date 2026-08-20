@@ -1,0 +1,57 @@
+# Keeps the Claude Code plugin in step with zvm's command surface and version.
+#
+# Drift is normally caught much earlier: go.yml runs `go test ./...` on every
+# push and pull request, and TestSkillReference / TestPluginVersionMatchesMeta
+# fail there. This workflow is the release-time backstop.
+name: Plugin Sync
+
+on:
+  workflow_dispatch:
+  release:
+    types: [published]
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: master
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.26"
+
+      # Step 1 of RELEASING.md is bumping cli/meta/version.go, and it is the
+      # easiest of the five steps to forget. Catch a tag that disagrees with it
+      # loudly rather than publishing a plugin pinned to a stale version.
+      - name: Verify version.go matches the release tag
+        if: github.event_name == 'release'
+        run: |
+          declared="$(grep -oP '^\s*VERSION\s*=\s*"\K[^"]+' cli/meta/version.go)"
+          tag="${{ github.event.release.tag_name }}"
+          echo "version.go: $declared"
+          echo "release tag: $tag"
+          if [ "${declared#v}" != "${tag#v}" ]; then
+            echo "::error::cli/meta/version.go is $declared but the release tag is $tag. Bump version.go (step 1 of RELEASING.md) and re-run."
+            exit 1
+          fi
+
+      - name: Regenerate plugin reference and sync version
+        run: go test -run 'TestSkillReference|TestPluginVersionMatchesMeta' -update .
+
+      - name: Commit if anything changed
+        run: |
+          if git diff --quiet -- .claude-plugin skills; then
+            echo "Plugin already in sync; nothing to commit."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add .claude-plugin skills
+          git commit -m "chore: sync Claude Code plugin with zvm command surface"
+          git push origin HEAD:master

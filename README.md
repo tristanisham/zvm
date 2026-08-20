@@ -155,6 +155,17 @@ manager. ZVM has no system dependencies. Whether you're on
 Windows, MacOS, Linux, a flavor of BSD, or Plan 9 `zvm` will let you install,
 switch between, and run multiple versions of Zig.
 
+# Using ZVM with AI coding agents
+
+ZVM ships a [Claude Code](https://claude.com/claude-code) plugin, so coding agents reach for `zvm` instead of a distro package or a hand-unpacked tarball, and drive it correctly when they do.
+
+```
+/plugin marketplace add tristanisham/zvm
+/plugin install zvm
+```
+
+The plugin is a single skill. It teaches agents ZVM's real command surface, how to find the version a repository actually wants (`//! zvm-lock:` in `build.zig`, `.minimum_zig_version` in `build.zig.zon`), and to prefer `zvm run` over `zvm use` so they never repoint your global Zig without being asked. The command reference is generated from ZVM's own CLI definition, so it cannot drift from the binary.
+
 # Contributing and Notice
 
 `zvm` is stable software. Pre-v1.0.0 any breaking changes will be clearly
@@ -236,6 +247,8 @@ zvm i master        # Install the current master nightly
 
 `stable` is especially useful in automation — you don't have to know the exact
 version number to grab the newest release.
+
+You can also create your own named aliases with the [`alias` command](#alias-your-zig-versions).
 
 ### Force Install
 
@@ -337,6 +350,26 @@ zvm use master     # Switch to master
 zvm use stable     # Switch to the latest installed stable release
 zvm use 0.13       # Resolves to 0.13.x (latest installed patch)
 zvm use .14        # Same — leading dot implies "0."
+```
+
+## Alias your Zig versions
+
+Use `alias` (or `kv`) to give an installed Zig version a custom name. The version must already be installed, and shorthand is supported.
+
+```sh
+zvm alias work 0.13.0    # Point "work" at 0.13.0
+zvm alias play .14       # Resolve to the latest installed 0.14.x
+zvm use work             # Switch versions by alias
+zvm run play version     # Run a command with the aliased version
+```
+
+Aliases work with `install`, `use`, `run`, and `rm`. Setting an existing name updates it.
+
+```sh
+zvm alias                # List all aliases
+zvm alias work           # Print one alias
+zvm alias -d work        # Delete one alias
+zvm alias --clear        # Delete all aliases
 ```
 
 ## List installed Zig versions
@@ -521,6 +554,26 @@ zvm --version
 
 Prints the version of ZVM you have installed.
 
+## Report a bug
+
+```sh
+zvm bug
+```
+
+Opens a prefilled issue on ZVM's GitHub repository in your browser. The report template comes with your environment already filled in: your ZVM version, settings, installed and selected Zig versions, and host details. Fill in what you did, what happened, and what you expected, then submit it yourself — `zvm` never files the issue for you.
+
+ZVM anonymizes the report before it reaches the form. Paths under your home directory are shortened to `~`, so the report never carries your account name. The mirror and version-map URLs ZVM ships (and Mach's) are shown as-is, since they describe nobody; a URL you configured yourself is replaced by a short digest like `custom sha256:06f9d80140a5`, which is enough to tell two reports apart without publishing where you fetch Zig from.
+
+That digest is a correlation tag, not a secret — a URL is guessable enough to be recovered by hashing candidates. It is there so a maintainer can ask you for the URL rather than find it already posted. Review the report before submitting it.
+
+On a machine with no browser (a remote shell or a container), print the URL instead and open it elsewhere:
+
+```sh
+zvm bug --print
+```
+
+`$BROWSER` takes precedence over the platform's default handler if it's set.
+
 ## Shell Completion
 
 ZVM can emit a completion script for `bash`, `zsh`, `fish`, or `pwsh`
@@ -642,6 +695,7 @@ Enable or disable colored ZVM output. No value toggles colors.
   Toggle off verifying TLS by setting this environment variable.
   - By default when this is enabled ZVM will print a warning. Set this variable
     to `no-warn` to silence this warning.
+- `BROWSER` is the command `zvm bug` uses to open a report URL. Without it, ZVM falls back to the platform's default handler.
 
 ## Settings
 

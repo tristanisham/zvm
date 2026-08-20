@@ -1,0 +1,210 @@
+.\" Copyright 2026 Tristan Isham. All rights reserved.
+.\" Use of this source code is governed by the MIT license.
+.TH ZVM 1 "August 2026" "ZVM" "User Commands"
+.SH NAME
+zvm \- manage installed Zig and ZLS versions
+.SH SYNOPSIS
+.B zvm
+.RI [ global-options ]
+.I command
+.RI [ command-options ]
+.SH DESCRIPTION
+.B zvm
+downloads, installs, selects, and removes Zig compiler versions.
+It can also install a compatible ZLS release, run a command with a Zig version
+without selecting it globally, and use alternative version maps or mirrors.
+.PP
+Zig installations and ZVM state are stored under
+.IR ~/.zvm
+by default.
+Set
+.B ZVM_PATH
+to use another base directory.
+.SH GLOBAL OPTIONS
+.TP
+.BR --color " " mode
+Set colored output.
+.I mode
+may be
+.BR on ,
+.BR yes ,
+.BR y ,
+.BR enabled ,
+.BR true ,
+.BR off ,
+.BR no ,
+.BR n ,
+.BR disabled ,
+or
+.BR false .
+If the value is omitted, toggle the saved setting.
+.TP
+.BR -h , " " --help
+Show help.
+.TP
+.BR -v , " " --version
+Print the ZVM version and target platform.
+.SH COMMANDS
+.TP
+.BR install ", " i
+Download and install a Zig version, optionally with ZLS.
+See
+.BR zvm-install (1).
+.TP
+.B use
+Select an installed Zig version.
+See
+.BR zvm-use (1).
+.TP
+.B run
+Run Zig from a selected version without changing the current version.
+See
+.BR zvm-run (1).
+.TP
+.BR list-remote ", " ls-remote
+List Zig versions available from the configured version map.
+See
+.BR zvm-list-remote (1).
+.TP
+.BR list ", " ls
+List installed Zig versions.
+See
+.BR zvm-list (1).
+.TP
+.BR alias ", " kv
+Create, inspect, or remove names for installed Zig versions.
+See
+.BR zvm-alias (1).
+.TP
+.BR uninstall ", " rm
+Remove an installed Zig version.
+See
+.BR zvm-uninstall (1).
+.TP
+.B clean
+Remove downloaded build archives from the ZVM base directory.
+See
+.BR zvm-clean (1).
+.TP
+.B upgrade
+Upgrade ZVM itself when self-upgrades are enabled in the build.
+See
+.BR zvm-upgrade (1).
+.TP
+.B mirrorlist
+Select the mirror-list URL used for Zig downloads.
+See
+.BR zvm-mirrorlist (1).
+.TP
+.B bug
+Start a bug report with the current environment prefilled.
+See
+.BR zvm-bug (1).
+.TP
+.B version
+Print the installed ZVM version.
+See
+.BR zvm-version (1).
+.TP
+.B vmu
+Configure Zig and ZLS version-map sources.
+See
+.BR zvm-vmu (1).
+.TP
+.B completion
+Generate a shell completion script.
+See
+.BR zvm-completion (1).
+.SH VERSION ARGUMENTS
+Commands that accept a Zig version support exact releases such as
+.BR 0.14.1 ,
+the development channel
+.BR master ,
+and development build identifiers.
+.PP
+Release shorthand such as
+.B 0.14
+or
+.B .14
+selects the newest matching patch release.
+The
+.B stable
+shorthand selects the newest stable release.
+Selection and removal resolve shorthand against installed versions;
+installation may resolve it against the remote version map.
+User-defined aliases may be used where version arguments are accepted.
+.SH ENVIRONMENT
+.TP
+.B ZVM_PATH
+ZVM base directory. Defaults to
+.IR ~/.zvm .
+.TP
+.B ZVM_INSTALL
+Directory containing the ZVM executable for self-upgrades.
+.TP
+.B ZVM_TARGET_OS
+Override the operating system selected for an installation download.
+.TP
+.B ZVM_TARGET_ARCH
+Override the architecture selected for an installation download.
+.TP
+.B ZVM_HTTP_TIMEOUT
+HTTP timeout in seconds for installation requests.
+.TP
+.B ZVM_SET_CU
+If set, disable the automatic ZVM upgrade check.
+.TP
+.B ZVM_DEBUG
+If set, enable debug logging.
+.TP
+.B ZVM_SKIP_TLS_VERIFY
+If set, disable TLS certificate verification for downloads.
+The value
+.B no-warn
+also suppresses the warning.
+.TP
+.B BROWSER
+Command used by
+.BR zvm-bug (1)
+to open a report URL.
+.SH FILES
+.TP
+.I ~/.zvm/settings.json
+Persistent ZVM settings.
+.TP
+.I ~/.zvm/memory.db
+Version aliases used by
+.BR zvm-alias (1).
+.TP
+.I ~/.zvm/bin/zig
+Link to the currently selected Zig executable on Unix-like systems.
+.TP
+.I ~/.zvm/bin/zls
+Link to the selected ZLS executable, when installed.
+.PP
+When
+.B ZVM_PATH
+is set, these paths are relative to that directory instead of
+.IR ~/.zvm .
+.SH EXAMPLES
+.EX
+zvm install 0.14.1
+zvm install --zls master
+zvm use stable
+zvm run 0.13 build test
+zvm ls
+zvm alias work 0.14.1
+.EE
+.SH BUGS
+Report issues at
+.UR https://github.com/tristanisham/zvm/issues/
+.UE .
+.SH AUTHOR
+Tristan Isham and ZVM contributors.
+.SH SEE ALSO
+.BR zig (1),
+.BR zvm-install (1),
+.BR zvm-use (1),
+.BR zvm-run (1),
+.BR zvm-list (1),
+.BR zvm-alias (1)

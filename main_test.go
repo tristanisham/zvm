@@ -7,10 +7,14 @@ package main
 import (
 	"bytes"
 	"context"
+	"errors"
 	"io"
 	"os"
+	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/tristanisham/zvm/cli"
 )
 
 // captureStdout runs fn with os.Stdout redirected to a pipe and returns what
@@ -39,6 +43,90 @@ func captureStdout(t *testing.T, fn func(w io.Writer)) string {
 	fn(w)
 	_ = w.Close()
 	return <-done
+}
+
+func setupAliasCommandTest(t *testing.T) {
+	t.Helper()
+
+	baseDir := t.TempDir()
+	if err := os.Mkdir(filepath.Join(baseDir, "0.13.0"), 0755); err != nil {
+		t.Fatalf("create installed version: %v", err)
+	}
+	t.Setenv("ZVM_PATH", baseDir)
+
+	originalZVM := zvm
+	zvm = *cli.Initialize()
+	zvm.Settings.UseColor = false
+	t.Cleanup(func() { zvm = originalZVM })
+}
+
+func TestAliasCommandLifecycle(t *testing.T) {
+	setupAliasCommandTest(t)
+	ctx := context.Background()
+
+	if err := zvmApp.Run(ctx, []string{"zvm", "alias", "work", "0.13.0"}); err != nil {
+		t.Fatalf("create alias: %v", err)
+	}
+	if got, ok, err := zvm.ResolveAlias(ctx, "work"); err != nil || !ok || got != "0.13.0" {
+		t.Fatalf("created alias = %q, %v, %v; want %q, true, nil", got, ok, err, "0.13.0")
+	}
+
+	var printErr error
+	got := captureStdout(t, func(w io.Writer) {
+		zvmApp.Writer = w
+		printErr = zvmApp.Run(ctx, []string{"zvm", "alias", "work"})
+	})
+	if printErr != nil {
+		t.Fatalf("print alias: %v", printErr)
+	}
+	if !strings.Contains(got, "work 0.13.0") {
+		t.Fatalf("alias output = %q; want alias name and version", got)
+	}
+
+	if err := zvmApp.Run(ctx, []string{"zvm", "alias", "--delete", "work"}); err != nil {
+		t.Fatalf("delete alias: %v", err)
+	}
+	if _, ok, err := zvm.ResolveAlias(ctx, "work"); err != nil || ok {
+		t.Fatalf("deleted alias still resolves: ok=%v, err=%v", ok, err)
+	}
+
+	if err := zvmApp.Run(ctx, []string{"zvm", "kv", "play", ".13"}); err != nil {
+		t.Fatalf("create alias through kv shorthand: %v", err)
+	}
+	if got, err := resolveVersionArg(ctx, "play"); err != nil || got != "0.13.0" {
+		t.Fatalf("resolveVersionArg(play) = %q, %v; want %q, nil", got, err, "0.13.0")
+	}
+
+	if err := zvmApp.Run(ctx, []string{"zvm", "alias", "--clear"}); err != nil {
+		t.Fatalf("clear aliases: %v", err)
+	}
+	aliases, err := zvm.ListAliases(ctx)
+	if err != nil {
+		t.Fatalf("list aliases after clear: %v", err)
+	}
+	if len(aliases) != 0 {
+		t.Fatalf("aliases after clear = %d; want 0", len(aliases))
+	}
+}
+
+func TestAliasCommandRejectsInvalidArguments(t *testing.T) {
+	setupAliasCommandTest(t)
+	ctx := context.Background()
+
+	err := zvmApp.Run(ctx, []string{"zvm", "alias", "missing", "9.9.9"})
+	if !errors.Is(err, cli.ErrInvalidAliasValue) {
+		t.Fatalf("non-installed version error = %v; want ErrInvalidAliasValue", err)
+	}
+
+	err = zvmApp.Run(ctx, []string{"zvm", "alias", "one", "two", "three"})
+	if !errors.Is(err, cli.ErrInvalidInput) {
+		t.Fatalf("too many arguments error = %v; want ErrInvalidInput", err)
+	}
+
+	err = zvmApp.Run(ctx, []string{"zvm", "alias", "--delete"})
+	if !errors.Is(err, cli.ErrMissingArgument) {
+		t.Fatalf("missing delete name error = %v; want ErrMissingArgument", err)
+	}
 }
 
 func TestCompletionEnabled(t *testing.T) {

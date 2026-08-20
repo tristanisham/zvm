@@ -15,6 +15,7 @@ import (
 	"strings"
 
 	"github.com/charmbracelet/log"
+	"gorm.io/gorm"
 )
 
 var ErrNoSettings = errors.New("settings.json not found")
@@ -59,6 +60,11 @@ func Initialize() *ZVM {
 		}
 	}
 
+	if err := zvm.initializeDatabase(); err != nil {
+		zvm.dbErr = err
+		log.Error("failed to initialize alias database", "error", err)
+	}
+
 	return zvm
 }
 
@@ -67,6 +73,8 @@ func Initialize() *ZVM {
 type ZVM struct {
 	baseDir  string
 	Settings Settings
+	db       *gorm.DB
+	dbErr    error
 }
 
 // A representaiton of the offical json schema for Zig versions

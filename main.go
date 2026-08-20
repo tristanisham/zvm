@@ -139,7 +139,10 @@ var zvmApp = &opts.Command{
 			// Args:        true,
 			ArgsUsage: " <ZIG VERSION>",
 			Action: func(ctx context.Context, cmd *opts.Command) error {
-				versionArg := strings.TrimPrefix(cmd.Args().First(), "v")
+				versionArg, err := resolveVersionArg(ctx, cmd.Args().First())
+				if err != nil {
+					return err
+				}
 
 				if versionArg == "" {
 					return errors.New("no version provided")
@@ -202,7 +205,10 @@ var zvmApp = &opts.Command{
 				if cmd.Bool("sync") {
 					return zvm.Sync()
 				} else {
-					versionArg := strings.TrimPrefix(cmd.Args().First(), "v")
+					versionArg, err := resolveVersionArg(ctx, cmd.Args().First())
+					if err != nil {
+						return err
+					}
 
 					if versionArg == "" {
 						emptyArgErrs := fmt.Errorf("command 'use' requires 1 valid Zig version as an argument")
@@ -235,7 +241,10 @@ var zvmApp = &opts.Command{
 			// Args:  true,
 			SkipFlagParsing: true,
 			Action: func(ctx context.Context, cmd *opts.Command) error {
-				versionArg := strings.TrimPrefix(cmd.Args().First(), "v")
+				versionArg, err := resolveVersionArg(ctx, cmd.Args().First())
+				if err != nil {
+					return err
+				}
 				cmds := cmd.Args().Tail()
 
 				log.Debug("run cmd", "version", versionArg, "args...", cmds)
@@ -322,12 +331,58 @@ var zvmApp = &opts.Command{
 			},
 		},
 		{
+			Name:    "alias",
+			Usage:   "Give an installed Zig version a name",
+			Aliases: []string{"kv"},
+			Flags: []opts.Flag{
+				&opts.BoolFlag{
+					Name:  "clear",
+					Usage: "clear all aliases",
+				},
+				&opts.BoolFlag{
+					Name:    "delete",
+					Aliases: []string{"d"},
+					Usage:   "delete the alias for the given name",
+				},
+			},
+			Action: func(ctx context.Context, cmd *opts.Command) error {
+				name := cmd.Args().First()
+
+				if cmd.Bool("clear") {
+					return zvm.ClearAliases(ctx)
+				}
+				if cmd.Bool("delete") {
+					return zvm.DeleteAlias(ctx, name)
+				}
+
+				switch cmd.Args().Len() {
+				case 0:
+					aliases, err := zvm.ListAliases(ctx)
+					if err != nil {
+						return err
+					}
+					zvm.PrintAliases(aliases)
+					return nil
+				case 1:
+					return zvm.Alias(ctx, name, nil)
+				case 2:
+					value := cmd.Args().Get(1)
+					return zvm.Alias(ctx, name, &value)
+				default:
+					return fmt.Errorf("%w: alias accepts at most a name and version", cli.ErrInvalidInput)
+				}
+			},
+		},
+		{
 			Name:    "uninstall",
 			Usage:   "Remove an installed version of Zig",
 			Aliases: []string{"rm"},
 			// Args:    true,
 			Action: func(ctx context.Context, cmd *opts.Command) error {
-				versionArg := strings.TrimPrefix(cmd.Args().First(), "v")
+				versionArg, err := resolveVersionArg(ctx, cmd.Args().First())
+				if err != nil {
+					return err
+				}
 				return zvm.Uninstall(versionArg)
 			},
 		},
@@ -377,6 +432,23 @@ var zvmApp = &opts.Command{
 			},
 		},
 		{
+			Name:  "bug",
+			Usage: "Start a bug report",
+			Description: "Open a prefilled ZVM issue in your browser.\n" +
+				"The report includes your ZVM version, settings, and host details.\n" +
+				"Paths under your home directory are shortened to ~, and custom mirror\n" +
+				"or version-map URLs are replaced by a digest. Review it before submitting.",
+			Flags: []opts.Flag{
+				&opts.BoolFlag{
+					Name:  "print",
+					Usage: "print the report URL instead of opening a browser",
+				},
+			},
+			Action: func(ctx context.Context, cmd *opts.Command) error {
+				return zvm.Bug(cmd.Bool("print"))
+			},
+		},
+		{
 			Name:  "version",
 			Usage: "Print the current version of ZVM",
 			Action: func(ctx context.Context, cmd *opts.Command) error {
@@ -404,7 +476,7 @@ var zvmApp = &opts.Command{
 							return zvm.Settings.ResetVersionMap()
 
 						case "mach":
-							if err := zvm.Settings.SetVersionMapUrl("https://machengine.org/zig/index.json"); err != nil {
+							if err := zvm.Settings.SetVersionMapUrl(cli.MachVersionMapUrl); err != nil {
 								fmt.Println("Run `zvm vmu zig default` to reset your version map.")
 								return err
 							}
@@ -524,6 +596,17 @@ func formatHelpSection(section string) string {
 		return section
 	}
 	return clr.Blue(section)
+}
+
+func resolveVersionArg(ctx context.Context, versionArg string) (string, error) {
+	aliasValue, ok, err := zvm.ResolveAlias(ctx, versionArg)
+	if err != nil {
+		return "", err
+	}
+	if ok {
+		versionArg = aliasValue
+	}
+	return strings.TrimPrefix(versionArg, "v"), nil
 }
 
 func printZVMHelp(w io.Writer, templ string, data any) {

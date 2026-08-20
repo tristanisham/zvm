@@ -1,0 +1,18 @@
+{
+  "name": "zvm",
+  "description": "Install, pin, and switch Zig toolchains with zvm (Zig Version Manager). Teaches agents zvm's real command surface and how to select a Zig version without disturbing the user's global install.",
+  "version": "0.8.29",
+  "author": {
+    "name": "Tristan Isham"
+  },
+  "homepage": "https://www.zvm.app",
+  "repository": "https://github.com/tristanisham/zvm",
+  "license": "MIT",
+  "keywords": [
+    "zig",
+    "zvm",
+    "version-manager",
+    "toolchain",
+    "zls"
+  ]
+}

@@ -34,9 +34,18 @@ var (
 	// ErrZigNotInstalled is returned when the `zig` executable cannot be found in the PATH.
 	ErrZigNotInstalled = errors.New("exec `zig` not found on $PATH")
 
+	// ErrMissingArgument is returned when a required command argument is not provided.
 	ErrMissingArgument = errors.New("missing argument")
-
+	// ErrInvalidAlias is returned when a requested version alias does not exist.
 	ErrInvalidAlias = errors.New("invalid version alias")
+	// ErrInvalidAliasValue is returned when an alias value does not match an installed Zig version.
+	ErrInvalidAliasValue = errors.New("invalid value for alias")
+	// ErrFailedAliasSave is returned when a version alias cannot be saved.
+	ErrFailedAliasSave = errors.New("failed to save alias")
+	// ErrFailedAliasClear is returned when a version alias cannot be deleted.
+	ErrFailedAliasClear = errors.New("failed to clear alias")
+	// ErrBadDatabase is returned when the local alias database cannot be opened or read.
+	ErrBadDatabase = errors.New("bad database")
 )
 
 // Handler-directive errors.

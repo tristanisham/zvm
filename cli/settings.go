@@ -26,6 +26,10 @@ type Settings struct {
 	AlwaysForceInstall bool   `json:"alwaysForceInstall"`
 }
 
+// MachVersionMapUrl is the version map published by the Mach engine project,
+// offered as a documented alternative to Zig's own.
+const MachVersionMapUrl = "https://machengine.org/zig/index.json"
+
 // DefaultSettings defines the default configuration values for ZVM.
 var DefaultSettings = Settings{
 	MirrorListUrl: "https://ziglang.org/download/community-mirrors.txt",

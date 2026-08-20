@@ -33,7 +33,7 @@ func CtaFatal(err error) {
 		Foreground(lipgloss.Color("#fee12b"))
 
 	fmt.Printf("\nIf you're experiencing a bug, run %s. If there's a new version of ZVM, we may have already fixed your bug in a new release :)\n", yellowText.Render("zvm upgrade"))
-	fmt.Printf("Otherwise, please report this error as a GitHub issue.\n%s\n", blueLink.Render("https://github.com/tristanisham/zvm/issues/\n"))
+	fmt.Printf("Otherwise, run %s to open a prefilled GitHub issue, or report it yourself at:\n%s\n", yellowText.Render("zvm bug"), blueLink.Render("https://github.com/tristanisham/zvm/issues/\n"))
 	os.Exit(1)
 }
 

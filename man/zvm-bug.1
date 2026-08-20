@@ -1,0 +1,79 @@
+.\" Copyright 2026 Tristan Isham. All rights reserved.
+.TH ZVM-BUG 1 "August 2026" "ZVM" "User Commands"
+.SH NAME
+zvm-bug \- start a ZVM bug report
+.SH SYNOPSIS
+.B zvm bug
+.RB [ --print ]
+.SH DESCRIPTION
+Open a prefilled issue form for the ZVM repository in a browser.
+The form contains a report template and a collected description of the
+environment ZVM is running in.
+.PP
+The report is not submitted by
+.BR zvm .
+Fill in what you did, what happened, and what you expected, review the
+collected environment, and submit the issue yourself.
+.PP
+The collected environment includes the ZVM version, the target operating
+system and architecture, the ZVM base directory, the values of the
+.B ZVM_*
+environment variables, the configured mirror list and version-map URLs, the
+installed Zig versions, the selected Zig and ZLS versions, and the host kernel
+and distribution.
+.SH ANONYMIZATION
+Paths inside the user's home directory are reported relative to
+.BR ~ ,
+so the report does not name the account it came from.
+Paths outside the home directory are reported as they are.
+.PP
+Mirror-list and version-map URLs distributed with ZVM are reported verbatim.
+A URL the user configured is replaced by a short digest, written as
+.BR "custom sha256:" \fIdigest\fR .
+.PP
+The digest is a correlation tag rather than a secret.
+A URL is drawn from a small enough set of candidates that hashing guesses
+recovers it, so the digest serves only to distinguish one custom source from
+another without publishing it.
+Report contents should still be reviewed before submitting.
+.SH OPTIONS
+.TP
+.B --print
+Print the report URL instead of opening a browser.
+Useful on machines with no browser, such as a remote shell or a container.
+.SH BROWSER SELECTION
+If
+.B BROWSER
+is set, it is run with the report URL as its argument.
+Otherwise the platform handler is used:
+.B open
+on macOS,
+.B "cmd /c start"
+on Windows, and
+.BR xdg-open ,
+.BR www-browser ,
+or
+.B x-www-browser
+elsewhere.
+On other systems, a browser is only attempted when
+.B DISPLAY
+or
+.B WAYLAND_DISPLAY
+is set.
+When no browser can be started, the URL is printed instead.
+.SH ENVIRONMENT
+.TP
+.B BROWSER
+Command used to open the report URL.
+.TP
+.BR DISPLAY , " " WAYLAND_DISPLAY
+Presence of either indicates a display server that can show a browser.
+.SH EXAMPLES
+.EX
+zvm bug
+zvm bug --print
+.EE
+.SH SEE ALSO
+.BR zvm (1),
+.BR zvm-version (1),
+.BR zvm-upgrade (1)

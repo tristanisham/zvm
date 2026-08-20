@@ -44,8 +44,8 @@ var (
 	ErrFailedAliasSave = errors.New("failed to save alias")
 	// ErrFailedAliasClear is returned when a version alias cannot be deleted.
 	ErrFailedAliasClear = errors.New("failed to clear alias")
-	// ErrBadDatabase is returned when the local alias database cannot be opened or read.
-	ErrBadDatabase = errors.New("bad database")
+	// ErrBadDatabase is returned when the alias file cannot be read or parsed.
+	ErrBadDatabase = errors.New("bad alias store")
 )
 
 // Handler-directive errors.

@@ -8,7 +8,7 @@
     {
       "name": "zvm",
       "description": "Install, pin, and switch Zig toolchains with zvm (Zig Version Manager).",
-      "version": "0.8.29",
+      "version": "0.9.1",
       "source": "./",
       "author": {
         "name": "Tristan Isham"

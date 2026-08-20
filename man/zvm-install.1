@@ -1,0 +1,64 @@
+.\" Copyright 2026 Tristan Isham. All rights reserved.
+.TH ZVM-INSTALL 1 "August 2026" "ZVM" "User Commands"
+.SH NAME
+zvm-install \- download and install Zig and ZLS versions
+.SH SYNOPSIS
+.B zvm install
+.RI [ options ]
+.I version
+.SH DESCRIPTION
+Download and install the requested Zig version.
+Use
+.B master
+for the latest development build.
+Version shorthand and aliases are accepted; see
+.BR zvm (1).
+.SH OPTIONS
+.TP
+.BR --zls
+Also install a ZLS release compatible with the resolved Zig version.
+.TP
+.BR -f , " " --force
+Install even when the version is already present.
+.TP
+.BR -s , " " --skip-shasum
+Skip SHA-256 verification and the confirmation normally required for an
+unverified download.
+This weakens download verification.
+.TP
+.BR --full
+Use the full ZLS compatibility mode instead of the default runtime-only mode.
+.TP
+.BR --nomirror
+Download Zig directly from ziglang.org instead of a community mirror.
+.TP
+.BR --target-os " " os
+Override the target operating system.
+This also sets
+.B ZVM_TARGET_OS
+for the operation.
+.TP
+.BR --target-arch " " architecture
+Override the target architecture.
+This also sets
+.B ZVM_TARGET_ARCH
+for the operation.
+.TP
+.BR --http.timeout " " seconds
+Set the HTTP timeout for installation requests.
+This also sets
+.B ZVM_HTTP_TIMEOUT
+for the operation.
+.SH EXAMPLES
+.EX
+zvm install 0.14.1
+zvm i .14
+zvm install --zls --full master
+zvm install --target-os freebsd --target-arch x86_64 0.14.1
+.EE
+.SH SEE ALSO
+.BR zvm (1),
+.BR zvm-use (1),
+.BR zvm-list-remote (1),
+.BR zvm-mirrorlist (1),
+.BR zvm-vmu (1)

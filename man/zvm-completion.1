@@ -1,0 +1,32 @@
+.\" Copyright 2026 Tristan Isham. All rights reserved.
+.TH ZVM-COMPLETION 1 "August 2026" "ZVM" "User Commands"
+.SH NAME
+zvm-completion \- generate shell completion scripts
+.SH SYNOPSIS
+.B zvm completion
+.BR bash | zsh | fish | pwsh
+.SH DESCRIPTION
+Write a completion script for the selected shell to standard output.
+The script is generated from the command tree of the running ZVM executable.
+.SH SHELLS
+.TP
+.B bash
+Generate Bash completion.
+.TP
+.B zsh
+Generate Zsh completion.
+.TP
+.B fish
+Generate fish completion.
+.TP
+.B pwsh
+Generate PowerShell completion.
+.SH EXAMPLES
+.EX
+source <(zvm completion bash)
+zvm completion zsh > _zvm
+zvm completion fish > ~/.config/fish/completions/zvm.fish
+zvm completion pwsh > zvm.ps1
+.EE
+.SH SEE ALSO
+.BR zvm (1)

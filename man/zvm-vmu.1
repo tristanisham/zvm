@@ -1,0 +1,47 @@
+.\" Copyright 2026 Tristan Isham. All rights reserved.
+.TH ZVM-VMU 1 "August 2026" "ZVM" "User Commands"
+.SH NAME
+zvm-vmu \- configure Zig and ZLS version-map sources
+.SH SYNOPSIS
+.B zvm vmu zig
+.I url
+.br
+.B zvm vmu zig default
+.br
+.B zvm vmu zig mach
+.br
+.B zvm vmu zls
+.I url
+.br
+.B zvm vmu zls default
+.SH DESCRIPTION
+Configure the remote metadata sources used to resolve Zig and ZLS releases.
+Custom URLs must use HTTP or HTTPS and must expose schemas compatible with the
+official sources.
+.SH SUBCOMMANDS
+.TP
+.B zig
+Set the Zig version-map URL.
+The value
+.B default
+restores the official ziglang.org map;
+.B mach
+selects the Mach Engine Zig version map.
+.TP
+.B zls
+Set the ZLS release-worker URL.
+The value
+.B default
+restores the official releases.zigtools.org source.
+.SH EXAMPLES
+.EX
+zvm vmu zig mach
+zvm vmu zig https://example.com/zig/index.json
+zvm vmu zls https://example.com/zls/
+zvm vmu zig default
+.EE
+.SH SEE ALSO
+.BR zvm (1),
+.BR zvm-install (1),
+.BR zvm-list-remote (1),
+.BR zvm-mirrorlist (1)

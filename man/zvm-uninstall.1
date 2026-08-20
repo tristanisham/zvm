@@ -1,0 +1,27 @@
+.\" Copyright 2026 Tristan Isham. All rights reserved.
+.TH ZVM-UNINSTALL 1 "August 2026" "ZVM" "User Commands"
+.SH NAME
+zvm-uninstall \- remove an installed Zig version
+.SH SYNOPSIS
+.B zvm uninstall
+.I version
+.br
+.B zvm rm
+.I version
+.SH DESCRIPTION
+Remove the requested Zig installation from the ZVM base directory.
+Version shorthand and aliases are resolved against locally installed versions.
+.PP
+If the requested version is not installed, ZVM reports that fact and lists the
+installed versions.
+.SH EXAMPLES
+.EX
+zvm uninstall 0.13.0
+zvm rm .13
+zvm rm stable
+.EE
+.SH SEE ALSO
+.BR zvm (1),
+.BR zvm-install (1),
+.BR zvm-list (1),
+.BR zvm-alias (1)

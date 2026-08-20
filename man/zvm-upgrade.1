@@ -1,0 +1,19 @@
+.\" Copyright 2026 Tristan Isham. All rights reserved.
+.TH ZVM-UPGRADE 1 "August 2026" "ZVM" "User Commands"
+.SH NAME
+zvm-upgrade \- upgrade ZVM to the latest release
+.SH SYNOPSIS
+.B zvm upgrade
+.SH DESCRIPTION
+Check the latest ZVM release, download the release archive for the current
+platform, and replace the installed ZVM executable.
+.PP
+Package-manager builds may compile out self-upgrade support.
+Such builds print a distributor-provided update instruction instead.
+.SH ENVIRONMENT
+.TP
+.B ZVM_INSTALL
+Override the directory containing the executable to replace.
+When unset, ZVM attempts to resolve the path of the running executable.
+.SH SEE ALSO
+.BR zvm (1)

@@ -1,0 +1,27 @@
+.\" Copyright 2026 Tristan Isham. All rights reserved.
+.TH ZVM-LIST 1 "August 2026" "ZVM" "User Commands"
+.SH NAME
+zvm-list \- list installed Zig versions
+.SH SYNOPSIS
+.B zvm list
+.RI [ options ]
+.br
+.B zvm ls
+.RI [ options ]
+.SH DESCRIPTION
+List Zig versions installed in the ZVM base directory and mark the currently
+selected version.
+.SH OPTIONS
+.TP
+.BR -a , " " --all
+List remote versions instead.
+This option is deprecated; use
+.B zvm list-remote
+instead.
+.TP
+.B --vmu
+Print the configured Zig and ZLS version-map URLs.
+.SH SEE ALSO
+.BR zvm (1),
+.BR zvm-list-remote (1),
+.BR zvm-use (1)

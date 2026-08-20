@@ -1,0 +1,23 @@
+.\" Copyright 2026 Tristan Isham. All rights reserved.
+.TH ZVM-LIST-REMOTE 1 "August 2026" "ZVM" "User Commands"
+.SH NAME
+zvm-list-remote \- list Zig versions available for installation
+.SH SYNOPSIS
+.B zvm list-remote
+.RI [ options ]
+.br
+.B zvm ls-remote
+.RI [ options ]
+.SH DESCRIPTION
+Fetch the configured Zig and ZLS version maps and list available Zig versions.
+The output identifies locally installed releases and releases with tagged ZLS
+builds.
+.SH OPTIONS
+.TP
+.B --json
+Emit structured JSON instead of the display table.
+.SH SEE ALSO
+.BR zvm (1),
+.BR zvm-install (1),
+.BR zvm-list (1),
+.BR zvm-vmu (1)

@@ -11,11 +11,7 @@ import (
 func newTestAliasZVM(t *testing.T) *ZVM {
 	t.Helper()
 
-	z := &ZVM{baseDir: t.TempDir()}
-	if err := z.initializeDatabase(); err != nil {
-		t.Fatalf("initialize database: %v", err)
-	}
-	return z
+	return &ZVM{baseDir: t.TempDir()}
 }
 
 func installTestVersion(t *testing.T, z *ZVM, version string) {

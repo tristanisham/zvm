@@ -1,0 +1,17 @@
+.\" Copyright 2026 Tristan Isham. All rights reserved.
+.TH ZVM-CLEAN 1 "August 2026" "ZVM" "User Commands"
+.SH NAME
+zvm-clean \- remove downloaded ZVM build archives
+.SH SYNOPSIS
+.B zvm clean
+.SH DESCRIPTION
+Remove files ending in
+.BR .zip ,
+.BR .xz ,
+or
+.B .tar
+from the top level of the ZVM base directory.
+Installed Zig version directories are not removed.
+.SH SEE ALSO
+.BR zvm (1),
+.BR zvm-uninstall (1)

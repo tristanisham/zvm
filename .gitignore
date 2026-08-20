@@ -12,6 +12,8 @@ testdata/
 .env*
 *.syso
 zvm-*
+# ...but the per-command man pages are source, not release binaries.
+!man/zvm-*.1
 .idea/
 .gemini
 .codex

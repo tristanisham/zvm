@@ -1,0 +1,25 @@
+.\" Copyright 2026 Tristan Isham. All rights reserved.
+.TH ZVM-MIRRORLIST 1 "August 2026" "ZVM" "User Commands"
+.SH NAME
+zvm-mirrorlist \- configure Zig download mirrors
+.SH SYNOPSIS
+.B zvm mirrorlist
+.I url
+.br
+.B zvm mirrorlist default
+.br
+.B zvm mirrorlist disabled
+.SH DESCRIPTION
+Set the URL from which ZVM obtains its list of community Zig download mirrors.
+The URL must use HTTP or HTTPS.
+.PP
+Use
+.B default
+to restore the official Zig community mirror list.
+Use
+.B disabled
+to download directly from ziglang.org.
+.SH SEE ALSO
+.BR zvm (1),
+.BR zvm-install (1),
+.BR zvm-vmu (1)

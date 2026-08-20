@@ -1,0 +1,32 @@
+.\" Copyright 2026 Tristan Isham. All rights reserved.
+.TH ZVM-RUN 1 "August 2026" "ZVM" "User Commands"
+.SH NAME
+zvm-run \- run Zig without changing the active version
+.SH SYNOPSIS
+.B zvm run
+.I version
+.RI [ zig-arguments ...]
+.SH DESCRIPTION
+Run the Zig executable from
+.I version
+with the remaining arguments.
+The globally selected Zig version is unchanged.
+.PP
+If the requested version is not installed, ZVM offers to install it.
+Version shorthand and aliases are accepted; see
+.BR zvm (1).
+.PP
+Arguments after
+.I version
+are passed directly to Zig, including arguments beginning with a hyphen.
+.SH EXAMPLES
+.EX
+zvm run 0.13.0 version
+zvm run .14 build test
+zvm run master build run -- --port 8080
+.EE
+.SH SEE ALSO
+.BR zvm (1),
+.BR zig (1),
+.BR zvm-install (1),
+.BR zvm-use (1)

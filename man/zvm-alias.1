@@ -1,0 +1,73 @@
+.\" Copyright 2026 Tristan Isham. All rights reserved.
+.TH ZVM-ALIAS 1 "August 2026" "ZVM" "User Commands"
+.SH NAME
+zvm-alias \- name installed Zig versions
+.SH SYNOPSIS
+.B zvm alias
+.br
+.B zvm alias
+.I name
+.br
+.B zvm alias
+.I name version
+.br
+.B zvm alias
+.BR --delete " " name
+.br
+.B zvm alias --clear
+.SH DESCRIPTION
+Create, inspect, list, or delete aliases for installed Zig versions.
+.B kv
+is an alias for the
+.B alias
+command.
+.PP
+With no arguments, list every alias.
+With only
+.IR name ,
+print that alias.
+With
+.I name
+and
+.IR version ,
+create or replace an alias.
+The target version must already be installed; version shorthand is accepted.
+.PP
+Aliases may be used as version arguments to
+.BR install ,
+.BR use ,
+.BR run ,
+and
+.BR uninstall .
+They are stored in
+.I aliases.json
+under the ZVM base directory, as a JSON object of name to version.
+.SH OPTIONS
+.TP
+.BR -d , " " --delete
+Delete the named alias.
+Deleting an alias that does not exist succeeds.
+.TP
+.B --clear
+Delete all aliases.
+.SH EXAMPLES
+.EX
+zvm alias work 0.14.1
+zvm kv play .13
+zvm alias work
+zvm alias
+zvm alias --delete work
+.EE
+.SH FILES
+.TP
+.I ~/.zvm/aliases.json
+Alias file.
+If
+.B ZVM_PATH
+is set, the file is
+.IR $ZVM_PATH/aliases.json .
+.SH SEE ALSO
+.BR zvm (1),
+.BR zvm-use (1),
+.BR zvm-run (1),
+.BR zvm-uninstall (1)

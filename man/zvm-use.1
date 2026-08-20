@@ -1,0 +1,41 @@
+.\" Copyright 2026 Tristan Isham. All rights reserved.
+.TH ZVM-USE 1 "August 2026" "ZVM" "User Commands"
+.SH NAME
+zvm-use \- select the active Zig version
+.SH SYNOPSIS
+.B zvm use
+.I version
+.br
+.B zvm use --sync
+.SH DESCRIPTION
+Select an installed Zig version and update the executables exposed through
+ZVM's
+.I bin
+directory.
+The version may be exact, shorthand, or an alias; see
+.BR zvm (1).
+.PP
+When no version is supplied, ZVM attempts to read
+.B minimum_zig_version
+from
+.I build.zig.zon
+in the current project.
+.SH OPTIONS
+.TP
+.B --sync
+Read a
+.B //! zvm-lock:
+directive from
+.I build.zig
+in the current directory and select its version.
+.SH EXAMPLES
+.EX
+zvm use 0.14.1
+zvm use stable
+zvm use --sync
+.EE
+.SH SEE ALSO
+.BR zvm (1),
+.BR zvm-install (1),
+.BR zvm-list (1),
+.BR zvm-alias (1)

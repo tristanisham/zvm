@@ -15,6 +15,7 @@ import (
 	"testing"
 
 	"github.com/tristanisham/zvm/cli"
+	opts "github.com/urfave/cli/v3"
 )
 
 // captureStdout runs fn with os.Stdout redirected to a pipe and returns what
@@ -230,8 +231,61 @@ func TestFishCompletionIsStatic(t *testing.T) {
 	if !strings.Contains(got, "complete -c zvm") {
 		t.Fatal("fish completion is missing zvm completion definitions")
 	}
-	if !strings.Contains(got, "-l json") {
-		t.Fatal("fish completion is missing the list-remote --json flag")
+
+	assertFishCompletionMatchesCommand(t, got, zvmApp)
+}
+
+func assertFishCompletionMatchesCommand(t *testing.T, completion string, command *opts.Command) {
+	t.Helper()
+
+	for _, flag := range command.VisibleFlags() {
+		for nameIndex, name := range flag.Names() {
+			kind := "-l"
+			if nameIndex > 0 {
+				kind = "-s"
+			}
+			if !strings.Contains(completion, kind+" "+name) {
+				t.Errorf("fish completion is missing flag %q from %s", name, command.FullName())
+			}
+		}
+	}
+
+	for _, child := range command.VisibleCommands() {
+		if !strings.Contains(completion, "-a '"+child.Name+"'") {
+			t.Errorf("fish completion is missing command %s", child.FullName())
+		}
+		assertFishCompletionMatchesCommand(t, completion, child)
+	}
+}
+
+func TestDynamicCompletionMatchesRootCommandsAndAliases(t *testing.T) {
+	t.Setenv("ZVM_PATH", t.TempDir())
+
+	originalArgs := os.Args
+	os.Args = []string{"zvm", "--generate-shell-completion"}
+	t.Cleanup(func() { os.Args = originalArgs })
+
+	var runErr error
+	got := captureStdout(t, func(w io.Writer) {
+		zvmApp.Writer = w
+		runErr = zvmApp.Run(context.Background(), os.Args)
+	})
+	if runErr != nil {
+		t.Fatalf("unexpected error generating dynamic completion: %v", runErr)
+	}
+
+	candidates := make(map[string]bool)
+	for line := range strings.Lines(got) {
+		name, _, _ := strings.Cut(strings.TrimSpace(line), ":")
+		candidates[name] = true
+	}
+
+	for _, command := range zvmApp.VisibleCommands() {
+		for _, name := range command.Names() {
+			if !candidates[name] {
+				t.Errorf("dynamic completion is missing %q from the root command tree", name)
+			}
+		}
 	}
 }
 

@@ -40,6 +40,7 @@ var zvmApp = &opts.Command{
 	Copyright:             fmt.Sprintf("Copyright © %d Tristan Isham", time.Now().Year()),
 	Suggest:               true,
 	EnableShellCompletion: true,
+	ShellComplete:         completeZVMCommands,
 	ConfigureShellCompletionCommand: func(cmd *opts.Command) {
 		cmd.Hidden = false
 		cmd.Usage = "Generate a shell completion script"
@@ -639,4 +640,22 @@ func printZVMHelp(w io.Writer, templ string, data any) {
 	opts.HelpPrinterCustom(w, styledTemplate, data, map[string]any{
 		"section": formatHelpSection,
 	})
+}
+
+
+// completeZVMCommands extends urfave/cli's live command completion with the
+// aliases accepted by ZVM. The default completer only emits each command's
+// canonical name, even though aliases are part of the public CLI surface.
+func completeZVMCommands(ctx context.Context, cmd *opts.Command) {
+	opts.DefaultCompleteWithFlags(ctx, cmd)
+
+	for _, command := range cmd.VisibleCommands() {
+		for _, alias := range command.Aliases {
+			if command.Usage == "" {
+				fmt.Fprintln(cmd.Root().Writer, alias)
+				continue
+			}
+			fmt.Fprintf(cmd.Root().Writer, "%s:%s\n", alias, command.Usage)
+		}
+	}
 }

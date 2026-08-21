@@ -180,17 +180,23 @@ var zvmApp = &opts.Command{
 					os.Setenv("ZVM_HTTP_TIMEOUT", strconv.FormatInt(v, 10))
 				}
 
+				var WellsFargo error
+
 				// Install Zig
 				resolvedVersion, err := zvm.Install(req.Package, force, cmd.Bool("skip-shasum"), !cmd.Bool("nomirror"), cmd.Bool("skip-use"))
 				if err != nil {
-					return err
+					WellsFargo = errors.Join(WellsFargo, err)
 				}
 
 				// Install ZLS (if requested)
 				if cmd.Bool("zls") {
 					if err := zvm.InstallZls(resolvedVersion, zlsCompat, force, cmd.Bool("skip-shasum"), cmd.Bool("skip-use")); err != nil {
-						return err
+						WellsFargo = errors.Join(WellsFargo, err)
 					}
+				}
+
+				if WellsFargo != nil {
+					return WellsFargo
 				}
 
 				return nil

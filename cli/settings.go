@@ -24,6 +24,7 @@ type Settings struct {
 	ZlsVMU             string `json:"zlsVersionMapUrl,omitempty"` // ZLS's version map URL
 	UseColor           bool   `json:"useColor"`
 	AlwaysForceInstall bool   `json:"alwaysForceInstall"`
+	AlwaysInstallZLS   bool   `json:"alwaysInstallZLS"`
 }
 
 // MachVersionMapUrl is the version map published by the Mach engine project,
@@ -39,6 +40,7 @@ var DefaultSettings = Settings{
 	ZlsVMU:             "https://releases.zigtools.org/",
 	UseColor:           true,
 	AlwaysForceInstall: false,
+	AlwaysInstallZLS:   false,
 }
 
 // UseMirrorList returns true if the mirror list URL is not set to "disabled".
@@ -115,6 +117,19 @@ func (s *Settings) SetColor(answer bool) {
 	if err := s.save(); err != nil {
 		log.Fatal(err)
 	}
+}
+
+// SetAlwaysInstallZLS sets whether ZLS should always be installed and saves the configuration.
+func (s *Settings) SetAlwaysInstallZLS(alwaysInstall bool) {
+	s.AlwaysInstallZLS = alwaysInstall
+	if err := s.save(); err != nil {
+		log.Fatal(err)
+	}
+}
+
+// ToggleAlwaysInstallZls toggles whether ZLS should always be installed and saves the configuration.
+func (s *Settings) ToggleAlwaysInstallZls() {
+	s.SetAlwaysInstallZLS(!s.AlwaysInstallZLS)
 }
 
 // SetMirrorListUrl sets the mirror list URL and saves the configuration.

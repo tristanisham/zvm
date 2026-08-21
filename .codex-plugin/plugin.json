@@ -1,0 +1,37 @@
+{
+  "name": "zvm",
+  "version": "0.9.1",
+  "description": "Install, pin, and switch Zig toolchains with zvm without disturbing the user's global toolchain.",
+  "author": {
+    "name": "Tristan Isham"
+  },
+  "homepage": "https://www.zvm.app",
+  "repository": "https://github.com/tristanisham/zvm",
+  "license": "MIT",
+  "keywords": [
+    "zig",
+    "zvm",
+    "version-manager",
+    "toolchain",
+    "zls"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "ZVM",
+    "shortDescription": "Manage Zig and ZLS toolchains safely",
+    "longDescription": "Teaches Codex how to install, select, pin, and run Zig and ZLS versions with ZVM while preserving the user's global toolchain selection.",
+    "developerName": "Tristan Isham",
+    "category": "Developer Tools",
+    "capabilities": [
+      "Toolchain management",
+      "Version selection"
+    ],
+    "websiteURL": "https://www.zvm.app",
+    "defaultPrompt": [
+      "Use the Zig version this repository expects.",
+      "Install the matching Zig and ZLS toolchain.",
+      "Diagnose this Zig version mismatch."
+    ],
+    "brandColor": "#F7A41D"
+  }
+}

@@ -5,7 +5,6 @@
 package main
 
 import (
-	"bytes"
 	"flag"
 	"fmt"
 	"os"
@@ -174,19 +173,16 @@ func renderFlags(flags []opts.Flag) []string {
 var pluginManifests = []string{
 	filepath.Join(".claude-plugin", "plugin.json"),
 	filepath.Join(".claude-plugin", "marketplace.json"),
+	filepath.Join(".codex-plugin", "plugin.json"),
 }
 
-// pluginVersionRe matches the "version" field in the plugin manifests. A
-// targeted rewrite preserves hand-authored formatting and key order, which
-// round-tripping through encoding/json would not.
+// pluginVersionRe matches the "version" field in the plugin manifests.
 var pluginVersionRe = regexp.MustCompile(`("version"\s*:\s*)"[^"]*"`)
 
 // TestPluginVersionMatchesMeta keeps the published plugin version in step with
 // the zvm release it documents.
 //
-// Sync with:
-//
-//	go test -run TestPluginVersionMatchesMeta -update
+// Synchronize with `deno task pkg`.
 func TestPluginVersionMatchesMeta(t *testing.T) {
 	want := strings.TrimPrefix(meta.VERSION, "v")
 
@@ -194,17 +190,6 @@ func TestPluginVersionMatchesMeta(t *testing.T) {
 		contents, err := os.ReadFile(manifest)
 		if err != nil {
 			t.Fatalf("reading %s: %v", manifest, err)
-		}
-
-		if *updateSkillReference {
-			updated := pluginVersionRe.ReplaceAll(contents, []byte(`${1}"`+want+`"`))
-			if !bytes.Equal(updated, contents) {
-				if err := os.WriteFile(manifest, updated, 0o644); err != nil {
-					t.Fatalf("writing %s: %v", manifest, err)
-				}
-				t.Logf("synced %s to %s", manifest, want)
-			}
-			continue
 		}
 
 		var manifestVersions []string
@@ -219,7 +204,7 @@ func TestPluginVersionMatchesMeta(t *testing.T) {
 
 		for _, got := range manifestVersions {
 			if got != want {
-				t.Errorf("%s declares version %q, want %q (from cli/meta.VERSION).\nSync with: go test -run TestPluginVersionMatchesMeta -update", manifest, got, want)
+				t.Errorf("%s declares version %q, want %q (from cli/meta.VERSION).\nSync with: deno task pkg", manifest, got, want)
 			}
 		}
 	}

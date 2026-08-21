@@ -63,7 +63,7 @@ Only fall back to `master` or `stable` when none of these exist.
 - `.12` normalizes to `0.12`, then resolves as above.
 - `stable` resolves to the highest non-dev, non-master release.
 - `master` is the current development build and passes through unresolved.
-- Aliases created with `zvm alias <version> <name>` also resolve.
+- Aliases created with `zvm alias <name> <version>` also resolve.
 
 Partial versions are safe to pass; you do not need to expand them yourself.
 

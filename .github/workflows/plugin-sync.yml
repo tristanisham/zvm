@@ -1,4 +1,4 @@
-# Keeps the Claude Code plugin in step with zvm's command surface and version.
+# Keeps distribution metadata and the agent skill in step with zvm.
 #
 # Drift is normally caught much earlier: go.yml runs `go test ./...` on every
 # push and pull request, and TestSkillReference / TestPluginVersionMatchesMeta
@@ -26,6 +26,11 @@ jobs:
         with:
           go-version: "1.26"
 
+      - name: Set up Deno
+        uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+
       # Step 1 of RELEASING.md is bumping cli/meta/version.go, and it is the
       # easiest of the five steps to forget. Catch a tag that disagrees with it
       # loudly rather than publishing a plugin pinned to a stale version.
@@ -41,17 +46,20 @@ jobs:
             exit 1
           fi
 
-      - name: Regenerate plugin reference and sync version
-        run: go test -run 'TestSkillReference|TestPluginVersionMatchesMeta' -update .
+      - name: Sync distribution versions
+        run: deno task pkg
+
+      - name: Regenerate plugin reference
+        run: go test -run TestSkillReference -update .
 
       - name: Commit if anything changed
         run: |
-          if git diff --quiet -- .claude-plugin skills; then
-            echo "Plugin already in sync; nothing to commit."
+          if git diff --quiet -- .claude-plugin .codex-plugin flake.nix skills; then
+            echo "Distribution metadata and agent skill already in sync; nothing to commit."
             exit 0
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add .claude-plugin skills
-          git commit -m "chore: sync Claude Code plugin with zvm command surface"
+          git add .claude-plugin .codex-plugin flake.nix skills
+          git commit -m "chore: sync distribution metadata with zvm version"
           git push origin HEAD:master

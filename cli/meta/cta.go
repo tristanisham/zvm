@@ -47,7 +47,7 @@ func CtaUpgradeAvailable(tag string) {
 		MarginTop(1).
 		MarginBottom(1).
 		Align(lipgloss.Center)
-	fmt.Println(style.Render("Notice"))
+	fmt.Fprintln(os.Stderr, style.Render("Notice"))
 
 	blueLink := lipgloss.NewStyle().
 		Foreground(lipgloss.Color("#0000EE")).
@@ -57,7 +57,7 @@ func CtaUpgradeAvailable(tag string) {
 	yellowText := lipgloss.NewStyle().
 		Foreground(lipgloss.Color("#fee12b"))
 
-	fmt.Printf("\nZVM %s is available. You are currently on %s.\n\nRun %s or download the latest release at\n%s\n\n", blueLink.Render(tag), blueLink.Render(VERSION), yellowText.Render("zvm upgrade"), blueLink.Render("https://github.com/tristanisham/zvm/releases/latest"))
+	fmt.Fprintf(os.Stderr, "\nZVM %s is available. You are currently on %s.\n\nRun %s or download the latest release at\n%s\n\n", blueLink.Render(tag), blueLink.Render(VERSION), yellowText.Render("zvm upgrade"), blueLink.Render("https://github.com/tristanisham/zvm/releases/latest"))
 }
 
 // CtaGeneric prints an aesthetic generic notice.

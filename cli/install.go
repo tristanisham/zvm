@@ -322,7 +322,9 @@ func (z *ZVM) Install(version string, force bool, skipShasum bool, mirror bool, 
 		log.Warn(err)
 	}
 
-	z.createSymlink(version, skipUse)
+	if !skipUse {
+		z.createSymlink(version)
+	}
 
 	fmt.Println("Successfully installed Zig!")
 
@@ -678,7 +680,9 @@ func (z *ZVM) InstallZls(requestedVersion string, compatMode string, force bool,
 		return err
 	}
 
-	z.createSymlink(requestedVersion, skipUse)
+	if !skipUse {
+		z.createSymlink(requestedVersion)
+	}
 	fmt.Println("Done! 🎉")
 	return nil
 }
@@ -717,12 +721,8 @@ func findZlsExecutable(dir string) (string, error) {
 }
 
 // createSymlink creates a symbolic link for the installed version
-// pointing to the 'bin' directory in the ZVM base path unless skipUse is set.
-func (z *ZVM) createSymlink(version string, skipUse bool) {
-	if skipUse {
-		return
-	}
-
+// pointing to the 'bin' directory in the ZVM base path.
+func (z *ZVM) createSymlink(version string) {
 	// .zvm/master
 	versionPath := filepath.Join(z.baseDir, version)
 	binDir := filepath.Join(z.baseDir, "bin")

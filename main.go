@@ -185,6 +185,9 @@ var zvmApp = &opts.Command{
 				// Install Zig
 				resolvedVersion, err := zvm.Install(req.Package, force, cmd.Bool("skip-shasum"), !cmd.Bool("nomirror"), cmd.Bool("skip-use"))
 				if err != nil {
+					if !zvm.Settings.AlwaysInstallZLS {
+						return err
+					}
 					WellsFargo = errors.Join(WellsFargo, err)
 				}
 

@@ -2,6 +2,9 @@
   "tasks": {
     "build": "deno run -A build.ts",
     "clean": "rm -r build",
+    "pkg": "deno run -A pkg.ts",
+    "pkg:check": "deno run -A pkg.ts --check",
+    "test:pkg": "deno test -A pkg_test.ts",
     "star-history": "deno run -A .github/scripts/star-history.ts"
   },
   "imports": {

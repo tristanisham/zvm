@@ -5,9 +5,17 @@
 import { parseArgs } from "@std/cli/parse-args";
 import { TarStream, type TarStreamInput } from "@std/tar";
 import * as zip from "@zip-js/zip-js";
+import { syncPackageVersions } from "./pkg.ts";
 
 // Command to count final build results
 //  find ./build -type f \( -name "*.tar" -o -name "*.zip" \) | wc -l
+
+const versionSync = await syncPackageVersions();
+if (versionSync.updated.length > 0) {
+  console.log(
+    `Synced ${versionSync.updated.join(", ")} to ${versionSync.version}`,
+  );
+}
 
 const args = parseArgs(Deno.args, {
   string: ["buildUpgradeMessage"],

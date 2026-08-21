@@ -157,14 +157,36 @@ switch between, and run multiple versions of Zig.
 
 # Using ZVM with AI coding agents
 
-ZVM ships a [Claude Code](https://claude.com/claude-code) plugin, so coding agents reach for `zvm` instead of a distro package or a hand-unpacked tarball, and drive it correctly when they do.
+ZVM ships one portable agent skill with plugin manifests for Claude Code and
+Codex. It teaches coding agents to reach for `zvm` instead of a distro package
+or a hand-unpacked tarball, and to drive it correctly when they do.
+
+### Claude Code
 
 ```
 /plugin marketplace add tristanisham/zvm
 /plugin install zvm
 ```
 
-The plugin is a single skill. It teaches agents ZVM's real command surface, how to find the version a repository actually wants (`//! zvm-lock:` in `build.zig`, `.minimum_zig_version` in `build.zig.zon`), and to prefer `zvm run` over `zvm use` so they never repoint your global Zig without being asked. The command reference is generated from ZVM's own CLI definition, so it cannot drift from the binary.
+The same commands are also available from a shell:
+
+```sh
+claude plugin marketplace add tristanisham/zvm
+claude plugin install zvm@zvm
+```
+
+### Codex and other agents
+
+The repository includes a Codex plugin manifest at `.codex-plugin/plugin.json`.
+The underlying `skills/zig-versions/` directory uses the portable Agent Skills
+layout, so other skill-compatible agents can load that directory directly.
+
+The shared skill covers ZVM's real command surface, how to find the version a
+repository actually wants (`//! zvm-lock:` in `build.zig`,
+`.minimum_zig_version` in `build.zig.zon`), and why agents should prefer
+`zvm run` over `zvm use` so they never repoint your global Zig without being
+asked. The command reference is generated from ZVM's own CLI definition, so it
+cannot drift from the binary.
 
 # Contributing and Notice
 

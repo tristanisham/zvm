@@ -1,0 +1,36 @@
+name: Nix
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  flake:
+    name: Flake (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Nix
+        uses: DeterminateSystems/determinate-nix-action@v3
+
+      - name: Check flake
+        run: nix flake check --all-systems --no-update-lock-file
+
+      - name: Build package
+        run: nix build --no-update-lock-file --print-build-logs
+
+      - name: Verify binary
+        run: ./result/bin/zvm --version

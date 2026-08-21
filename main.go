@@ -112,6 +112,11 @@ var zvmApp = &opts.Command{
 					Usage:   "skip SHA-256 verification and the unverified-download confirmation",
 				},
 				&opts.BoolFlag{
+					Name:    "skip-use",
+					Aliases: []string{"k"},
+					Usage:   "install without setting the version as active",
+				},
+				&opts.BoolFlag{
 					Name:  "full",
 					Usage: "use the 'full' zls compatibility mode",
 				},
@@ -176,14 +181,14 @@ var zvmApp = &opts.Command{
 				}
 
 				// Install Zig
-				resolvedVersion, err := zvm.Install(req.Package, force, cmd.Bool("skip-shasum"), !cmd.Bool("nomirror"))
+				resolvedVersion, err := zvm.Install(req.Package, force, cmd.Bool("skip-shasum"), !cmd.Bool("nomirror"), cmd.Bool("skip-use"))
 				if err != nil {
 					return err
 				}
 
 				// Install ZLS (if requested)
 				if cmd.Bool("zls") {
-					if err := zvm.InstallZls(resolvedVersion, zlsCompat, force, cmd.Bool("skip-shasum")); err != nil {
+					if err := zvm.InstallZls(resolvedVersion, zlsCompat, force, cmd.Bool("skip-shasum"), cmd.Bool("skip-use")); err != nil {
 						return err
 					}
 				}

@@ -79,7 +79,7 @@ func confirmUnverifiedDownload(artifact string) error {
 // Install downloads and installs the specified Zig version.
 // It handles checking for existing installations, verifying checksums,
 // and extracting the downloaded bundle.
-func (z *ZVM) Install(version string, force bool, skipShasum bool, mirror bool) (string, error) {
+func (z *ZVM) Install(version string, force bool, skipShasum bool, mirror bool, skipUse bool) (string, error) {
 	if err := os.MkdirAll(z.baseDir, 0755); err != nil {
 		return version, err
 	}
@@ -322,7 +322,7 @@ func (z *ZVM) Install(version string, force bool, skipShasum bool, mirror bool) 
 		log.Warn(err)
 	}
 
-	z.createSymlink(version)
+	z.createSymlink(version, skipUse)
 
 	fmt.Println("Successfully installed Zig!")
 
@@ -527,7 +527,7 @@ func (z *ZVM) SelectZlsVersion(version string, compatMode string) (string, strin
 }
 
 // InstallZls downloads and installs the Zig Language Server (ZLS) for the specified Zig version.
-func (z *ZVM) InstallZls(requestedVersion string, compatMode string, force bool, skipShasum bool) error {
+func (z *ZVM) InstallZls(requestedVersion string, compatMode string, force bool, skipShasum bool, skipUse bool) error {
 	fmt.Println("Determining installed Zig version...")
 
 	// make sure dir exists
@@ -678,7 +678,7 @@ func (z *ZVM) InstallZls(requestedVersion string, compatMode string, force bool,
 		return err
 	}
 
-	z.createSymlink(requestedVersion)
+	z.createSymlink(requestedVersion, skipUse)
 	fmt.Println("Done! 🎉")
 	return nil
 }
@@ -717,8 +717,12 @@ func findZlsExecutable(dir string) (string, error) {
 }
 
 // createSymlink creates a symbolic link for the installed version
-// pointing to the 'bin' directory in the ZVM base path.
-func (z *ZVM) createSymlink(version string) {
+// pointing to the 'bin' directory in the ZVM base path unless skipUse is set.
+func (z *ZVM) createSymlink(version string, skipUse bool) {
+	if skipUse {
+		return
+	}
+
 	// .zvm/master
 	versionPath := filepath.Join(z.baseDir, version)
 	binDir := filepath.Join(z.baseDir, "bin")

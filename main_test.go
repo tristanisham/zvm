@@ -138,6 +138,25 @@ func TestCompletionEnabled(t *testing.T) {
 	}
 }
 
+func TestInstallCommandHasSkipUseFlag(t *testing.T) {
+	for _, command := range zvmApp.Commands {
+		if command.Name != "install" {
+			continue
+		}
+
+		for _, flag := range command.Flags {
+			names := flag.Names()
+			if len(names) == 2 && names[0] == "skip-use" && names[1] == "k" {
+				return
+			}
+		}
+
+		t.Fatal("install command does not define --skip-use with -k alias")
+	}
+
+	t.Fatal("install command is not registered")
+}
+
 func TestCompletionOutput(t *testing.T) {
 	t.Setenv("ZVM_PATH", t.TempDir())
 

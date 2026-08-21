@@ -310,6 +310,19 @@ pass the `--zls` flag with `zvm i`. For example:
 zvm i --zls master
 ```
 
+By default, ZVM stops if the Zig installation fails and does not attempt the
+requested ZLS installation. To attempt ZLS even after a Zig installation error,
+set `alwaysInstallZLS` to `true` in `~/.zvm/settings.json`:
+
+```json
+{
+  "alwaysInstallZLS": true
+}
+```
+
+The command still returns the Zig installation error. If ZLS also fails, ZVM
+returns both errors.
+
 ### Install for a Different Target Platform
 
 If you're on a platform where pre-built Zig binaries aren't available for a
@@ -712,9 +725,11 @@ Enable or disable colored ZVM output. No value toggles colors.
 
 ZVM has additional setting stored in `~/.zvm/settings.json`. You can manually
 update version maps, toggle color support, and disable the automatic upgrade
-checker here. All settings are also exposed as flags or environment variables.
-This file is stateful, and ZVM will create it if it does not exist and utilizes
-it for its operation.
+checker here. The `alwaysInstallZLS` setting controls whether a requested ZLS
+installation is attempted after Zig installation fails and defaults to `false`.
+Some settings are also exposed as flags or environment variables. This file is
+stateful, and ZVM will create it if it does not exist and utilizes it for its
+operation.
 
 ## Uninstalling ZVM
 

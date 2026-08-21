@@ -262,6 +262,17 @@ zvm i --force master
 You can also enable the old behavior by setting the new `alwaysForceInstall`
 field to `true` in `~/.zvm/settings.json`.
 
+### Install Without Switching
+
+By default, installing Zig also makes that version active. Pass `--skip-use`
+or `-k` to install it without changing the active Zig version:
+
+```sh
+zvm i --skip-use 0.15.2
+```
+
+This also applies when installing ZLS with `--zls`.
+
 ### Install a Specific Development Build
 
 Zig development builds can be installed by their full build identifier, such as

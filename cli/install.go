@@ -79,7 +79,7 @@ func confirmUnverifiedDownload(artifact string) error {
 // Install downloads and installs the specified Zig version.
 // It handles checking for existing installations, verifying checksums,
 // and extracting the downloaded bundle.
-func (z *ZVM) Install(version string, force bool, skipShasum bool, mirror bool) (string, error) {
+func (z *ZVM) Install(version string, force bool, skipShasum bool, mirror bool, skipUse bool) (string, error) {
 	if err := os.MkdirAll(z.baseDir, 0755); err != nil {
 		return version, err
 	}
@@ -322,7 +322,9 @@ func (z *ZVM) Install(version string, force bool, skipShasum bool, mirror bool) 
 		log.Warn(err)
 	}
 
-	z.createSymlink(version)
+	if !skipUse {
+		z.createSymlink(version)
+	}
 
 	fmt.Println("Successfully installed Zig!")
 
@@ -527,7 +529,7 @@ func (z *ZVM) SelectZlsVersion(version string, compatMode string) (string, strin
 }
 
 // InstallZls downloads and installs the Zig Language Server (ZLS) for the specified Zig version.
-func (z *ZVM) InstallZls(requestedVersion string, compatMode string, force bool, skipShasum bool) error {
+func (z *ZVM) InstallZls(requestedVersion string, compatMode string, force bool, skipShasum bool, skipUse bool) error {
 	fmt.Println("Determining installed Zig version...")
 
 	// make sure dir exists
@@ -678,7 +680,9 @@ func (z *ZVM) InstallZls(requestedVersion string, compatMode string, force bool,
 		return err
 	}
 
-	z.createSymlink(requestedVersion)
+	if !skipUse {
+		z.createSymlink(requestedVersion)
+	}
 	fmt.Println("Done! 🎉")
 	return nil
 }

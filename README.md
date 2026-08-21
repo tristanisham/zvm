@@ -586,10 +586,6 @@ zvm bug
 
 Opens a prefilled issue on ZVM's GitHub repository in your browser. The report template comes with your environment already filled in: your ZVM version, settings, installed and selected Zig versions, and host details. Fill in what you did, what happened, and what you expected, then submit it yourself — `zvm` never files the issue for you.
 
-ZVM anonymizes the report before it reaches the form. Paths under your home directory are shortened to `~`, so the report never carries your account name. The mirror and version-map URLs ZVM ships (and Mach's) are shown as-is, since they describe nobody; a URL you configured yourself is replaced by a short digest like `custom sha256:06f9d80140a5`, which is enough to tell two reports apart without publishing where you fetch Zig from.
-
-That digest is a correlation tag, not a secret — a URL is guessable enough to be recovered by hashing candidates. It is there so a maintainer can ask you for the URL rather than find it already posted. Review the report before submitting it.
-
 On a machine with no browser (a remote shell or a container), print the URL instead and open it elsewhere:
 
 ```sh

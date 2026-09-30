@@ -77,6 +77,23 @@ powershell -c "irm https://www.zvm.app/install.ps1 | iex"
 go install -ldflags "-s -w" github.com/tristanisham/zvm@latest
 ```
 
+> [!NOTE]
+> **Building on small machines.** On low-memory or resource-limited hosts
+> (reported on OpenBSD/arm64 with Go 1.26.2, see
+> [#200](https://github.com/tristanisham/zvm/issues/200)), the build can fail
+> with `could not import maps (can't find export data (bufio: buffer full))`.
+> This means Go couldn't read a compiled package from its build cache. Clearing
+> the cache and building one package at a time fixed it:
+>
+> ```sh
+> go clean -cache
+> GOMAXPROCS=1 go install -p=1 -ldflags "-s -w" github.com/tristanisham/zvm@latest
+> ```
+>
+> Alternatively, cross-compile on a bigger machine, for example
+> `GOOS=openbsd GOARCH=arm64 go build -ldflags "-s -w" .`, and copy the binary
+> over.
+
 ## Manually
 
 Please grab the

@@ -232,6 +232,7 @@ func (z *ZVM) Install(version string, force bool, skipShasum bool, mirror bool, 
 
 	hash := sha256.New()
 	_, err = io.Copy(io.MultiWriter(tempFile, pbar, hash), tarResp.Body)
+	stopProgressBar(pbar, err == nil)
 	if err != nil {
 		return version, err
 	}
@@ -631,6 +632,7 @@ func (z *ZVM) InstallZls(requestedVersion string, compatMode string, force bool,
 
 	hash := sha256.New()
 	_, err = io.Copy(io.MultiWriter(tempDir, pbar, hash), tarResp.Body)
+	stopProgressBar(pbar, err == nil)
 	if err != nil {
 		return err
 	}
@@ -1066,4 +1068,18 @@ func ExtractInstall(input string) installRequest {
 	}
 
 	return req
+}
+
+// stopProgressBar stops a download progress bar so nothing is drawn over the
+// output that follows it. When a server doesn't send Content-Length
+// progressbar falls back to a spinner that redraws on a background ticker.
+// That ticker only stops once the bar is finished, so the spinner would
+// otherwise keep rewriting the current line and prefix every later log line
+// Exit() does not stop the ticker, so spinners are always finished.
+func stopProgressBar(pbar *progressbar.ProgressBar, completed bool) {
+	if completed || pbar.GetMax64() == -1 {
+		_ = pbar.Finish()
+		return
+	}
+	_ = pbar.Exit()
 }

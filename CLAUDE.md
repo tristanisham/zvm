@@ -43,7 +43,7 @@ deno task star-history   # regenerate the README star chart (needs GITHUB_TOKEN)
 - **Install** (`cli/install.go`): fetches version map → downloads tarball → verifies minisign signature + SHA256 → extracts to `~/.zvm/<version>/`. Most complex file (~600 lines). Handles mirrors, ZLS co-installation, and platform-specific extraction.
 - **Use** (`cli/use.go`): switches active version by symlinking `~/.zvm/bin` → `~/.zvm/<version>` via `meta.Link()`.
 - **Upgrade** (`cli/upgrade.go`): self-upgrade from GitHub releases. Guarded by `!noAutoUpgrades` build tag.
-- **Sync** (`cli/sync.go`): reads `build.zig` for `//! zvm-lock: <version>` and switches to that version. (Note: `build.zig`, not `build.zig.zon` — `.minimum_zig_version` in `build.zig.zon` is a separate fallback used by `cli/use.go:ExtractMinimumZigVersion`.)
+- **Sync** (`cli/sync.go`): invoked as `zvm use --sync` (there is no `zvm sync` command). Reads `build.zig` for `//! zvm-lock: <version>` and switches to that version. (Note: `build.zig`, not `build.zig.zon` — `.minimum_zig_version` in `build.zig.zon` is a separate fallback used by `cli/use.go:ExtractMinimumZigVersion`.)
 
 **Platform abstraction:** `cli/meta/link_unix.go` and `cli/meta/link_win.go` abstract symlinks (Unix) vs junctions (Windows). Similarly `cli/fileperms_unix.go` / `cli/fileperms_win.go` for permission checks.
 

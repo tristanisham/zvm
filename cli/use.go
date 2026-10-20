@@ -22,6 +22,9 @@ import (
 // If the version is not installed, it prompts the user to install it.
 // Returns the resolved version string (which may differ from input if shorthand was used).
 func (z *ZVM) Use(ver string) (string, error) {
+	if err := validateVersionTarget(ver, "use"); err != nil {
+		return ver, err
+	}
 	// Resolve shorthand against locally installed versions
 	if installedVersions, err := z.GetInstalledVersions(); err == nil {
 		if resolved, resolveErr := resolveVersionShorthand(ver, installedVersions); resolveErr == nil && resolved != ver {
@@ -29,6 +32,9 @@ func (z *ZVM) Use(ver string) (string, error) {
 			fmt.Printf("Resolved %q to %s\n", ver, resolved)
 			ver = resolved
 		}
+	}
+	if err := checkReservedVersion(ver, "use"); err != nil {
+		return ver, err
 	}
 
 	if err := z.getVersion(ver); err != nil {
@@ -42,6 +48,8 @@ func (z *ZVM) Use(ver string) (string, error) {
 			} else {
 				return ver, fmt.Errorf("version %s is not installed", ver)
 			}
+		} else {
+			return ver, err
 		}
 	}
 

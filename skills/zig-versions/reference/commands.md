@@ -83,6 +83,21 @@ Remove build artifacts (good if you're a scrub)
 
 Self-upgrade ZVM
 
+## `zvm settings`
+
+View or edit settings.json (opens an editor when no path is given)
+
+Arguments: `[.key [value]]`
+
+With no arguments in a terminal, open an interactive editor (vim keys or arrows).
+Select a key with jq dot notation to print it, or pass a value to replace it:
+  zvm settings .useColor           # print a value
+  zvm settings .useColor false     # validate and save a new value
+  zvm settings --check             # report invalid entries in settings.json
+
+- `--check` — report invalid entries in settings.json and exit non-zero if there are any
+- `--raw-output`, `-r` — print string values without JSON quotes, like jq -r
+
 ## `zvm mirrorlist`
 
 Set ZVM's mirror list URL for custom Zig distribution servers, or set to "disabled" to download directly from ziglang.org

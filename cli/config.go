@@ -12,6 +12,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"reflect"
 	"strings"
 
 	"github.com/charmbracelet/log"
@@ -159,11 +160,31 @@ func (z *ZVM) loadSettings() error {
 		return err
 	}
 
-	if err = json.Unmarshal(data, &z.Settings); err != nil {
-		return err
+	z.Settings.problems = decodeSettings(data, &z.Settings)
+	if len(z.Settings.problems) == 0 {
+		return z.Settings.ResetEmpty()
 	}
 
-	return z.Settings.ResetEmpty()
+	// Keep the user's file as it is so they can fix it, and run with
+	// defaults for the entries that could not be used.
+	for _, p := range z.Settings.problems {
+		if p.Key == "" {
+			// The file could not be parsed at all.
+			path, problems := z.Settings.path, z.Settings.problems
+			z.Settings = DefaultSettings
+			z.Settings.path, z.Settings.problems = path, problems
+			return nil
+		}
+	}
+	defaults := reflect.ValueOf(DefaultSettings)
+	current := reflect.ValueOf(&z.Settings).Elem()
+	for _, p := range z.Settings.problems {
+		if f, err := LookupSetting(p.Key); err == nil {
+			current.Field(f.index).Set(defaults.Field(f.index))
+		}
+	}
+	z.Settings.fillEmpty()
+	return nil
 }
 
 // func (z *ZVM) AlertIfUpgradable() {

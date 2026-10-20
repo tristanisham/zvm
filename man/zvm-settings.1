@@ -1,0 +1,94 @@
+.\" Copyright 2026 Tristan Isham. All rights reserved.
+.TH ZVM-SETTINGS 1 "October 2026" "ZVM" "User Commands"
+.SH NAME
+zvm-settings \- view, edit, and check ZVM's settings.json
+.SH SYNOPSIS
+.B zvm settings
+.br
+.B zvm settings
+.I .key
+.RI [ value ]
+.br
+.B zvm settings --check
+.SH DESCRIPTION
+With no arguments in a terminal, open an interactive editor for
+.IR settings.json .
+When standard input or output is not a terminal, print the settings as JSON instead.
+.PP
+A
+.I .key
+argument selects one setting with jq dot notation:
+.BR .useColor ,
+.BR ."useColor" ,
+or
+.BR .["useColor"] .
+The path
+.B .
+selects the whole file.
+settings.json is a flat object, so nested paths are rejected.
+With only a key, print its value as JSON.
+With a key and a value, validate the value and save it.
+Booleans take
+.B true
+or
+.BR false ;
+strings may be given bare or as a quoted JSON string.
+URLs must use HTTP or HTTPS,
+.B mirrorListUrl
+also accepts
+.BR disabled ,
+and
+.B minisignPubKey
+must be a valid minisign public key.
+An invalid value is rejected and nothing is saved.
+.PP
+When settings.json is loaded, invalid entries (malformed JSON, wrong types,
+invalid values, or unknown keys) are reported as warnings and ZVM uses the
+defaults for them without rewriting the file.
+The editor marks those entries; saving replaces them with valid values and
+drops unknown keys.
+.SH EDITOR KEYS
+.TP
+.BR j ", " k ", " Down ", " Up
+Move between settings.
+.TP
+.BR g ", " G ", " Home ", " End
+Jump to the first or last setting.
+.TP
+.BR Enter ", " i ", " l
+Edit the selected value. Enter applies it, Esc cancels.
+.TP
+.B Space
+Toggle a boolean setting.
+.TP
+.B r
+Reset the selected setting to its default.
+.TP
+.BR w ", " Ctrl+S
+Save settings.json.
+.TP
+.BR :w ", " :q ", " :wq ", " :x ", " :q!
+Vim-style save and quit commands.
+.TP
+.BR q ", " Esc
+Quit. With unsaved changes, press q again to quit without saving.
+.SH OPTIONS
+.TP
+.B --check
+Report every invalid entry in settings.json and exit with a non-zero status if there are any.
+.TP
+.BR -r , " " --raw-output
+Print string values without JSON quotes, like
+.BR "jq -r" .
+.SH EXAMPLES
+.nf
+zvm settings .useColor
+zvm settings .useColor false
+zvm settings -r .mirrorListUrl
+zvm settings .mirrorListUrl disabled
+zvm settings --check
+.fi
+.SH SEE ALSO
+.BR zvm (1),
+.BR zvm-mirrorlist (1),
+.BR zvm-vmu (1)

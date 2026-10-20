@@ -40,6 +40,16 @@ var (
 	ErrInvalidAlias = errors.New("invalid version alias")
 	// ErrInvalidAliasValue is returned when an alias value does not match an installed Zig version.
 	ErrInvalidAliasValue = errors.New("invalid value for alias")
+	// ErrUnknownSetting is returned when a settings key does not exist.
+	ErrUnknownSetting = errors.New("unknown setting")
+	// ErrInvalidSetting is returned when a value is not valid for a setting.
+	ErrInvalidSetting = errors.New("invalid value")
+	// ErrInvalidSettingPath is returned when a jq-style settings path cannot be parsed.
+	ErrInvalidSettingPath = errors.New("invalid settings path")
+	// ErrSettingsProblems is returned by `zvm settings --check` when settings.json has invalid entries.
+	ErrSettingsProblems = errors.New("settings.json has invalid entries")
+	// ErrInvalidSettingsFile is returned when settings.json is not a valid JSON object.
+	ErrInvalidSettingsFile = errors.New("settings.json is not valid JSON")
 	// ErrFailedAliasSave is returned when a version alias cannot be saved.
 	ErrFailedAliasSave = errors.New("failed to save alias")
 	// ErrFailedAliasClear is returned when a version alias cannot be deleted.

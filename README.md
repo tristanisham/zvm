@@ -749,6 +749,29 @@ Some settings are also exposed as flags or environment variables. This file is
 stateful, and ZVM will create it if it does not exist and utilizes it for its
 operation.
 
+### Editing settings
+
+Run `zvm settings` in a terminal to open an editor. Move with `j`/`k` or the
+arrow keys, `g`/`G` to jump, `Enter` or `i` to edit, `Space` to toggle a
+boolean, `r` to reset a value to its default, `w` (or `:w`) to save and `q` (or
+`:q`, `:wq`, `:q!`) to quit.
+
+You can also select a key with jq's dot notation and pass a value to replace
+it. Values are validated before anything is saved:
+
+```sh
+zvm settings .useColor              # print a value (JSON, like jq)
+zvm settings -r .mirrorListUrl      # print a string without quotes, like jq -r
+zvm settings .useColor false        # validate and save
+zvm settings .mirrorListUrl disabled
+zvm settings --check                # report invalid entries, exit 1 if any
+```
+
+If `settings.json` contains malformed JSON, values of the wrong type, invalid
+URLs or keys, or unknown keys, ZVM warns about each one and uses the defaults
+for them without rewriting your file. The editor marks those entries; saving
+replaces them with valid values.
+
 ## Uninstalling ZVM
 
 ZVM stores its binaries, installed Zig versions, and settings under

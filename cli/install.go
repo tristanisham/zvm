@@ -1100,7 +1100,7 @@ func ExtractInstall(input string) installRequest {
 // output that follows it. When a server doesn't send Content-Length
 // progressbar falls back to a spinner that redraws on a background ticker.
 // That ticker only stops once the bar is finished, so the spinner would
-// otherwise keep rewriting the current line and prefix every later log line
+// otherwise keep rewriting the current line and prefix every later log line.
 // Exit() does not stop the ticker, so spinners are always finished.
 func stopProgressBar(pbar *progressbar.ProgressBar, completed bool) {
 	// GetMax64 reports the spinner width for unknown lengths; State preserves -1.

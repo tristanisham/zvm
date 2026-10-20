@@ -8,13 +8,25 @@ import (
 	"errors"
 	"io"
 	"strings"
+	"sync/atomic"
 	"testing"
 	"testing/iotest"
+	"time"
 
 	"github.com/schollz/progressbar/v3"
 )
 
+// writeCounter counts writes; the spinner ticker writes from its own goroutine.
+type writeCounter struct{ n atomic.Int64 }
+
+func (w *writeCounter) Write(p []byte) (int, error) {
+	w.n.Add(1)
+	return len(p), nil
+}
+
 func TestStopProgressBar(t *testing.T) {
+	const spinnerInterval = 10 * time.Millisecond
+
 	for _, tt := range []struct {
 		name          string
 		contentLength int64
@@ -26,11 +38,14 @@ func TestStopProgressBar(t *testing.T) {
 		{"unknown length failure", -1, true},
 	} {
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			out := &writeCounter{}
 			pbar := progressbar.NewOptions64(tt.contentLength,
-				progressbar.OptionSetWriter(io.Discard),
+				progressbar.OptionSetWriter(out),
 				progressbar.OptionShowBytes(true),
 				progressbar.OptionShowCount(),
 				progressbar.OptionSetRenderBlankState(true),
+				progressbar.OptionSetSpinnerChangeInterval(spinnerInterval),
 			)
 			t.Cleanup(func() {
 				// Also stop the ticker if an assertion fails after Exit.
@@ -47,12 +62,17 @@ func TestStopProgressBar(t *testing.T) {
 			if tt.fail && !errors.Is(err, readErr) || !tt.fail && err != nil {
 				t.Fatalf("unexpected copy error: %v", err)
 			}
+
+			// Let an unknown-length spinner redraw at least once before stopping,
+			// so the check below would fail if stopProgressBar did nothing.
+			time.Sleep(5 * spinnerInterval)
 			stopProgressBar(pbar, err == nil)
 
-			// The background spinner exits only when IsFinished becomes true.
-			wantFinished := !tt.fail || tt.contentLength == -1
-			if got := pbar.IsFinished(); got != wantFinished {
-				t.Errorf("IsFinished() = %v, want %v", got, wantFinished)
+			// Nothing may be drawn after the bar is stopped.
+			before := out.n.Load()
+			time.Sleep(5 * spinnerInterval)
+			if after := out.n.Load(); after != before {
+				t.Errorf("progress bar wrote %d times after being stopped", after-before)
 			}
 			if got := pbar.State().CurrentBytes; got != 3 {
 				t.Errorf("downloaded bytes = %v, want 3", got)

@@ -737,6 +737,22 @@ Enable or disable colored ZVM output. No value toggles colors.
   Toggle off verifying TLS by setting this environment variable.
   - By default when this is enabled ZVM will print a warning. Set this variable
     to `no-warn` to silence this warning.
+  - **Danger:** with TLS verification off, anyone on the network path (a
+    hostile Wi-Fi, a compromised proxy) can replace the Zig tarballs, minisign
+    signatures and ZLS archives that ZVM downloads. What still
+    protects you:
+    - Official Zig tarballs (from ziglang.org or a community mirror) are
+      checked against Zig's minisign signature, including the filename the
+      signature was made for, so an attacker cannot hand you a modified build
+      or an older build under a newer version's name.
+    - The version lists (`index.json` and the ZLS release index) are still
+      fetched with TLS verification even when this variable is set, and their
+      SHA-256 checksums are checked unless you pass `--skip-shasum`.
+    - ZLS archives are **not** signed. With this variable set, their only
+      protection is the SHA-256 checksum; combined with `--skip-shasum`, an
+      attacker can install an arbitrary `zls` binary.
+  - Setting it to `no-warn` only hides the warning. It does not make
+    downloads any safer.
 - `BROWSER` is the command `zvm bug` uses to open a report URL. Without it, ZVM falls back to the platform's default handler.
 
 ## Settings

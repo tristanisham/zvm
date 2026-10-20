@@ -31,6 +31,23 @@ var (
 	ErrMissingVersionInfo = errors.New("version info not found")
 	// ErrMissingShasum is returned when the SHA256 checksum is missing for a download.
 	ErrMissingShasum = errors.New("shasum not found")
+	// ErrShasumMismatch is returned when a download's SHA-256 does not match the version map.
+	ErrShasumMismatch = errors.New("shasum does not match expected value")
+	// ErrMinisignVerify is returned when a download's minisign signature cannot be fetched or verified.
+	ErrMinisignVerify = errors.New("minisign verification failed")
+	// ErrMissingSignedFilename is returned when a minisign trusted comment has no usable `file:` field.
+	ErrMissingSignedFilename = errors.New("minisign trusted comment does not name a file")
+	// ErrSignedFilenameMismatch is returned when a minisign signature was made for a different tarball
+	// than the one requested, e.g. an older release served under a newer name (downgrade attack).
+	ErrSignedFilenameMismatch = errors.New("minisign signature is for a different file")
+	// ErrTarballVersionMismatch is returned when the version map points a version at a tarball
+	// whose filename names a different version.
+	ErrTarballVersionMismatch = errors.New("version map tarball does not match requested version")
+	// ErrKnownHashMismatch is returned when a tarball's SHA-256 differs from the one recorded
+	// the first time that tarball was installed.
+	ErrKnownHashMismatch = errors.New("tarball hash differs from previously recorded hash")
+	// ErrBadKnownHashes is returned when the known hashes file cannot be read or parsed.
+	ErrBadKnownHashes = errors.New("bad known hashes store")
 	// ErrZigNotInstalled is returned when the `zig` executable cannot be found in the PATH.
 	ErrZigNotInstalled = errors.New("exec `zig` not found on $PATH")
 

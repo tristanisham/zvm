@@ -15,7 +15,6 @@ import (
 	"fmt"
 	"io"
 	"io/fs"
-	"math/rand"
 	"net/http"
 	"net/url"
 	"os"
@@ -27,6 +26,7 @@ import (
 	"slices"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/jedisct1/go-minisign"
@@ -168,55 +168,11 @@ func (z *ZVM) Install(version string, force bool, skipShasum bool, mirror bool, 
 
 	log.Debug("tarPath", "url", tarPath)
 
-	var tarResp *http.Response
-	var minisig minisign.Signature
-	var verifyMinisig bool
-
-	// Official Zig sources serve builds signed with the pinned minisign key;
-	// custom version maps distribute their own builds, so signature verification
-	// cannot apply to them.
-	isOfficialSource := isDevelopmentVersion || z.Settings.VersionMapUrl == DefaultSettings.VersionMapUrl
-	mirror = !isDevelopmentVersion && mirror && z.Settings.UseMirrorList() && isOfficialSource
-	if mirror {
-		tarResp, minisig, err = attemptMirrorDownload(z.Settings.MirrorListUrl, tarPath)
-		verifyMinisig = err == nil
-	} else {
-		tarResp, err = attemptDownload(tarPath, nil)
-		if isDevelopmentVersion && err != nil && strings.Contains(err.Error(), "404") {
-			fmt.Println("This version of Zig may be no longer available.")
-		}
-		if err == nil && isOfficialSource {
-			// ziglang.org publishes a .minisig for every build, so a missing
-			// signature is a failed download, not a reason to skip verification.
-			minisig, err = attemptMinisigDownload(tarPath, nil)
-			if err != nil {
-				tarResp.Body.Close()
-				err = fmt.Errorf("minisign signature download failed: %w", err)
-			}
-			verifyMinisig = err == nil
-		}
-	}
-
+	resultUrl, err := url.Parse(tarPath)
 	if err != nil {
-		return version, err
+		return version, fmt.Errorf("%w: %w", ErrDownloadFail, err)
 	}
-	defer tarResp.Body.Close()
-
-	_, targetOS := zigStyleSysInfo()
-	var pathEnding string
-	if targetOS == "windows" {
-		pathEnding = "*.zip"
-	} else {
-		pathEnding = "*.tar.xz"
-	}
-
-	tempFile, err := os.CreateTemp(z.baseDir, pathEnding)
-	if err != nil {
-		return version, err
-	}
-
-	defer tempFile.Close()
-	defer os.RemoveAll(tempFile.Name())
+	tarFileName := path.Base(resultUrl.Path)
 
 	var clrOptVerStr string
 	if z.Settings.UseColor {
@@ -225,71 +181,63 @@ func (z *ZVM) Install(version string, force bool, skipShasum bool, mirror bool, 
 		clrOptVerStr = version
 	}
 
-	pbar := progressbar.DefaultBytes(
-		int64(tarResp.ContentLength),
-		fmt.Sprintf("Downloading %s:", clrOptVerStr),
-	)
-
-	hash := sha256.New()
-	_, err = io.Copy(io.MultiWriter(tempFile, pbar, hash), tarResp.Body)
-	if err != nil {
-		return version, err
-	}
-
+	chk := tarballCheck{name: tarFileName, label: clrOptVerStr}
 	if skipShasum {
 		fmt.Println("Skipping shasum check (user requested)")
-	} else if len(shasum) > 0 {
-		fmt.Println("Checking shasum...")
-		ourHexHash := hex.EncodeToString(hash.Sum(nil))
-		log.Debug("shasum check:", "theirs", shasum, "ours", ourHexHash)
-		if ourHexHash != shasum {
-			// TODO (tristan)
-			// Why is my sha256 identical on the server and sha256sum,
-			// but not when I download it in ZVM? Oh shit.
-			// It's because it's a compressed download.
-			return version, fmt.Errorf("shasum for %v does not match expected value", version)
-		}
-		fmt.Println("Shasums match! 🎉")
+	} else {
+		chk.shasum = shasum
 	}
 
-	if verifyMinisig {
-		fmt.Println("Checking minisign signature...")
+	// Official Zig sources serve builds signed with the pinned minisign key;
+	// custom version maps distribute their own builds, so signature verification
+	// (and filename-keyed hash pinning, which assumes one publisher) cannot
+	// apply to them.
+	isOfficialSource := isDevelopmentVersion || z.Settings.VersionMapUrl == DefaultSettings.VersionMapUrl
+	if isOfficialSource {
 		pubkey, err := minisign.NewPublicKey(z.Settings.MinisignPubKey)
 		if err != nil {
 			return version, fmt.Errorf("minisign public key decoding failed: %w", err)
 		}
-		verified, err := pubkey.VerifyFromFile(tempFile.Name(), minisig)
-		if err != nil {
-			return version, fmt.Errorf("minisign verification failed: %w", err)
-		}
+		chk.pubkey = &pubkey
+		chk.knownHashes = filepath.Join(z.baseDir, knownHashesFile)
 
-		if !verified {
-			return version, fmt.Errorf("minisign signature for %v could not be verified", version)
+		// index.json is not signed, so make sure it points the requested
+		// version at that version's tarball; the signature's file: field is
+		// then checked against this name.
+		if !isDevelopmentVersion {
+			expected := version
+			if version == "master" {
+				expected, _ = rawVersionStructure["master"]["version"].(string)
+			}
+			if !tarballMatchesVersion(tarFileName, expected) {
+				return version, fmt.Errorf("%w: %q -> %s", ErrTarballVersionMismatch, version, tarFileName)
+			}
 		}
-
-		fmt.Println("Minisign signature verified! 🎉")
 	}
+
+	candidates := []string{tarPath}
+	if !isDevelopmentVersion && mirror && z.Settings.UseMirrorList() && isOfficialSource {
+		candidates = mirrorCandidates(z.Settings.MirrorListUrl, tarPath)
+	}
+
+	tempPath, err := downloadFirstVerified(z.baseDir, candidates, chk)
+	if err != nil {
+		if isDevelopmentVersion && strings.Contains(err.Error(), "404") {
+			fmt.Println("This version of Zig may be no longer available.")
+		}
+		return version, err
+	}
+	defer os.Remove(tempPath)
 
 	// The base directory where all Zig files for the appropriate version are installed
 	// installedVersionPath := filepath.Join(z.zvmBaseDir, version)
 	fmt.Println("Extracting bundle...")
 
-	if err := ExtractBundle(tempFile.Name(), z.baseDir); err != nil {
+	if err := ExtractBundle(tempPath, z.baseDir); err != nil {
 		log.Fatal(err)
 	}
 
-	// TODO investigate why the CI thinks this is an error.
-	var tarName string
-
-	resultUrl, err := url.Parse(tarPath)
-	if err != nil {
-		log.Error(err)
-	}
-
-	// Maybe think of a better algorithm
-	urlPath := strings.Split(resultUrl.Path, "/")
-	tarName = urlPath[len(urlPath)-1]
-	tarName = strings.TrimSuffix(tarName, ".tar.xz")
+	tarName := strings.TrimSuffix(tarFileName, ".tar.xz")
 	tarName = strings.TrimSuffix(tarName, ".zip")
 
 	if tarName == "" {
@@ -334,61 +282,6 @@ func (z *ZVM) Install(version string, force bool, skipShasum bool, mirror bool, 
 	return version, nil
 }
 
-// attemptMirrorDownload HTTP requests Zig downloads from the community mirrorlist.
-// Returns a tuple of (response, minisig, error).
-func attemptMirrorDownload(mirrorListURL string, tarURL string) (*http.Response, minisign.Signature, error) {
-	log.Debug("attemptMirrorDownload", "mirrorListURL", mirrorListURL, "tarURL", tarURL)
-	tarURLParsed, err := url.Parse(tarURL)
-	if err != nil {
-		return nil, minisign.Signature{}, fmt.Errorf("%w: %w", ErrDownloadFail, err)
-	}
-	tarName := path.Base(tarURLParsed.Path)
-
-	resp, err := attemptDownload(mirrorListURL, nil)
-	if err != nil {
-		return nil, minisign.Signature{}, fmt.Errorf("%w: %w", ErrDownloadFail, err)
-	}
-	defer resp.Body.Close()
-
-	mirrorBytes, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, minisign.Signature{}, err
-	}
-
-	mirrors := strings.Split(string(mirrorBytes), "\n")
-	// Pop empty field after terminating newline
-	mirrors = mirrors[:len(mirrors)-1]
-	rand.Shuffle(len(mirrors), func(i, j int) { mirrors[i], mirrors[j] = mirrors[j], mirrors[i] })
-	// Default as fallback
-	mirrors = append(mirrors, zigBuildsBaseURL)
-
-	for i, mirror := range mirrors {
-		mirrorTarURL, err := url.JoinPath(mirror, tarName)
-		if err != nil {
-			log.Debug("mirror path error", "mirror", mirror, "error", err)
-			continue
-		}
-
-		log.Debug("attemptMirrorDownload", "mirror", i, "mirrorURL", mirrorTarURL)
-		tarResp, err := attemptDownload(mirrorTarURL, nil)
-		if err != nil {
-			log.Debug("mirror tar error", "mirror", mirror, "error", err)
-			continue
-		}
-
-		minisig, err := attemptMinisigDownload(mirrorTarURL, nil)
-		if err != nil {
-			log.Debug("mirror minisig error", "mirror", mirror, "error", err)
-			tarResp.Body.Close()
-			continue
-		}
-
-		return tarResp, minisig, nil
-	}
-
-	return nil, minisign.Signature{}, fmt.Errorf("%w: %w: %w", ErrDownloadFail, errors.New("all download attempts failed"), err)
-}
-
 // attemptMinisigDownload downloads the minisign signature for a given tarball URL.
 func attemptMinisigDownload(tarURL string, client *http.Client) (minisign.Signature, error) {
 	minisigResp, err := attemptDownload(tarURL+".minisig", client)
@@ -397,13 +290,18 @@ func attemptMinisigDownload(tarURL string, client *http.Client) (minisign.Signat
 	}
 	defer minisigResp.Body.Close()
 
-	minisigBytes, err := io.ReadAll(minisigResp.Body)
+	// Real .minisig files are a few hundred bytes; cap what a mirror can make us buffer.
+	minisigBytes, err := io.ReadAll(io.LimitReader(minisigResp.Body, 64<<10))
 	if err != nil {
 		return minisign.Signature{}, err
 	}
 
 	return minisign.DecodeSignature(string(minisigBytes))
 }
+
+// skipTLSDangerOnce prints the ZVM_SKIP_TLS_VERIFY explanation once per run,
+// although every download repeats the short warning.
+var skipTLSDangerOnce sync.Once
 
 // attemptDownload creates a generic http request for ZVM.
 func attemptDownload(url string, client *http.Client) (*http.Response, error) {
@@ -436,6 +334,10 @@ func attemptDownload(url string, client *http.Client) (*http.Response, error) {
 
 		if kind != "no-warn" {
 			log.Warnf("ZVM_SKIP_TLS_VERIFY enabled")
+			skipTLSDangerOnce.Do(func() {
+				log.Warn("TLS certificates are not checked for Zig, ZLS and mirror downloads, so anyone on the network path can replace them. " +
+					"Official Zig tarballs are still checked against Zig's minisign signature; ZLS is not signed and is protected only by its SHA-256 checksum, which --skip-shasum turns off.")
+			})
 		}
 
 		log.Debug("ZVM_SKIP_TLS_VERIFY", "enabled", true)

@@ -642,7 +642,6 @@ func printZVMHelp(w io.Writer, templ string, data any) {
 	})
 }
 
-
 // completeZVMCommands extends urfave/cli's live command completion with the
 // aliases accepted by ZVM. The default completer only emits each command's
 // canonical name, even though aliases are part of the public CLI surface.

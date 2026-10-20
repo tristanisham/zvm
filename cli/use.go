@@ -21,7 +21,30 @@ import (
 // Use switches the active Zig version to the specified one.
 // If the version is not installed, it prompts the user to install it.
 // Returns the resolved version string (which may differ from input if shorthand was used).
+//
+// If the current shell has a per-shell link (see `zvm env`), only that link is
+// repointed; otherwise the global ~/.zvm/bin link is.
 func (z *ZVM) Use(ver string) (string, error) {
+	resolved, _, err := z.UseVersion(ver, false)
+	return resolved, err
+}
+
+// UseVersion is Use with control over scope. With global set, or when the
+// current shell has no per-shell link, it repoints the global ~/.zvm/bin link
+// exactly as Use always has. Otherwise it repoints only the link named by
+// ZVM_MULTISHELL_PATH and reports perShell as true.
+func (z *ZVM) UseVersion(ver string, global bool) (resolved string, perShell bool, err error) {
+	shellLink := ""
+	if !global {
+		link, ok, linkErr := ActiveMultishellLink()
+		switch {
+		case linkErr != nil:
+			log.Warn("ignoring "+MultishellEnv+"; changing the global version instead", "err", linkErr)
+		case ok:
+			shellLink = link
+		}
+	}
+
 	// Resolve shorthand against locally installed versions
 	if installedVersions, err := z.GetInstalledVersions(); err == nil {
 		if resolved, resolveErr := resolveVersionShorthand(ver, installedVersions); resolveErr == nil && resolved != ver {
@@ -36,16 +59,22 @@ func (z *ZVM) Use(ver string) (string, error) {
 
 			fmt.Printf("It looks like %s isn't installed. Would you like to install it? [y/N]\n", ver)
 			if getConfirmation() {
-				if ver, err = z.Install(ver, false, false, true, false); err != nil {
-					return ver, err
+				// In a per-shell session, installing must not repoint the
+				// global link as a side effect.
+				if ver, err = z.Install(ver, false, false, true, shellLink != ""); err != nil {
+					return ver, false, err
 				}
 			} else {
-				return ver, fmt.Errorf("version %s is not installed", ver)
+				return ver, false, fmt.Errorf("version %s is not installed", ver)
 			}
 		}
 	}
 
-	return ver, z.setBin(ver)
+	if shellLink != "" {
+		return ver, true, z.setShellLink(shellLink, ver)
+	}
+
+	return ver, false, z.setBin(ver)
 }
 
 // setBin updates the symbolic link 'bin' in the ZVM base directory to point to the specified version's bin directory.
@@ -96,14 +125,21 @@ func getConfirmation() bool {
 
 var minZigVersionRe = regexp.MustCompile(`(?m)^\s*\.minimum_zig_version\s*=\s*"([^"]+)"`)
 
+// ExtractMinimumZigVersion reads `.minimum_zig_version` from build.zig.zon in
+// the current directory only. It deliberately does not search parent
+// directories; see FindVersionSource for the recursive lookup used by
+// `zvm env --use-on-cd`.
 func ExtractMinimumZigVersion() (string, error) {
-
-	// this is the new part.
 	cwd, err := os.Getwd()
 	if err != nil {
 		cwd = "./"
 	}
-	zigBuildfile := filepath.Join(cwd, "build.zig.zon")
+	return ExtractMinimumZigVersionIn(cwd)
+}
+
+// ExtractMinimumZigVersionIn reads `.minimum_zig_version` from dir/build.zig.zon.
+func ExtractMinimumZigVersionIn(dir string) (string, error) {
+	zigBuildfile := filepath.Join(dir, "build.zig.zon")
 	log.Debug("build.zig.zon check", "cwd", zigBuildfile)
 
 	// only fetches uncommented minimum_zig_versions
@@ -112,13 +148,11 @@ func ExtractMinimumZigVersion() (string, error) {
 		return "", fmt.Errorf("couldn't read build.zig.zon: %w", err)
 	}
 
-	matches := minZigVersionRe.FindSubmatch(data)
-	if len(matches) < 2 {
+	versionArg, ok := parseMinimumZigVersion(data)
+	if !ok {
 		return "", fmt.Errorf("build.zig.zon minimum_zig_version is unparsable. Please provide a valid Zig version as an argument for `use`")
 	}
-	answer := string(matches[1])
-	log.Debug("build.zig.zon exists!", "minimum_zig_version", answer)
-	versionArg := strings.TrimPrefix(answer, "v")
+	log.Debug("build.zig.zon exists!", "minimum_zig_version", versionArg)
 
 	return versionArg, nil
 }

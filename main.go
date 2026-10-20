@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -215,6 +216,11 @@ var zvmApp = &opts.Command{
 					Name:  "sync",
 					Usage: "sync your current version of Zig with the repository",
 				},
+				&opts.BoolFlag{
+					Name:    "global",
+					Aliases: []string{"g"},
+					Usage:   "change the global default even in a shell set up with `zvm env`",
+				},
 			},
 			Action: func(ctx context.Context, cmd *opts.Command) error {
 				if cmd.Bool("sync") {
@@ -240,12 +246,20 @@ var zvmApp = &opts.Command{
 
 					}
 
-					resolvedVer, err := zvm.Use(versionArg)
+					global := cmd.Bool("global")
+					resolvedVer, perShell, err := zvm.UseVersion(versionArg, global)
 					if err != nil {
 						return err
 					}
 
-					fmt.Printf("Now using Zig %s\n", resolvedVer)
+					switch {
+					case perShell:
+						fmt.Printf("Now using Zig %s in this shell only (run `zvm use --global %s` to change the default)\n", resolvedVer, resolvedVer)
+					case global && os.Getenv(cli.MultishellEnv) != "":
+						fmt.Printf("Now using Zig %s as the global default (this shell keeps its own version; run `zvm use %s` to switch it)\n", resolvedVer, resolvedVer)
+					default:
+						fmt.Printf("Now using Zig %s\n", resolvedVer)
+					}
 					return nil
 				}
 			},
@@ -404,8 +418,65 @@ var zvmApp = &opts.Command{
 		{
 			Name:  "clean",
 			Usage: "Remove build artifacts (good if you're a scrub)",
+			Description: "Removes downloaded archives from the ZVM base directory and per-shell\n" +
+				"links (from `zvm env`) that are over a week old and whose shell has exited.",
 			Action: func(ctx context.Context, cmd *opts.Command) error {
-				return zvm.Clean()
+				if err := zvm.Clean(); err != nil {
+					return err
+				}
+				n, err := cli.PruneMultishells(cli.MultishellMaxAge)
+				if n > 0 {
+					fmt.Printf("Removed %d stale per-shell link(s)\n", n)
+				}
+				return err
+			},
+		},
+		{
+			Name:  "env",
+			Usage: "Print shell code that gives this shell its own Zig version",
+			Description: "Creates a per-shell link to the current global Zig version, exports it as\n" +
+				"ZVM_MULTISHELL_PATH and prepends it to PATH. Afterwards `zvm use` switches\n" +
+				"only that shell; `zvm use --global` changes the default.\n" +
+				"With --use-on-cd, entering a directory switches to the version declared by\n" +
+				"the nearest build.zig (`//! zvm-lock: <version>`) or build.zig.zon\n" +
+				"(`.minimum_zig_version`) in it or any parent.\n" +
+				"Example: eval \"$(zvm env --shell bash --use-on-cd)\"          # bash, zsh\n" +
+				"         zvm env --shell fish --use-on-cd | source            # fish\n" +
+				"         zvm env --shell powershell --use-on-cd | Out-String | Invoke-Expression",
+			Flags: []opts.Flag{
+				&opts.StringFlag{
+					Name:  "shell",
+					Usage: "shell to emit code for: bash, zsh, fish, or powershell (default: from $SHELL)",
+				},
+				&opts.BoolFlag{
+					Name:  "use-on-cd",
+					Usage: "switch Zig automatically when entering a directory with a version file",
+				},
+			},
+			Action: func(ctx context.Context, cmd *opts.Command) error {
+				// This output is eval'd by the shell, so errors must go to
+				// stderr: anything on stdout would be run as shell code.
+				shell, err := cli.DetectShell()
+				if name := cmd.String("shell"); name != "" {
+					shell, err = cli.NormalizeShell(name)
+				}
+				if err == nil {
+					err = zvm.Env(os.Stdout, shell, cmd.Bool("use-on-cd"), os.Getppid())
+				}
+				if err != nil {
+					fmt.Fprintf(os.Stderr, "zvm env: %v\n", err)
+					return errors.Join(cli.ErrFailQuietly, err)
+				}
+				return nil
+			},
+		},
+		{
+			Name:   cli.OnCdCommand,
+			Usage:  "Internal: called by the `zvm env --use-on-cd` hook",
+			Hidden: true,
+			Action: func(ctx context.Context, cmd *opts.Command) error {
+				zvm.UseOnCd(os.Stdout, os.Stderr)
+				return nil
 			},
 		},
 		{
@@ -544,6 +615,12 @@ func main() {
 		checkUpgradeDisabled = true
 	}
 
+	// `zvm env` output is eval'd by the shell and the cd hook runs on every
+	// directory change: neither may wait on the network or print a notice.
+	if slices.Contains(os.Args[1:], "env") || slices.Contains(os.Args[1:], cli.OnCdCommand) {
+		checkUpgradeDisabled = true
+	}
+
 	log.Debug("Automatic Upgrade Checker", "disabled", checkUpgradeDisabled, "noAutoUpgrades", meta.NoAutoUpgrades)
 
 	// Upgrade
@@ -641,7 +718,6 @@ func printZVMHelp(w io.Writer, templ string, data any) {
 		"section": formatHelpSection,
 	})
 }
-
 
 // completeZVMCommands extends urfave/cli's live command completion with the
 // aliases accepted by ZVM. The default completer only emits each command's

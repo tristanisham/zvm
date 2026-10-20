@@ -398,6 +398,38 @@ zvm use 0.13       # Resolves to 0.13.x (latest installed patch)
 zvm use .14        # Same — leading dot implies "0."
 ```
 
+### Per-shell versions and switching on `cd`
+
+By default `zvm use` changes Zig for every terminal at once. To give each shell
+its own version, add one line to your shell's startup file:
+
+```sh
+eval "$(zvm env --shell bash --use-on-cd)"                 # ~/.bashrc
+eval "$(zvm env --shell zsh --use-on-cd)"                  # ~/.zshrc
+zvm env --shell fish --use-on-cd | source                  # ~/.config/fish/config.fish
+zvm env --shell powershell --use-on-cd | Out-String | Invoke-Expression  # $PROFILE
+```
+
+`zvm env` creates a link for this shell that starts out pointing at your global
+version, exports it as `ZVM_MULTISHELL_PATH`, and puts it in front of
+`~/.zvm/bin` on your `PATH`. From then on, `zvm use <version>` switches only the
+current shell. Run `zvm use --global <version>` to change the default that new
+shells (and shells without `zvm env`) get. `--shell` may be omitted, in which
+case it is taken from `$SHELL`.
+
+With `--use-on-cd`, entering a directory switches the shell to the version
+requested by the nearest project in it or any parent directory: a
+`//! zvm-lock: <version>` line in `build.zig` wins, otherwise
+`.minimum_zig_version` in `build.zig.zon`. If that version is not installed you
+get a one-line hint (nothing is installed for you); if no project declares a
+version, nothing changes. In bash the switch happens just before the next
+prompt.
+
+The per-shell links live in `$ZVM_MULTISHELL_DIR`, else
+`$XDG_STATE_HOME/zvm/multishells`, else `zvm/multishells` in your user cache
+directory — never inside `~/.zvm`. `zvm clean` removes links that are over a
+week old and whose shell has exited.
+
 ## Alias your Zig versions
 
 Use `alias` (or `kv`) to give an installed Zig version a custom name. The version must already be installed, and shorthand is supported.
@@ -493,7 +525,8 @@ Remember, ZVM is an open source project. Anyone can customize and distribute it.
 zvm clean
 ```
 
-Use `clean` to remove build artifacts (Good if you're on Windows).
+Use `clean` to remove build artifacts (Good if you're on Windows). It also
+removes stale per-shell links left behind by `zvm env`.
 
 ## Run installed version of Zig without switching your default
 
@@ -737,6 +770,9 @@ Enable or disable colored ZVM output. No value toggles colors.
   Toggle off verifying TLS by setting this environment variable.
   - By default when this is enabled ZVM will print a warning. Set this variable
     to `no-warn` to silence this warning.
+- `ZVM_MULTISHELL_PATH` is set by `zvm env` to the current shell's own Zig
+  link. While it is set, `zvm use` only affects that shell.
+- `ZVM_MULTISHELL_DIR` overrides where `zvm env` creates per-shell links.
 - `BROWSER` is the command `zvm bug` uses to open a report URL. Without it, ZVM falls back to the platform's default handler.
 
 ## Settings

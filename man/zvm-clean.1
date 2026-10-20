@@ -12,6 +12,13 @@ or
 .B .tar
 from the top level of the ZVM base directory.
 Installed Zig version directories are not removed.
+.PP
+Also garbage-collect the dedupe store: files in
+.I ~/.zvm/store
+whose hard-link count is 1 are no longer linked from any installed version and
+are removed. Removing a store file never removes data an installed version
+still links to.
 .SH SEE ALSO
 .BR zvm (1),
+.BR zvm-dedupe (1),
 .BR zvm-uninstall (1)

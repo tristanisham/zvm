@@ -493,7 +493,33 @@ Remember, ZVM is an open source project. Anyone can customize and distribute it.
 zvm clean
 ```
 
-Use `clean` to remove build artifacts (Good if you're on Windows).
+Use `clean` to remove build artifacts (Good if you're on Windows). It also
+removes files from the dedupe store (below) that no installed version links to
+any more.
+
+## Deduplicate installed versions
+
+```sh
+zvm dedupe                 # all installed versions
+zvm dedupe 0.15.1 0.15.2   # just these
+zvm dedupe --auto on       # also dedupe every future `zvm install` (default: off)
+```
+
+Zig releases ship mostly the same files: `0.15.1` and `0.15.2` share all but
+~50 of ~18,000 files (only the compiler binary really differs), so two installs
+take roughly half the space once deduped. `zvm dedupe` hashes each file and
+replaces duplicates with hard links into `~/.zvm/store/`, the way pnpm and uv
+share packages. Files are only merged if content, permissions and owner match;
+symlinks are left alone. It is safe to re-run or interrupt, and files on a
+filesystem without hard links are simply skipped. `zvm uninstall` and
+`zvm clean` drop store files nothing links to any more.
+
+Because deduped files are shared, **editing one in place (say, patching
+`lib/std` in one version) changes it in every version that shares it.** If you
+patch Zig's standard library, don't dedupe that version, or reinstall it with
+`zvm install --force` afterwards. Use `du -sh ~/.zvm` (one `du` over the whole
+tree) to see the real total: `du` counts each hard-linked file once per
+invocation, so summing separate `du` runs per version overstates usage.
 
 ## Run installed version of Zig without switching your default
 
@@ -745,6 +771,8 @@ ZVM has additional setting stored in `~/.zvm/settings.json`. You can manually
 update version maps, toggle color support, and disable the automatic upgrade
 checker here. The `alwaysInstallZLS` setting controls whether a requested ZLS
 installation is attempted after Zig installation fails and defaults to `false`.
+The `autoDedupe` setting (also set with `zvm dedupe --auto on|off`) dedupes each
+newly installed version into the store and defaults to `false`.
 Some settings are also exposed as flags or environment variables. This file is
 stateful, and ZVM will create it if it does not exist and utilizes it for its
 operation.

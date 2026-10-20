@@ -31,6 +31,10 @@ func (z *ZVM) Use(ver string) (string, error) {
 		}
 	}
 
+	if isReservedName(ver) {
+		return ver, fmt.Errorf("%w: %q", ErrReservedName, ver)
+	}
+
 	if err := z.getVersion(ver); err != nil {
 		if errors.Is(err, os.ErrNotExist) {
 

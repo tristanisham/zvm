@@ -32,6 +32,32 @@ func TestAlwaysInstallZLSSettings(t *testing.T) {
 	assertPersistedAlwaysInstallZLS(t, settingsPath, false)
 }
 
+func TestAutoDedupeSetting(t *testing.T) {
+	if DefaultSettings.AutoDedupe {
+		t.Fatal("AutoDedupe should be disabled by default")
+	}
+
+	settingsPath := filepath.Join(t.TempDir(), "settings.json")
+	settings := Settings{path: settingsPath}
+
+	for _, want := range []bool{true, false} {
+		if err := settings.SetAutoDedupe(want); err != nil {
+			t.Fatal(err)
+		}
+		contents, err := os.ReadFile(settingsPath)
+		if err != nil {
+			t.Fatal(err)
+		}
+		var persisted Settings
+		if err := json.Unmarshal(contents, &persisted); err != nil {
+			t.Fatal(err)
+		}
+		if persisted.AutoDedupe != want {
+			t.Fatalf("persisted AutoDedupe = %v, want %v", persisted.AutoDedupe, want)
+		}
+	}
+}
+
 func assertPersistedAlwaysInstallZLS(t *testing.T, path string, want bool) {
 	t.Helper()
 

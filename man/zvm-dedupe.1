@@ -1,0 +1,61 @@
+.\" Copyright 2026 Tristan Isham. All rights reserved.
+.TH ZVM-DEDUPE 1 "October 2026" "ZVM" "User Commands"
+.SH NAME
+zvm-dedupe \- hard-link identical files across installed Zig versions
+.SH SYNOPSIS
+.B zvm dedupe
+.RI [ version ...]
+.br
+.B zvm dedupe
+.BR --auto " " on | off
+.SH DESCRIPTION
+Hash every regular file in the given installed versions (all of them when none
+are given) with SHA-256 and replace duplicates with hard links into the
+content-addressed store at
+.IR ~/.zvm/store/ .
+Patch releases of the same Zig series share almost every file except the
+compiler binary, so this roughly halves the space two of them take; releases
+further apart share less.
+.PP
+Files are only merged when their content, permission bits and (on Unix-like
+systems) owner all match, because hard links share one inode. Symbolic links,
+empty files and setuid/setgid/sticky files are left alone.
+.PP
+Each file is replaced by linking the store copy to a temporary name in the same
+directory and renaming that over the original, so an interrupted run never
+leaves a file missing. Running it again finishes the job and otherwise changes
+nothing. Files that cannot be hard-linked (another filesystem, or one without
+hard-link support) are left untouched and reported; they do not fail the run.
+.PP
+A deduped file is shared: editing it in place changes it in every version that
+links to it. A later run detects store entries that no longer match their hash
+and stops sharing them, but it cannot undo the edit; reinstall with
+.B zvm install --force
+instead.
+.PP
+Store files no installed version links to any more are removed by
+.BR zvm-clean (1)
+and after
+.BR zvm-uninstall (1).
+.SH OPTIONS
+.TP
+.BR --auto " " on | off
+Set whether
+.BR zvm-install (1)
+dedupes each newly installed version automatically, then exit.
+Stored as
+.B autoDedupe
+in
+.IR ~/.zvm/settings.json .
+Off by default.
+.SH EXAMPLES
+.EX
+zvm dedupe
+zvm dedupe 0.15.1 0.15.2
+zvm dedupe --auto on
+.EE
+.SH SEE ALSO
+.BR zvm (1),
+.BR zvm-clean (1),
+.BR zvm-install (1),
+.BR zvm-uninstall (1)

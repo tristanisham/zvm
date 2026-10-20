@@ -46,6 +46,17 @@ var (
 	ErrFailedAliasClear = errors.New("failed to clear alias")
 	// ErrBadDatabase is returned when the alias file cannot be read or parsed.
 	ErrBadDatabase = errors.New("bad alias store")
+
+	// ErrReservedName is returned when a command is given one of the names ZVM
+	// keeps for its own directories (bin, self, store) in place of a Zig version.
+	ErrReservedName = errors.New("name is reserved by zvm and is not a Zig version")
+	// ErrVersionNotInstalled is returned when a command needs a locally installed
+	// Zig version that does not exist.
+	ErrVersionNotInstalled = errors.New("zig version not installed")
+	// ErrDedupeFailed is returned when the dedupe store cannot be set up or walked.
+	// Per-file problems (unsupported hard links, cross-device links, permission
+	// errors) never produce it: those files are left untouched and reported.
+	ErrDedupeFailed = errors.New("dedupe failed")
 )
 
 // Handler-directive errors.

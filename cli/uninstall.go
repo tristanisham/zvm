@@ -22,16 +22,32 @@ func (z *ZVM) Uninstall(version string) error {
 		}
 	}
 
+	// Never remove ZVM's own directories (bin, self, the dedupe store), even
+	// though they sit next to the versions in the base directory.
+	if isReservedName(version) {
+		return fmt.Errorf("%w: %q", ErrReservedName, version)
+	}
+
 	root, err := os.OpenRoot(z.baseDir)
 	if err != nil {
 		return err
 	}
+	defer root.Close()
 
 	if _, err := root.Stat(version); err == nil {
+		// Deduped files are hard links: removing them only drops this
+		// version's names. Other versions and the store keep their data.
 		if err := root.RemoveAll(version); err != nil {
 			return err
 		}
 		fmt.Printf("✔ Uninstalled %s\nRun `zvm ls` to view installed versions.\n", version)
+
+		// Store entries only this version referenced are now unreferenced.
+		if pruned, err := z.PruneStore(); err != nil {
+			log.Warn("could not prune dedupe store", "err", err)
+		} else if pruned.Removed > 0 {
+			fmt.Printf("Freed %s from the dedupe store (%d files no longer shared).\n", FormatBytes(pruned.BytesFreed), pruned.Removed)
+		}
 		return nil
 	}
 	fmt.Printf("Version: %s not found locally.\nHere are your installed versions:\n", version)

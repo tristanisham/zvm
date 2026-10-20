@@ -40,6 +40,7 @@ if (!args.autoUpgrades) {
 }
 
 const GOARCH = [
+  "386",
   "amd64",
   "arm64",
   "loong64",
@@ -53,7 +54,7 @@ const GOOS = [
   "freebsd",
   "netbsd",
   "openbsd",
-  // "plan9",
+  "plan9",
   "solaris",
 ];
 
@@ -68,8 +69,9 @@ function getTargets(): Target[] {
   for (const os of GOOS) {
     for (const arch of GOARCH) {
       if (
-        os === "solaris" && arch === "arm64" ||
-        os === "plan9" && arch === "arm64" ||
+        os === "solaris" && arch !== "amd64" ||
+        os === "darwin" && arch === "386" ||
+        os === "plan9" && arch !== "386" ||
         os !== "linux" && arch === "loong64" ||
         os !== "linux" && arch === "ppc64le"
       ) {

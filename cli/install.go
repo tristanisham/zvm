@@ -1077,7 +1077,8 @@ func ExtractInstall(input string) installRequest {
 // otherwise keep rewriting the current line and prefix every later log line
 // Exit() does not stop the ticker, so spinners are always finished.
 func stopProgressBar(pbar *progressbar.ProgressBar, completed bool) {
-	if completed || pbar.GetMax64() == -1 {
+	// GetMax64 reports the spinner width for unknown lengths; State preserves -1.
+	if completed || pbar.State().Max == -1 {
 		_ = pbar.Finish()
 		return
 	}

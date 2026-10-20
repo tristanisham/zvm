@@ -346,3 +346,27 @@ func TestCompletionCommandVisible(t *testing.T) {
 		t.Fatal("completion command not registered on zvmApp")
 	}
 }
+
+func TestSubcommand(t *testing.T) {
+	tests := []struct {
+		args []string
+		want string
+	}{
+		{args: nil, want: ""},
+		{args: []string{"env"}, want: "env"},
+		{args: []string{"env", "--use-on-cd"}, want: "env"},
+		{args: []string{cli.OnCdCommand}, want: cli.OnCdCommand},
+		{args: []string{"run", "0.15.1", "env"}, want: "run"},
+		{args: []string{"install", "env"}, want: "install"},
+		{args: []string{"--color", "off", "env"}, want: "env"},
+		{args: []string{"--color=off", "env"}, want: "env"},
+		{args: []string{"--help"}, want: ""},
+	}
+	for _, tt := range tests {
+		t.Run(strings.Join(tt.args, " "), func(t *testing.T) {
+			if got := subcommand(tt.args); got != tt.want {
+				t.Fatalf("subcommand(%q) = %q, want %q", tt.args, got, tt.want)
+			}
+		})
+	}
+}

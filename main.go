@@ -10,7 +10,6 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -617,7 +616,9 @@ func main() {
 
 	// `zvm env` output is eval'd by the shell and the cd hook runs on every
 	// directory change: neither may wait on the network or print a notice.
-	if slices.Contains(os.Args[1:], "env") || slices.Contains(os.Args[1:], cli.OnCdCommand) {
+	// Only the subcommand counts: `zvm run 0.15.1 env` runs `zig env` and
+	// should still check for upgrades.
+	if sub := subcommand(os.Args[1:]); sub == "env" || sub == cli.OnCdCommand {
 		checkUpgradeDisabled = true
 	}
 
@@ -734,4 +735,20 @@ func completeZVMCommands(ctx context.Context, cmd *opts.Command) {
 			fmt.Fprintf(cmd.Root().Writer, "%s:%s\n", alias, command.Usage)
 		}
 	}
+}
+
+// subcommand returns the name of the command in args (os.Args[1:]), skipping
+// global flags and the value of --color.
+func subcommand(args []string) string {
+	for i := 0; i < len(args); i++ {
+		arg := args[i]
+		switch {
+		case arg == "--color" || arg == "-color":
+			i++ // skip its value
+		case strings.HasPrefix(arg, "-"):
+		default:
+			return arg
+		}
+	}
+	return ""
 }

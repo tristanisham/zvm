@@ -38,6 +38,7 @@ To install the latest version, use `master`
 Switch between versions of Zig
 
 - `--sync` — sync your current version of Zig with the repository
+- `--global`, `-g` — change the global default even in a shell set up with `zvm env`
 
 ## `zvm run`
 
@@ -78,6 +79,26 @@ Aliases: `zvm rm`
 ## `zvm clean`
 
 Remove build artifacts (good if you're a scrub)
+
+Removes downloaded archives from the ZVM base directory and per-shell
+links (from `zvm env`) that are over a week old and whose shell has exited.
+
+## `zvm env`
+
+Print shell code that gives this shell its own Zig version
+
+Creates a per-shell link to the current global Zig version, exports it as
+ZVM_MULTISHELL_PATH and prepends it to PATH. Afterwards `zvm use` switches
+only that shell; `zvm use --global` changes the default.
+With --use-on-cd, entering a directory switches to the version declared by
+the nearest build.zig (`//! zvm-lock: <version>`) or build.zig.zon
+(`.minimum_zig_version`) in it or any parent.
+Example: eval "$(zvm env --shell bash --use-on-cd)"          # bash, zsh
+         zvm env --shell fish --use-on-cd | source            # fish
+         zvm env --shell powershell --use-on-cd | Out-String | Invoke-Expression
+
+- `--shell` — shell to emit code for: bash, zsh, fish, or powershell (default: from $SHELL)
+- `--use-on-cd` — switch Zig automatically when entering a directory with a version file
 
 ## `zvm upgrade`
 

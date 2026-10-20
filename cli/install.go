@@ -752,6 +752,9 @@ func (z *ZVM) createSymlink(version string) {
 		log.Fatal("meta.Link error", err)
 	}
 
+	if _, ok, _ := ActiveMultishellLink(); ok {
+		fmt.Printf("Set Zig %s as the global default. This shell has its own Zig link; run `zvm use %s` to switch it too.\n", version, version)
+	}
 }
 
 // getTarPath determines the download URL for the Zig binary based on the version and system architecture.

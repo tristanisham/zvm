@@ -34,6 +34,10 @@ func (z *ZVM) Use(ver string) (string, error) {
 // exactly as Use always has. Otherwise it repoints only the link named by
 // ZVM_MULTISHELL_PATH and reports perShell as true.
 func (z *ZVM) UseVersion(ver string, global bool) (resolved string, perShell bool, err error) {
+	if err := validateVersionTarget(ver, "use"); err != nil {
+		return ver, false, err
+	}
+
 	shellLink := ""
 	if !global {
 		link, ok, linkErr := ActiveMultishellLink()
@@ -53,6 +57,9 @@ func (z *ZVM) UseVersion(ver string, global bool) (resolved string, perShell boo
 			ver = resolved
 		}
 	}
+	if err := checkReservedVersion(ver, "use"); err != nil {
+		return ver, false, err
+	}
 
 	if err := z.getVersion(ver); err != nil {
 		if errors.Is(err, os.ErrNotExist) {
@@ -67,6 +74,8 @@ func (z *ZVM) UseVersion(ver string, global bool) (resolved string, perShell boo
 			} else {
 				return ver, false, fmt.Errorf("version %s is not installed", ver)
 			}
+		} else {
+			return ver, false, err
 		}
 	}
 

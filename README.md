@@ -71,7 +71,7 @@ irm "https://www.zvm.app/install.ps1" | iex
 powershell -c "irm https://www.zvm.app/install.ps1 | iex"
 ```
 
-# If You Have a Valid Version of Go Installed
+# You Have Go Installed
 
 ```sh
 go install -ldflags "-s -w" github.com/tristanisham/zvm@latest

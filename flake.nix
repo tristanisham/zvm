@@ -28,6 +28,13 @@
             subPackages = [ "." ];
 
             tags = [ "noAutoUpgrades" ];
+
+            # The sandbox sets HOME=/homeless-shelter, which is not writable,
+            # and the main package creates ~/.zvm when its tests load.
+            preCheck = ''
+              export HOME=$(mktemp -d)
+            '';
+
             ldflags = [
               "-s"
               "-w"

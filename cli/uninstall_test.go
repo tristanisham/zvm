@@ -83,3 +83,32 @@ func TestUninstallRejectsSymlinkTarget(t *testing.T) {
 		t.Fatal(err)
 	}
 }
+
+func TestUninstallRemovesActiveBinLink(t *testing.T) {
+	z := &ZVM{baseDir: t.TempDir()}
+	for _, ver := range []string{"0.14.0", "0.15.1"} {
+		if err := os.MkdirAll(filepath.Join(z.baseDir, ver), 0700); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	if err := z.setBin("0.15.1"); err != nil {
+		t.Fatal(err)
+	}
+
+	// Uninstalling an inactive version keeps the active bin link intact.
+	if err := z.Uninstall("0.14.0"); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := os.Stat(filepath.Join(z.baseDir, "bin")); err != nil {
+		t.Fatalf("bin link should remain after uninstalling inactive version: %v", err)
+	}
+
+	// Uninstalling the active version removes the bin link so it is not left dangling.
+	if err := z.Uninstall("0.15.1"); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := os.Lstat(filepath.Join(z.baseDir, "bin")); !errors.Is(err, os.ErrNotExist) {
+		t.Fatalf("expected active bin link to be removed, got err=%v", err)
+	}
+}

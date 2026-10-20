@@ -18,6 +18,7 @@ import (
 	"github.com/tristanisham/zvm/cli"
 	"github.com/tristanisham/zvm/cli/meta"
 	opts "github.com/urfave/cli/v3"
+	"golang.org/x/mod/semver"
 
 	"github.com/charmbracelet/log"
 )
@@ -271,10 +272,16 @@ var zvmApp = &opts.Command{
 							return fmt.Errorf("version %q is not a known Zig version and no minimum_zig_version found: %w", versionArg, err)
 						}
 						log.Debug("falling back to minimum_zig_version", "version", versionArg, "minZig", minZig)
-						redoneArgs := []string{cmd.Args().First()}
-						redoneArgs = append(redoneArgs, cmds...)
-						log.Debug("running with minZig", "minZig", minZig, "args", redoneArgs)
-						return zvm.Run(minZig, redoneArgs)
+						// Without an explicit version, the first argument is
+						// part of the Zig command. Preserve its original spelling.
+						normalizedVersion := versionArg
+						if strings.HasPrefix(normalizedVersion, ".") {
+							normalizedVersion = "0" + normalizedVersion
+						}
+						if versionArg != "" && !semver.IsValid("v"+normalizedVersion) {
+							cmds = cmd.Args().Slice()
+						}
+						return zvm.Run(minZig, cmds)
 					}
 					return err
 				}
@@ -641,7 +648,6 @@ func printZVMHelp(w io.Writer, templ string, data any) {
 		"section": formatHelpSection,
 	})
 }
-
 
 // completeZVMCommands extends urfave/cli's live command completion with the
 // aliases accepted by ZVM. The default completer only emits each command's

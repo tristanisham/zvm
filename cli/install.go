@@ -507,8 +507,14 @@ func (z *ZVM) SelectZlsVersion(version string, compatMode string) (string, strin
 		}
 
 		arch, ops := zigStyleSysInfo()
-		systemInfo, ok := info[fmt.Sprintf("%s-%s", arch, ops)].(map[string]any)
-		if !ok {
+		var systemInfo map[string]any
+		for _, key := range zigSystemKeys(arch, ops) {
+			if entry, ok := info[key].(map[string]any); ok {
+				systemInfo = entry
+				break
+			}
+		}
+		if systemInfo == nil {
 			return "", "", "", ErrUnsupportedSystem
 		}
 
@@ -751,7 +757,11 @@ func getTarPath(version string, data *map[string]map[string]any) (string, error)
 	arch, ops := zigStyleSysInfo()
 
 	if info, ok := (*data)[version]; ok {
-		if systemInfo, ok := info[fmt.Sprintf("%s-%s", arch, ops)]; ok {
+		for _, key := range zigSystemKeys(arch, ops) {
+			systemInfo, ok := info[key]
+			if !ok {
+				continue
+			}
 			if base, ok := systemInfo.(map[string]any); ok {
 				if tar, ok := base["tarball"].(string); ok {
 					return tar, nil
@@ -759,9 +769,8 @@ func getTarPath(version string, data *map[string]map[string]any) (string, error)
 			} else {
 				return "", ErrMissingBundlePath
 			}
-		} else {
-			return "", ErrUnsupportedSystem
 		}
+		return "", ErrUnsupportedSystem
 	}
 
 	return "", ErrUnsupportedVersion
@@ -771,7 +780,11 @@ func getTarPath(version string, data *map[string]map[string]any) (string, error)
 func getVersionShasum(version string, data *map[string]map[string]any) (string, error) {
 	if info, ok := (*data)[version]; ok {
 		arch, ops := zigStyleSysInfo()
-		if systemInfo, ok := info[fmt.Sprintf("%s-%s", arch, ops)]; ok {
+		for _, key := range zigSystemKeys(arch, ops) {
+			systemInfo, ok := info[key]
+			if !ok {
+				continue
+			}
 			if base, ok := systemInfo.(map[string]any); ok {
 				if shasum, ok := base["shasum"].(string); ok {
 					return shasum, nil
@@ -779,9 +792,8 @@ func getVersionShasum(version string, data *map[string]map[string]any) (string, 
 			} else {
 				return "", fmt.Errorf("unable to find necessary download path")
 			}
-		} else {
-			return "", fmt.Errorf("invalid/unsupported system: ARCH: %s OS: %s", arch, ops)
 		}
+		return "", fmt.Errorf("invalid/unsupported system: ARCH: %s OS: %s", arch, ops)
 	}
 	verMap := []string{"  "}
 	for key := range *data {
@@ -807,6 +819,8 @@ func zigStyleSysInfo() (arch string, osName string) {
 	}
 
 	switch arch {
+	case "386":
+		arch = "x86"
 	case "amd64":
 		arch = "x86_64"
 	case "arm64":
@@ -823,6 +837,18 @@ func zigStyleSysInfo() (arch string, osName string) {
 	}
 
 	return arch, osName
+}
+
+// zigSystemKeys returns the version-map keys to try for a system in order of
+// preference. Zig named its 32-bit x86 builds "i386-<os>" before 0.11.0 and
+// "x86-<os>" afterwards, so a 386 build of ZVM must accept both to install
+// older releases.
+func zigSystemKeys(arch string, osName string) []string {
+	keys := []string{arch + "-" + osName}
+	if arch == "x86" {
+		keys = append(keys, "i386-"+osName)
+	}
+	return keys
 }
 
 // ExtractBundle extracts a compressed bundle (zip, tar.xz) to the specified output directory.

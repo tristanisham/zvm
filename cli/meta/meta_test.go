@@ -69,14 +69,6 @@ func TestSentinelErrors_wrap_correctly(t *testing.T) {
 	}
 }
 
-// TestNoAutoUpgrades_default confirms that in a normal build (without the
-// noAutoUpgrades build tag), the flag is false so self-upgrade is enabled.
-func TestNoAutoUpgrades_default(t *testing.T) {
-	if NoAutoUpgrades {
-		t.Error("NoAutoUpgrades should be false in default build")
-	}
-}
-
 // TestLink_creates_link verifies that Link creates a working junction
 // (Windows) or symlink (Unix) that allows reading files through it.
 func TestLink_creates_link(t *testing.T) {

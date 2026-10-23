@@ -566,3 +566,32 @@ func TestEnvScriptPowerShellInstallsHookOnce(t *testing.T) {
 		t.Errorf("PowerShell script still calls the previous handler with &:\n%s", script)
 	}
 }
+
+func TestUseOnCdSwitchesToSymlinkedBuild(t *testing.T) {
+	z, _ := setupMultishell(t, "0.15.1")
+	if err := z.setBin("0.15.1"); err != nil {
+		t.Fatal(err)
+	}
+	build := t.TempDir()
+	if err := os.WriteFile(filepath.Join(build, "zig"), []byte("#!/bin/sh\n"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Symlink(build, filepath.Join(z.baseDir, "local")); err != nil {
+		t.Skipf("symlinks unavailable: %v", err)
+	}
+	link, err := z.NewMultishellLink(os.Getpid())
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv(MultishellEnv, link)
+
+	root := t.TempDir()
+	writeTree(t, root, map[string]string{"proj/build.zig": buildZigLock("local")})
+	t.Chdir(filepath.Join(root, "proj"))
+
+	var stdout, stderr bytes.Buffer
+	z.UseOnCd(&stdout, &stderr)
+	if got := readlink(t, link); got != filepath.Join(z.baseDir, "local") {
+		t.Fatalf("shell link -> %q, want the local build (stdout %q, stderr %q)", got, stdout.String(), stderr.String())
+	}
+}

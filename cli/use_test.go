@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"slices"
 	"errors"
 	"os"
 	"path/filepath"
@@ -81,5 +82,31 @@ func TestUseSwitchesInstalledVersion(t *testing.T) {
 
 	if _, err := os.Stat(filepath.Join(z.baseDir, "bin", zigExe)); err != nil {
 		t.Fatalf("expected active zig binary in bin: %v", err)
+	}
+}
+
+// A symlink in the base dir to a directory holding zig (e.g. a local build)
+// is a usable version: use, ls and run all find it.
+func TestUseAcceptsSymlinkToZigBuild(t *testing.T) {
+	z := &ZVM{baseDir: t.TempDir()}
+	build := t.TempDir()
+	if err := os.WriteFile(filepath.Join(build, "zig"), []byte("binary"), 0700); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Symlink(build, filepath.Join(z.baseDir, "local")); err != nil {
+		t.Skipf("symlinks unavailable: %v", err)
+	}
+
+	if _, err := z.Use("local"); err != nil {
+		t.Fatalf("Use(local) = %v", err)
+	}
+	if _, err := os.Stat(filepath.Join(z.baseDir, "bin", "zig")); err != nil {
+		t.Fatalf("bin does not reach the local build: %v", err)
+	}
+	if versions, err := z.GetInstalledVersions(); err != nil || !slices.Contains(versions, "local") {
+		t.Fatalf("GetInstalledVersions() = %v, %v; want local listed", versions, err)
+	}
+	if exe, err := z.zigExecutable("local"); err != nil || exe != filepath.Join(z.baseDir, "local", "zig") {
+		t.Fatalf("zigExecutable(local) = %q, %v", exe, err)
 	}
 }

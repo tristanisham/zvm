@@ -154,10 +154,7 @@ func ActiveMultishellLink() (link string, ok bool, err error) {
 func (z *ZVM) setShellLink(link, ver string) error {
 	// The link sits at the front of PATH, so it must only ever point at an
 	// install directory inside baseDir.
-	if err := validateVersionTarget(ver, "use"); err != nil {
-		return err
-	}
-	if err := checkReservedVersion(ver, "use"); err != nil {
+	if _, err := z.zigExecutable(ver); err != nil {
 		return err
 	}
 	if err := os.MkdirAll(filepath.Dir(link), 0o700); err != nil {

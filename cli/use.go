@@ -61,10 +61,6 @@ func (z *ZVM) UseVersion(ver string, global bool) (resolved string, perShell boo
 		return ver, false, err
 	}
 
-	if isReservedName(ver) {
-		return ver, false, fmt.Errorf("%w: %q", ErrReservedName, ver)
-	}
-
 	if err := z.getVersion(ver); err != nil {
 		if errors.Is(err, os.ErrNotExist) {
 

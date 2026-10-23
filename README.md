@@ -411,9 +411,18 @@ zvm use 0.13       # Resolves to 0.13.x (latest installed patch)
 zvm use .14        # Same — leading dot implies "0."
 ```
 
-`use` only switches to versions ZVM installed. A symlink in `~/.zvm` (for
-example to a Zig you built yourself) isn't treated as a version; put that
-build's directory on your `PATH` instead.
+To use a Zig you built yourself, link it into `~/.zvm` under any name. ZVM
+treats the link like an installed version once the directory it points to
+holds a `zig` executable:
+
+```sh
+ln -s ~/src/zig/zig-out/bin ~/.zvm/local   # the directory that contains `zig`
+zvm use local
+zvm run local version
+```
+
+`zvm uninstall` won't remove a linked build, and `zvm dedupe` leaves its files
+alone. Delete the link yourself when you're done with it.
 
 ### Give each shell its own Zig version
 

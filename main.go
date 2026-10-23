@@ -762,7 +762,7 @@ func main() {
 	}
 
 	// `zvm settings` reports problems itself.
-	if !isSettingsCommand(os.Args[1:]) {
+	if subcommand(os.Args[1:]) != "settings" {
 		zvm.Settings.WarnProblems()
 	}
 
@@ -862,11 +862,6 @@ func completeZVMCommands(ctx context.Context, cmd *opts.Command) {
 			fmt.Fprintf(cmd.Root().Writer, "%s:%s\n", alias, command.Usage)
 		}
 	}
-}
-
-// isSettingsCommand reports whether args name the settings command.
-func isSettingsCommand(args []string) bool {
-	return subcommand(args) == "settings"
 }
 
 // subcommand returns the name of the command in args (os.Args[1:]), skipping

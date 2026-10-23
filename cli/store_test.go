@@ -640,3 +640,35 @@ func TestFormatBytes(t *testing.T) {
 		}
 	}
 }
+
+// Dedupe must never hard-link files inside a directory a version symlink
+// points to: that is the user's own build tree, not ZVM's.
+func TestDedupeSkipsSymlinkedVersion(t *testing.T) {
+	z := newStoreTestZVM(t, []storeTestFile{{path: "0.15.1/lib/std.zig", content: "same", mode: 0o755}, {path: "0.15.1/zig", content: "zig", mode: 0o755}})
+	build := t.TempDir()
+	for name, data := range map[string]string{"lib/std.zig": "same", "zig": "zig"} {
+		path := filepath.Join(build, name)
+		if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(path, []byte(data), 0o755); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if err := os.Symlink(build, filepath.Join(z.baseDir, "local")); err != nil {
+		t.Skipf("symlinks unavailable: %v", err)
+	}
+
+	if _, err := z.Dedupe(nil); err != nil {
+		t.Fatal(err)
+	}
+	for _, name := range []string{"lib/std.zig", "zig"} {
+		info, err := os.Stat(filepath.Join(build, name))
+		if err != nil {
+			t.Fatal(err)
+		}
+		if _, n, ok := fileIdentity(filepath.Join(build, name), info); ok && n != 1 {
+			t.Errorf("%s in the local build has %d links; dedupe must not touch it", name, n)
+		}
+	}
+}

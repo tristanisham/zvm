@@ -7,6 +7,7 @@ package cli
 import (
 	"encoding/json"
 	"fmt"
+	"io/fs"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -80,7 +81,15 @@ func (z *ZVM) GetInstalledVersions() ([]string, error) {
 	for _, key := range dir {
 		// bin, self and the dedupe store are ZVM's own directories, not
 		// Zig versions; see isReservedName.
-		if !key.IsDir() || isReservedName(key.Name()) {
+		if isReservedName(key.Name()) {
+			continue
+		}
+		if key.Type()&fs.ModeSymlink != 0 {
+			// A link to a local build counts once it holds a zig executable.
+			if _, err := z.zigExecutable(key.Name()); err != nil {
+				continue
+			}
+		} else if !key.IsDir() {
 			continue
 		}
 		if multishellDir != "" && filepath.Join(z.baseDir, key.Name()) == filepath.Clean(multishellDir) {

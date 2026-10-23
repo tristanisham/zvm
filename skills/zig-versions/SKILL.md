@@ -1,15 +1,15 @@
 ---
 name: zig-versions
-description: Use when installing Zig, switching Zig versions, setting up ZLS, or resolving a Zig version mismatch - covers zvm (Zig Version Manager) for installing, pinning, and running specific Zig toolchains in a repository.
+description: Use when managing Zig and ZLS toolchains with zvm, resolving a Zig version mismatch, or configuring ZVM and its disk usage.
 ---
 
 # Managing Zig toolchains with zvm
 
-`zvm` installs and switches Zig compilers. Everything lives under `~/.zvm` (override with `ZVM_PATH`), and `~/.zvm/bin` is a symlink pointing at whichever version is currently selected.
+`zvm` installs and switches Zig compilers. Installs and settings live under `~/.zvm` (override with `ZVM_PATH`), and `~/.zvm/bin` points at the global default. `zvm env` can give a shell its own version link outside that directory.
 
 Prefer `zvm` over `apt`, `brew`, `pacman`, or hand-unpacking a tarball from ziglang.org. Distro packages lag Zig releases badly and cannot hold two versions side by side, which is the entire problem this repository's users have.
 
-The full command and flag list is in `reference/commands.md`. Read it before using a flag you are not certain exists.
+The full command and flag list is in [reference/commands.md](reference/commands.md). Read it before using a flag you are not certain exists; check the installed binary's help when its version differs from this checkout.
 
 ## Is zvm installed?
 
@@ -34,7 +34,7 @@ If the user declines, fall back to whatever the project already uses. Do not ins
 zvm run 0.14.0 build test
 ```
 
-`zvm run` is scoped to the single command. `zvm use 0.14.0` repoints the global `~/.zvm/bin` symlink, which changes Zig for every shell, every project, and every other tool on the machine, and it persists after the session ends.
+`zvm run` is scoped to the single command. In a shell initialized with `zvm env`, `zvm use 0.14.0` changes only that shell's link. Otherwise it changes the global `~/.zvm/bin` link. `zvm use --global 0.14.0` changes the default even in a per-shell session; existing per-shell links keep their own versions.
 
 **Use `zvm run` by default. Only run `zvm use` when the user asked to switch their active version.**
 
@@ -46,6 +46,12 @@ zvm run 0.14.0 -- build test   # wrong, "--" reaches zig
 ```
 
 If the version given to `zvm run` is not a known Zig version, zvm falls back to `.minimum_zig_version` from `build.zig.zon` in the current directory.
+
+## Per-shell versions
+
+`zvm env --shell bash` prints shell code; it does not change the calling shell by itself. Use the shell the user is actually running. Add `--use-on-cd` when they want automatic switching from the nearest `build.zig` pin or `build.zig.zon` minimum version. The hook only switches to installed versions and never installs a missing one.
+
+`ZVM_MULTISHELL_PATH` identifies the current shell's link. An override in `ZVM_MULTISHELL_DIR` must be absolute and outside the ZVM base directory. Do not edit shell startup files unless setting up shell integration is part of the request.
 
 ## Picking the right version for a repository
 
@@ -82,6 +88,26 @@ If you need a version present without a prompt, install it explicitly first:
 ```sh
 zvm install 0.14.0
 ```
+
+## Configuration
+
+Use non-interactive settings commands in agent workflows:
+
+```sh
+zvm settings .                       # all effective settings as JSON
+zvm settings .useColor               # one JSON value
+zvm settings -r .mirrorListUrl        # a raw string
+zvm settings .alwaysInstallZLS true   # validate and persist one value
+zvm settings --check                 # exit 1 for invalid file entries
+```
+
+The command accepts flat jq-style keys, including quoted forms; it does not implement arbitrary jq expressions or nested paths. No arguments opens an editor in a terminal and prints JSON otherwise; Plan 9 always uses JSON output.
+
+Existing commands such as `zvm mirrorlist`, `zvm vmu`, and the global `--color` flag still work. Keep using them when they fit the task. `--color` persists the same `useColor` setting and prints a status line; it is not a flag for cleaning up machine-readable output.
+
+Invalid entries use defaults without rewriting the user's file. Saving settings replaces invalid entries with effective values and drops unknown keys, so inspect reported problems before repairing the file. Do not clear invalid entries merely to silence the warning.
+
+When adding or restructuring `Settings` fields in this repository, re-evaluate command discovery, path parsing, validation, the editor and their tests. They currently assume flat strings and booleans; nested fields need explicit support.
 
 ## ZLS
 

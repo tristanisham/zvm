@@ -551,9 +551,10 @@ var zvmApp = &opts.Command{
 				if pruned.Removed > 0 {
 					fmt.Printf("  unreferenced store files removed: %d\n", pruned.Removed)
 				}
+				reclaimed := report.BytesSaved() + pruned.BytesFreed
 				fmt.Printf("Disk used by versions + store: %s -> %s (saved %s)\n",
 					cli.FormatBytes(report.BytesBefore), cli.FormatBytes(report.BytesAfter-pruned.BytesFreed),
-					cli.FormatBytes(report.BytesSaved()+pruned.BytesFreed))
+					cli.FormatBytes(reclaimed))
 				fmt.Printf("  exact bytes: %d -> %d\n", report.BytesBefore, report.BytesAfter-pruned.BytesFreed)
 
 				const maxProblems = 20
@@ -564,6 +565,7 @@ var zvmApp = &opts.Command{
 					}
 					fmt.Println("  note:", p)
 				}
+				fmt.Printf("ZVM reclaimed %s\n", cli.FormatBytes(reclaimed))
 				return nil
 			},
 		},

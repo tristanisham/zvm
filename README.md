@@ -589,6 +589,10 @@ symlinks are left alone. It is safe to re-run or interrupt, and files on a
 filesystem without hard links are simply skipped. `zvm uninstall` and
 `zvm clean` drop store files nothing links to any more.
 
+Hashing every file takes a while (around 20 seconds for four versions), so
+`zvm dedupe` shows a progress bar and ends by telling you how much space it
+reclaimed.
+
 `--auto` saves your preference and exits. Turning it on doesn't dedupe
 versions you've already installed, so run `zvm dedupe` once to include those.
 Turning it off doesn't make separate copies of files that are already shared.

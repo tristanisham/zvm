@@ -223,3 +223,32 @@ func TestExtractMinimumZigVersionIn(t *testing.T) {
 		})
 	}
 }
+
+func TestParseMinimumZigVersion(t *testing.T) {
+	tests := []struct {
+		name string
+		src  string
+		want string // "" means no version
+	}{
+		{name: "zig init file", src: zon("0.15.2"), want: "0.15.2"},
+		{name: "v prefix", src: zon("v0.15.2"), want: "0.15.2"},
+		{name: "whole file on one line", src: `.{ .name = .p, .minimum_zig_version = "0.14.1" }`, want: "0.14.1"},
+		{name: "commented out", src: ".{\n    .name = .p,\n    // .minimum_zig_version = \"0.11.0\",\n}\n"},
+		{name: "multiline string before it", src: ".{\n    .description =\n        \\\\one\n        \\\\two\n    ,\n    .minimum_zig_version = \"0.13.0\",\n}\n", want: "0.13.0"},
+		{
+			name: "nested key is not the project's",
+			src:  ".{\n    .dependencies = .{\n        .dep = .{\n            .minimum_zig_version = \"0.9.0\",\n        },\n    },\n    .minimum_zig_version = \"0.15.2\",\n}\n",
+			want: "0.15.2",
+		},
+		{name: "no top-level key", src: ".{\n    .name = .p,\n}\n"},
+		{name: "malformed", src: `.{ .minimum_zig_version = "0.15.2" `},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, ok := parseMinimumZigVersion([]byte(tt.src))
+			if got != tt.want || ok != (tt.want != "") {
+				t.Fatalf("parseMinimumZigVersion = %q, %v; want %q", got, ok, tt.want)
+			}
+		})
+	}
+}

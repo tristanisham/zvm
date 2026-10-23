@@ -10,6 +10,8 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+
+	"github.com/rogpeppe/go-internal/lockedfile"
 )
 
 // knownHashesFile is the trust-on-first-use store (similar in spirit to go.sum)
@@ -34,6 +36,9 @@ func loadKnownHashes(path string) (map[string]string, error) {
 	if err := json.Unmarshal(data, &hashes); err != nil {
 		return nil, fmt.Errorf("%w: %s: %w (delete the file to reset it)", ErrBadKnownHashes, path, err)
 	}
+	if hashes == nil {
+		return nil, fmt.Errorf("%w: %s must contain a JSON object (delete the file to reset it)", ErrBadKnownHashes, path)
+	}
 	return hashes, nil
 }
 
@@ -57,9 +62,22 @@ func checkKnownHash(path, tarName, sum string) (recorded bool, err error) {
 
 // recordKnownHash stores sum for tarName in the store at path, replacing the
 // file atomically so an interrupted write cannot corrupt existing entries.
+// A persistent sidecar lock serializes the check and update across processes;
+// locking the store itself would lose exclusion when it is replaced by rename.
 func recordKnownHash(path, tarName, sum string) error {
+	unlock, err := lockedfile.MutexAt(path + ".lock").Lock()
+	if err != nil {
+		return fmt.Errorf("%w: lock %s: %w", ErrBadKnownHashes, path, err)
+	}
+	defer unlock()
+
 	hashes, err := loadKnownHashes(path)
 	if err != nil {
+		return err
+	}
+	if _, exists := hashes[tarName]; exists {
+		// Another install may have pinned this name since the download began.
+		_, err := checkKnownHash(path, tarName, sum)
 		return err
 	}
 	hashes[tarName] = sum

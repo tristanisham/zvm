@@ -231,14 +231,10 @@ func downloadVerified(dir, tarURL string, chk tarballCheck) (tempPath string, er
 	}
 
 	if chk.knownHashes != "" {
-		recorded, err := checkKnownHash(chk.knownHashes, chk.name, sum)
-		if err != nil {
+		// Compare and record under the same lock: a concurrent install may
+		// have pinned this filename while this download was being verified.
+		if err := recordKnownHash(chk.knownHashes, chk.name, sum); err != nil {
 			return "", err
-		}
-		if !recorded {
-			if err := recordKnownHash(chk.knownHashes, chk.name, sum); err != nil {
-				log.Warn("could not record tarball hash", "file", chk.knownHashes, "error", err)
-			}
 		}
 	}
 

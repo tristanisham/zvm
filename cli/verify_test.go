@@ -123,6 +123,7 @@ func TestKnownHashes(t *testing.T) {
 		{"different hash", `{"` + name + `": "aa"}`, "bb", true, ErrKnownHashMismatch},
 		{"other file pinned", `{"zig-x86_64-linux-0.14.1.tar.xz": "aa"}`, "bb", false, nil},
 		{"corrupt store", `{not json`, "aa", false, ErrBadKnownHashes},
+		{"null store", `null`, "aa", false, ErrBadKnownHashes},
 	}
 
 	for _, tt := range tests {
@@ -310,7 +311,7 @@ func tempFiles(t *testing.T, dir string) []string {
 	}
 	var names []string
 	for _, e := range entries {
-		if e.Name() != knownHashesFile {
+		if e.Name() != knownHashesFile && e.Name() != knownHashesFile+".lock" {
 			names = append(names, e.Name())
 		}
 	}
@@ -392,6 +393,30 @@ func TestDownloadVerified(t *testing.T) {
 				t.Fatalf("verified download not pinned: %v", err)
 			}
 		})
+	}
+}
+
+func TestDownloadVerifiedRejectsHashStoreFailure(t *testing.T) {
+	const name = "zig-test.tar.xz"
+	signer := newTestSigner(t)
+	body := []byte("genuine tarball")
+	srv := newFileServer(t, map[string][]byte{
+		"/" + name:              body,
+		"/" + name + ".minisig": signer.signFile(t, body, name),
+	})
+	dir := t.TempDir()
+	pins := filepath.Join(dir, knownHashesFile)
+	// A directory at the lock path makes acquiring the store lock fail.
+	if err := os.Mkdir(pins+".lock", 0700); err != nil {
+		t.Fatal(err)
+	}
+	chk := tarballCheck{name: name, pubkey: signer.publicKey(t), knownHashes: pins, label: "test"}
+	got, err := downloadVerified(dir, srv.URL+"/"+name, chk)
+	if got != "" || !errors.Is(err, ErrBadKnownHashes) {
+		t.Fatalf("downloadVerified() = %q, %v; want ErrBadKnownHashes", got, err)
+	}
+	if left := tempFiles(t, dir); len(left) != 0 {
+		t.Fatalf("failed pinning left download files behind: %v", left)
 	}
 }
 

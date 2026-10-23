@@ -790,8 +790,8 @@ Enable or disable colored ZVM output. No value toggles colors.
 ## Settings
 
 ZVM keeps its settings in `~/.zvm/settings.json` and creates the file if it
-doesn't exist. You can edit it by hand, or use `zvm settings` to view and
-change individual values.
+doesn't exist. You can edit it by hand, use bespoke commands, or use `zvm settings` to view and
+change individual values. It is modeled after `jq` and supports most of its syntax.
 
 Bespoke commands and flags are still work. `--color` updates the same
 `useColor` setting, and `zvm mirrorlist` and `zvm vmu` still set your mirror

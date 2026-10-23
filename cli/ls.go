@@ -72,8 +72,8 @@ func (z *ZVM) GetInstalledVersions() ([]string, error) {
 		return nil, err
 	}
 
-	// Per-shell links normally live outside baseDir, but ZVM_MULTISHELL_DIR
-	// may point inside it; never report that directory as a Zig version.
+	// zvm env refuses to create per-shell links inside baseDir, but older
+	// builds allowed it; never report such a directory as a Zig version.
 	multishellDir, _ := MultishellDir()
 
 	versions := make([]string, 0, len(dir))

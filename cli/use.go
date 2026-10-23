@@ -66,9 +66,10 @@ func (z *ZVM) UseVersion(ver string, global bool) (resolved string, perShell boo
 
 			fmt.Printf("It looks like %s isn't installed. Would you like to install it? [y/N]\n", ver)
 			if getConfirmation() {
-				// In a per-shell session, installing must not repoint the
-				// global link as a side effect.
-				if ver, err = z.Install(ver, false, false, true, shellLink != ""); err != nil {
+				// Install must not switch versions itself: UseVersion repoints
+				// the right link below, and a second switch would print a second,
+				// conflicting message.
+				if ver, err = z.Install(ver, false, false, true, true); err != nil {
 					return ver, false, err
 				}
 			} else {

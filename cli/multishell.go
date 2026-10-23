@@ -14,6 +14,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/charmbracelet/log"
@@ -53,7 +54,11 @@ var multishellNameRe = regexp.MustCompile(`^([0-9]+)_([0-9]+)_([0-9a-f]{8})$`)
 // ~/Library/Caches on macOS, %LocalAppData% on Windows).
 func MultishellDir() (string, error) {
 	if dir := os.Getenv(MultishellDirEnv); dir != "" {
-		return filepath.Abs(dir)
+		// A relative path would resolve differently after every cd.
+		if !filepath.IsAbs(dir) {
+			return "", fmt.Errorf("%w: %s must be an absolute path, got %q", ErrNoMultishellDir, MultishellDirEnv, dir)
+		}
+		return filepath.Clean(dir), nil
 	}
 	if state := os.Getenv("XDG_STATE_HOME"); state != "" && filepath.IsAbs(state) {
 		return filepath.Join(state, "zvm", "multishells"), nil
@@ -91,6 +96,10 @@ func (z *ZVM) NewMultishellLink(pid int) (string, error) {
 	dir, err := MultishellDir()
 	if err != nil {
 		return "", err
+	}
+	// Anything inside baseDir would show up in `zvm ls` as a Zig version.
+	if rel, err := filepath.Rel(z.baseDir, dir); err == nil && rel != ".." && !strings.HasPrefix(rel, ".."+string(filepath.Separator)) {
+		return "", fmt.Errorf("%w: %s must not be inside %s", ErrNoMultishellDir, MultishellDirEnv, z.baseDir)
 	}
 	if err := os.MkdirAll(dir, 0o700); err != nil {
 		return "", err
@@ -143,6 +152,14 @@ func ActiveMultishellLink() (link string, ok bool, err error) {
 
 // setShellLink repoints a per-shell link at an installed version.
 func (z *ZVM) setShellLink(link, ver string) error {
+	// The link sits at the front of PATH, so it must only ever point at an
+	// install directory inside baseDir.
+	if err := validateVersionTarget(ver, "use"); err != nil {
+		return err
+	}
+	if err := checkReservedVersion(ver, "use"); err != nil {
+		return err
+	}
 	if err := os.MkdirAll(filepath.Dir(link), 0o700); err != nil {
 		return err
 	}

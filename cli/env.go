@@ -119,11 +119,18 @@ func EnvScript(shell, link string, useOnCd bool) string {
 		fmt.Fprintf(&b, "$env:%s = %s\n", MultishellEnv, q)
 		fmt.Fprintf(&b, "$env:PATH = %s + [System.IO.Path]::PathSeparator + $env:PATH\n", q)
 		if useOnCd {
-			b.WriteString("$global:__ZvmPrevLocationChangedAction = $ExecutionContext.SessionState.InvokeCommand.LocationChangedAction\n")
-			b.WriteString("$ExecutionContext.SessionState.InvokeCommand.LocationChangedAction = {\n")
-			b.WriteString("    param($zvmSource, $zvmArgs)\n")
-			b.WriteString("    if ($global:__ZvmPrevLocationChangedAction) { & $global:__ZvmPrevLocationChangedAction $zvmSource $zvmArgs }\n")
-			fmt.Fprintf(&b, "    & zvm %s\n", OnCdCommand)
+			// Install the handler once per session: evaluating this twice would
+			// otherwise chain zvm's handler to itself. PowerShell stores the
+			// previous handler as an EventHandler delegate, so it is called with
+			// .Invoke rather than &.
+			b.WriteString("if (-not $global:__ZvmUseOnCdInstalled) {\n")
+			b.WriteString("    $global:__ZvmUseOnCdInstalled = $true\n")
+			b.WriteString("    $global:__ZvmPrevLocationChangedAction = $ExecutionContext.SessionState.InvokeCommand.LocationChangedAction\n")
+			b.WriteString("    $ExecutionContext.SessionState.InvokeCommand.LocationChangedAction = {\n")
+			b.WriteString("        param($zvmSource, $zvmArgs)\n")
+			b.WriteString("        if ($global:__ZvmPrevLocationChangedAction) { $global:__ZvmPrevLocationChangedAction.Invoke($zvmSource, $zvmArgs) }\n")
+			fmt.Fprintf(&b, "        & zvm %s\n", OnCdCommand)
+			b.WriteString("    }\n")
 			b.WriteString("}\n")
 			fmt.Fprintf(&b, "& zvm %s\n", OnCdCommand)
 		}
@@ -145,6 +152,17 @@ func fishQuote(s string) string {
 // psQuote single-quotes s for PowerShell, where ' is escaped by doubling.
 func psQuote(s string) string {
 	return "'" + strings.ReplaceAll(s, "'", "''") + "'"
+}
+
+// statVersion stats an install directory through os.Root, so it can never
+// resolve to anything outside baseDir.
+func (z *ZVM) statVersion(ver string) (fs.FileInfo, error) {
+	root, err := os.OpenRoot(z.baseDir)
+	if err != nil {
+		return nil, err
+	}
+	defer root.Close()
+	return root.Stat(ver)
 }
 
 // UseOnCd is run by the --use-on-cd hook after every directory change. It
@@ -179,12 +197,24 @@ func (z *ZVM) UseOnCd(stdout, stderr io.Writer) {
 		}
 	}
 
+	// The version comes from a file in the directory being entered, which
+	// may be untrusted (a cloned repository). Never let it name anything but
+	// an install directory inside baseDir.
+	if err := validateVersionTarget(ver, "use"); err != nil {
+		fmt.Fprintf(stderr, "zvm: ignoring invalid Zig version %q in %s\n", src.Version, src.File)
+		return
+	}
+	if err := checkReservedVersion(ver, "use"); err != nil {
+		fmt.Fprintf(stderr, "zvm: ignoring invalid Zig version %q in %s\n", src.Version, src.File)
+		return
+	}
+
 	target := filepath.Join(z.baseDir, ver)
 	if linkPointsTo(link, target) {
 		return
 	}
 
-	if fi, err := os.Stat(target); err != nil || !fi.IsDir() {
+	if fi, err := z.statVersion(ver); err != nil || !fi.IsDir() {
 		if err != nil && !errors.Is(err, fs.ErrNotExist) {
 			log.Debug("use-on-cd: stat", "target", target, "err", err)
 		}

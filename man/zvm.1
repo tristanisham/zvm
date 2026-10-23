@@ -158,7 +158,8 @@ to the current shell's per-shell link; while it is set,
 changes only this shell.
 .TP
 .B ZVM_MULTISHELL_DIR
-Directory for per-shell links. Defaults to
+Directory for per-shell links. It must be an absolute path outside the ZVM
+base directory. Defaults to
 .I $XDG_STATE_HOME/zvm/multishells
 or the user cache directory; see
 .BR zvm-env (1).

@@ -19,7 +19,7 @@
           pkgs = nixpkgs.legacyPackages.${system};
         in
         {
-          default = pkgs.buildGoModule {
+          default = pkgs.buildGo127Module {
             pname = "zvm";
             version = "0.9.4";
 
@@ -68,7 +68,7 @@
         in
         {
           default = pkgs.mkShell {
-            packages = [ pkgs.go_1_26 ];
+            packages = [ pkgs.go_1_27 ];
           };
         });
 

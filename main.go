@@ -591,6 +591,30 @@ var zvmApp = &opts.Command{
 			},
 		},
 		{
+			Name:      "settings",
+			Usage:     "View or edit settings.json (opens an editor when no path is given)",
+			ArgsUsage: "[.key [value]]",
+			Description: "With no arguments in a terminal, open an interactive editor (vim keys or arrows).\n" +
+				"Select a key with jq dot notation to print it, or pass a value to replace it:\n" +
+				"  zvm settings .useColor           # print a value\n" +
+				"  zvm settings .useColor false     # validate and save a new value\n" +
+				"  zvm settings --check             # report invalid entries in settings.json",
+			Flags: []opts.Flag{
+				&opts.BoolFlag{
+					Name:  "check",
+					Usage: "report invalid entries in settings.json and exit non-zero if there are any",
+				},
+				&opts.BoolFlag{
+					Name:    "raw-output",
+					Aliases: []string{"r"},
+					Usage:   "print string values without JSON quotes, like jq -r",
+				},
+			},
+			Action: func(ctx context.Context, cmd *opts.Command) error {
+				return zvm.SettingsCommand(cmd.Args().Slice(), cmd.Bool("check"), cmd.Bool("raw-output"), os.Stdout)
+			},
+		},
+		{
 			Name:  "mirrorlist",
 			Usage: "Set ZVM's mirror list URL for custom Zig distribution servers, or set to \"disabled\" to download directly from ziglang.org",
 			Action: func(ctx context.Context, cmd *opts.Command) error {
@@ -737,6 +761,11 @@ func main() {
 		upSig <- ""
 	}
 
+	// `zvm settings` reports problems itself.
+	if !isSettingsCommand(os.Args[1:]) {
+		zvm.Settings.WarnProblems()
+	}
+
 	// run and report errors
 	if err := zvmApp.Run(context.Background(), os.Args); err != nil {
 		// 		if meta.VERSION == "v0.7.9" && errors.Is(err, cli.ErrInvalidVersionMap) {
@@ -833,6 +862,11 @@ func completeZVMCommands(ctx context.Context, cmd *opts.Command) {
 			fmt.Fprintf(cmd.Root().Writer, "%s:%s\n", alias, command.Usage)
 		}
 	}
+}
+
+// isSettingsCommand reports whether args name the settings command.
+func isSettingsCommand(args []string) bool {
+	return subcommand(args) == "settings"
 }
 
 // subcommand returns the name of the command in args (os.Args[1:]), skipping

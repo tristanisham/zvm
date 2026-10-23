@@ -21,10 +21,10 @@
         {
           default = pkgs.buildGoModule {
             pname = "zvm";
-            version = "0.9.3";
+            version = "0.9.4";
 
             src = ./.;
-            vendorHash = "sha256-P3+kqmLuOhT6U4d/fg9axTd02tmlYWXH0PA+5/WIY+E=";
+            vendorHash = "sha256-7dGTHeGxBov14/2oEIMYWVxGVehqQKgq2X6sLu0V774=";
             subPackages = [ "." ];
 
             tags = [ "noAutoUpgrades" ];

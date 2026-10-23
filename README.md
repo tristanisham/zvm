@@ -830,15 +830,49 @@ Enable or disable colored ZVM output. No value toggles colors.
 
 ## Settings
 
-ZVM has additional setting stored in `~/.zvm/settings.json`. You can manually
-update version maps, toggle color support, and disable the automatic upgrade
-checker here. The `alwaysInstallZLS` setting controls whether a requested ZLS
-installation is attempted after Zig installation fails and defaults to `false`.
-The `autoDedupe` setting (also set with `zvm dedupe --auto on|off`) dedupes each
-newly installed version into the store and defaults to `false`.
-Some settings are also exposed as flags or environment variables. This file is
-stateful, and ZVM will create it if it does not exist and utilizes it for its
-operation.
+ZVM keeps its settings in `~/.zvm/settings.json` and creates the file if it
+doesn't exist. You can edit it by hand, use bespoke commands, or use `zvm settings` to view and
+change individual values. It is modeled after `jq` and supports most of its syntax.
+
+Bespoke commands and flags are still work. `--color` updates the same
+`useColor` setting, and `zvm mirrorlist` and `zvm vmu` still set your mirror
+list and version maps. The `alwaysInstallZLS` setting controls whether a
+requested ZLS installation is attempted after Zig installation fails. It
+defaults to `false`.
+
+### Editing settings
+
+```sh
+zvm settings
+```
+
+Run `settings` in a terminal to open the editor. Use `j`/`k` or the arrow
+keys to move, `Enter` or `i` to edit, and `Space` to toggle a boolean. Press
+`r` to reset a value to its default, `w` or `Ctrl+S` to save, and `q` to
+quit. If you've changed something without saving it, `q` asks before
+quitting. Vim commands `:w`, `:q`, `:wq`, and `:q!` work too.
+
+You can also select a key with jq's dot notation and pass a value to replace
+it. Values are validated before anything is saved:
+
+```sh
+zvm settings .                     # Print all settings as JSON
+zvm settings .useColor             # Print one value
+zvm settings -r .mirrorListUrl      # Print a string without JSON quotes
+zvm settings .useColor false       # Validate and save a value
+zvm settings .mirrorListUrl disabled
+zvm settings --check               # Check the file; exit 1 if an entry is invalid
+```
+
+Without a terminal, `zvm settings` prints JSON. It does the same on Plan 9,
+where the interactive editor isn't available. Reading and setting individual
+values works there too.
+
+If the file has malformed JSON, a value of the wrong type, an invalid URL,
+or an invalid signing key, ZVM warns and uses defaults for the affected
+settings. It leaves your file alone so you can fix it. The editor shows the
+problems, and saving writes the values shown in the editor. Unknown keys are
+reported too, and are removed when you save.
 
 ## Uninstalling ZVM
 

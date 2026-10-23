@@ -89,6 +89,26 @@ If you need a version present without a prompt, install it explicitly first:
 zvm install 0.14.0
 ```
 
+## Configuration
+
+Use non-interactive settings commands in agent workflows:
+
+```sh
+zvm settings .                       # all effective settings as JSON
+zvm settings .useColor               # one JSON value
+zvm settings -r .mirrorListUrl        # a raw string
+zvm settings .alwaysInstallZLS true   # validate and persist one value
+zvm settings --check                 # exit 1 for invalid file entries
+```
+
+The command accepts flat jq-style keys, including quoted forms; it does not implement arbitrary jq expressions or nested paths. No arguments opens an editor in a terminal and prints JSON otherwise; Plan 9 always uses JSON output.
+
+Existing commands such as `zvm mirrorlist`, `zvm vmu`, and the global `--color` flag still work. Keep using them when they fit the task. `--color` persists the same `useColor` setting and prints a status line; it is not a flag for cleaning up machine-readable output.
+
+Invalid entries use defaults without rewriting the user's file. Saving settings replaces invalid entries with effective values and drops unknown keys, so inspect reported problems before repairing the file. Do not clear invalid entries merely to silence the warning.
+
+When adding or restructuring `Settings` fields in this repository, re-evaluate command discovery, path parsing, validation, the editor and their tests. They currently assume flat strings and booleans; nested fields need explicit support.
+
 ## ZLS
 
 ```sh

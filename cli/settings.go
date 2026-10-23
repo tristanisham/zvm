@@ -16,17 +16,21 @@ import (
 	"github.com/tristanisham/clr"
 )
 
+// Settings holds the persisted ZVM configuration. When adding or restructuring
+// fields, re-evaluate the settings command's field discovery, path parsing,
+// validation, and editor, along with their tests. They currently assume a flat
+// object of strings and booleans; nested fields need explicit support.
 type Settings struct {
 	path               string
-	MirrorListUrl      string `json:"mirrorListUrl,omitempty"` // Zig's community mirror list URL
-	MinisignPubKey     string `json:"minisignPubKey,omitempty"`
-	VersionMapUrl      string `json:"versionMapUrl,omitempty"`    // Zig's version map URL
-	ZlsVMU             string `json:"zlsVersionMapUrl,omitempty"` // ZLS's version map URL
-	UseColor           bool   `json:"useColor"`
-	AlwaysForceInstall bool   `json:"alwaysForceInstall"`
-	AlwaysInstallZLS   bool   `json:"alwaysInstallZLS"`
-	// AutoDedupe hard-links a freshly installed version's files into the
-	// content-addressed store (see store.go) right after `zvm install`.
+	problems           []SettingProblem // invalid entries found when settings.json was loaded
+	MirrorListUrl      string           `json:"mirrorListUrl,omitempty"` // Zig's community mirror list URL
+	MinisignPubKey     string           `json:"minisignPubKey,omitempty"`
+	VersionMapUrl      string           `json:"versionMapUrl,omitempty"`    // Zig's version map URL
+	ZlsVMU             string           `json:"zlsVersionMapUrl,omitempty"` // ZLS's version map URL
+	UseColor           bool             `json:"useColor"`
+	AlwaysForceInstall bool             `json:"alwaysForceInstall"`
+	AlwaysInstallZLS   bool             `json:"alwaysInstallZLS"`
+	// AutoDedupe hard-links newly installed files into the shared store.
 	AutoDedupe bool `json:"autoDedupe"`
 }
 
@@ -46,6 +50,9 @@ var DefaultSettings = Settings{
 	AlwaysInstallZLS:   false,
 	AutoDedupe:         false,
 }
+
+// Problems returns the invalid entries found when settings.json was loaded.
+func (s *Settings) Problems() []SettingProblem { return s.problems }
 
 // UseMirrorList returns true if the mirror list URL is not set to "disabled".
 func (s *Settings) UseMirrorList() bool {
@@ -199,6 +206,12 @@ func (s *Settings) SetZlsVMU(versionMapUrl string) error {
 // ResetEmpty ensures that any empty settings fields are set to their default values
 // and saves the configuration.
 func (s *Settings) ResetEmpty() error {
+	s.fillEmpty()
+	return s.save()
+}
+
+// fillEmpty sets empty string settings to their defaults without saving.
+func (s *Settings) fillEmpty() {
 	if s.MirrorListUrl == "" {
 		s.MirrorListUrl = DefaultSettings.MirrorListUrl
 	}
@@ -214,8 +227,6 @@ func (s *Settings) ResetEmpty() error {
 	if s.ZlsVMU == "" {
 		s.ZlsVMU = DefaultSettings.ZlsVMU
 	}
-
-	return s.save()
 }
 
 // isValidWebURL checks if the given URL string is a valid web URL.

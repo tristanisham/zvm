@@ -13,8 +13,13 @@ go build -v .                    # Build the binary
 go test -v ./...                 # Run all tests
 go test -v ./cli/ -run TestName  # Run a single test
 go vet ./...                     # Static analysis
+govulncheck ./...                 # Known vulnerabilities in code and dependencies
 go fmt ./...                     # Format code
 ```
+
+Run tests, vet, and `govulncheck` during reviews and implementation work. If
+`govulncheck` is missing, install it with
+`go install golang.org/x/vuln/cmd/govulncheck@latest`.
 
 Build without self-upgrade capability (for package manager distributions):
 ```bash
@@ -30,7 +35,8 @@ go build -tags noAutoUpgrades \
 Deno tasks (see `deno.jsonc`):
 ```bash
 deno task build          # cross-platform release artifacts into build/
-deno task star-history   # regenerate the README star chart (needs GITHUB_TOKEN)
+deno task release:sign   # sign build/SHA256SUMS with Minisign (requires a signing key)
+deno task star-history   # regenerate the README star chart (token or gh auth login)
 ```
 
 ## Architecture

@@ -24,6 +24,58 @@ I hope you feel comfortable contributing to ZVM and know that I greatly
 appreaciate every contribution. I'm just one person so seeing community members
 care enough to write code for this project warms my heart. Thank you in advance.
 
+## Validation
+
+When reviewing or changing Go code, run `go test ./...`, `go vet ./...`, and
+`govulncheck ./...`. Include the results in your P.R. If you don't have
+`govulncheck`, install it with
+`go install golang.org/x/vuln/cmd/govulncheck@latest`.
+
+## Signing a release
+
+CI builds the archives, checksums, and GitHub provenance attestations. You can
+also sign `SHA256SUMS` locally with [Minisign](https://jedisct1.github.io/minisign/).
+The signed checksums cover every release archive.
+
+Install Minisign and generate a key pair once:
+
+```sh
+minisign -G
+```
+
+This writes `minisign.pub` in the current directory and an encrypted private
+key at `~/.minisign/minisign.key`. Back up the private key and password. Publish
+the public key on your website or in the repository so users can verify your
+signatures. Keep the private key out of the repository and CI.
+
+After CI creates the draft release, download its checksum file, sign it, and
+attach the signature before publishing:
+
+```sh
+tag=v0.9.4
+gh release download "$tag" --repo tristanisham/zvm \
+  --pattern SHA256SUMS --dir build --clobber
+deno task release:sign -t "ZVM $tag release checksums"
+gh release upload "$tag" build/SHA256SUMS.minisig --repo tristanisham/zvm --clobber
+```
+
+Sign the checksum file from the release, since a local rebuild can produce
+different archives. The task prompts for your key password and writes
+`build/SHA256SUMS.minisig`. For a key stored elsewhere, append
+`-s /path/to/minisign.key` to the task. If you rebuild or replace the draft's
+archives, download and sign its new checksum file again.
+
+To verify a download, put the archives, `SHA256SUMS`, and `SHA256SUMS.minisig`
+in the same directory. Use the public key you published:
+
+```sh
+minisign -V -m SHA256SUMS -p /path/to/minisign.pub
+sha256sum --check --ignore-missing SHA256SUMS
+```
+
+Run the checksum check only after the signature verifies. The install scripts
+and `zvm upgrade` don't verify these Minisign signatures yet.
+
 ## AI
 
 Regardless of your thoughts on generative AI, as

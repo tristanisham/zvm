@@ -20,6 +20,9 @@ jobs:
         with:
           deno-version: v2.x
 
+      - name: Test chart authentication
+        run: deno task test:star-history
+
       - name: Generate chart
         env:
           GITHUB_TOKEN: ${{ github.token }}

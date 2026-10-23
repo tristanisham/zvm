@@ -24,7 +24,7 @@
             version = "0.9.4";
 
             src = ./.;
-            vendorHash = "sha256-SJ5ARP7TsRMJ1EGL927isePcJ+zc23TmHm5qFO5JEMA=";
+            vendorHash = "sha256-YIhYRq55WWcXz50DDRgMzzXNKbA16vlfKqlrgziD1qA=";
             subPackages = [ "." ];
 
             tags = [ "noAutoUpgrades" ];

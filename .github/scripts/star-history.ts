@@ -46,9 +46,30 @@ const THEMES: Theme[] = [
   },
 ];
 
+/** Use the same token precedence as gh, including its saved login. */
+export async function githubToken(): Promise<string | undefined> {
+  for (const name of ["GH_TOKEN", "GITHUB_TOKEN"]) {
+    const token = Deno.env.get(name)?.trim();
+    if (token) return token;
+  }
+  try {
+    const result = await new Deno.Command("gh", {
+      args: ["auth", "token", "--hostname", "github.com"],
+      stdout: "piped",
+      stderr: "null",
+    }).output();
+    if (result.success) {
+      return new TextDecoder().decode(result.stdout).trim() || undefined;
+    }
+  } catch (err) {
+    if (!(err instanceof Deno.errors.NotFound)) throw err;
+  }
+  return undefined;
+}
+
 /** Fetches every stargazer timestamp, oldest first. */
-async function fetchStarTimestamps(repo: string): Promise<Date[]> {
-  const token = Deno.env.get("GITHUB_TOKEN");
+export async function fetchStarTimestamps(repo: string): Promise<Date[]> {
+  const token = await githubToken();
   const headers: HeadersInit = {
     // Without this Accept header the API omits `starred_at`.
     "Accept": "application/vnd.github.star+json",
@@ -68,9 +89,12 @@ async function fetchStarTimestamps(repo: string): Promise<Date[]> {
     const response = await fetch(url, { headers });
 
     if (!response.ok) {
+      const hint = response.status === 401
+        ? " Run `gh auth login --hostname github.com` or set a valid GH_TOKEN/GITHUB_TOKEN. Environment tokens override the saved gh login."
+        : "";
       throw new Error(
         `GitHub API returned ${response.status} ${response.statusText} for page ${page}: ${await response
-          .text()}`,
+          .text()}${hint}`,
       );
     }
 
@@ -128,15 +152,16 @@ function niceTicks(max: number, count: number): number[] {
   const normalized = rawStep / magnitude;
   // 2.5 matters: without it a max like 1039 rounds straight from step 2 to
   // step 5, collapsing the axis to three ticks.
-  const step = (normalized <= 1
-    ? 1
-    : normalized <= 2
-    ? 2
-    : normalized <= 2.5
-    ? 2.5
-    : normalized <= 5
-    ? 5
-    : 10) * magnitude;
+  const step =
+    (normalized <= 1
+      ? 1
+      : normalized <= 2
+      ? 2
+      : normalized <= 2.5
+      ? 2.5
+      : normalized <= 5
+      ? 5
+      : 10) * magnitude;
 
   const ticks: number[] = [];
   for (let value = 0; value <= max + step / 2; value += step) {
@@ -180,7 +205,9 @@ function renderSvg(points: Point[], repo: string, theme: Theme): string {
   const y = (stars: number) =>
     margin.top + plotHeight - (stars / yMax) * plotHeight;
 
-  const coords = points.map((p) => `${x(p.time).toFixed(1)},${y(p.stars).toFixed(1)}`);
+  const coords = points.map((p) =>
+    `${x(p.time).toFixed(1)},${y(p.stars).toFixed(1)}`
+  );
   const areaPath = [
     `M ${x(minTime).toFixed(1)},${(margin.top + plotHeight).toFixed(1)}`,
     ...coords.map((c) => `L ${c.replace(",", " ")}`),
@@ -193,7 +220,9 @@ function renderSvg(points: Point[], repo: string, theme: Theme): string {
     return `    <line x1="${margin.left}" y1="${ty}" x2="${
       margin.left + plotWidth
     }" y2="${ty}" stroke="${theme.grid}" stroke-width="1" />
-    <text x="${margin.left - 12}" y="${ty}" fill="${theme.muted}" font-size="12" text-anchor="end" dominant-baseline="middle">${tick}</text>`;
+    <text x="${
+      margin.left - 12
+    }" y="${ty}" fill="${theme.muted}" font-size="12" text-anchor="end" dominant-baseline="middle">${tick}</text>`;
   }).join("\n");
 
   const xTickCount = 6;
@@ -203,7 +232,9 @@ function renderSvg(points: Point[], repo: string, theme: Theme): string {
     const anchor = i === 0 ? "start" : i === xTickCount - 1 ? "end" : "middle";
     return `    <text x="${tx}" y="${
       margin.top + plotHeight + 24
-    }" fill="${theme.muted}" font-size="12" text-anchor="${anchor}">${formatMonth(time)}</text>`;
+    }" fill="${theme.muted}" font-size="12" text-anchor="${anchor}">${
+      formatMonth(time)
+    }</text>`;
   }).join("\n");
 
   const font =
@@ -234,18 +265,20 @@ ${xLabels}
 `;
 }
 
-const dates = await fetchStarTimestamps(REPO);
-const series = buildSeries(dates);
+if (import.meta.main) {
+  const dates = await fetchStarTimestamps(REPO);
+  const series = buildSeries(dates);
 
-await Deno.mkdir(OUT_DIR, { recursive: true });
-for (const theme of THEMES) {
-  const path = `${OUT_DIR}/star-history-${theme.name}.svg`;
-  await Deno.writeTextFile(path, renderSvg(series, REPO, theme));
-  console.log(`wrote ${path}`);
+  await Deno.mkdir(OUT_DIR, { recursive: true });
+  for (const theme of THEMES) {
+    const path = `${OUT_DIR}/star-history-${theme.name}.svg`;
+    await Deno.writeTextFile(path, renderSvg(series, REPO, theme));
+    console.log(`wrote ${path}`);
+  }
+
+  console.log(
+    `${dates.length} stars, ${series.length} plotted points, ${
+      formatMonth(series[0].time)
+    } to ${formatMonth(series[series.length - 1].time)}`,
+  );
 }
-
-console.log(
-  `${dates.length} stars, ${series.length} plotted points, ${
-    formatMonth(series[0].time)
-  } to ${formatMonth(series[series.length - 1].time)}`,
-);

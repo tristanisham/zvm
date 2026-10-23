@@ -50,7 +50,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: "1.26"
+          go-version-file: go.mod
 
       - name: Set up Deno
         uses: denoland/setup-deno@v2
@@ -91,7 +91,11 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          if gh release view "$TAG" > /dev/null 2>&1; then
+          if is_draft=$(gh release view "$TAG" --json isDraft --jq '.isDraft'); then
+            if [ "$is_draft" != true ]; then
+              echo "::error::Refusing to replace assets on published release $TAG"
+              exit 1
+            fi
             gh release upload "$TAG" build/zvm-*.tar build/zvm-*.zip build/SHA256SUMS --clobber
           else
             gh release create "$TAG" build/zvm-*.tar build/zvm-*.zip build/SHA256SUMS \

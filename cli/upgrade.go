@@ -92,6 +92,7 @@ func (z *ZVM) Upgrade() error {
 	)
 
 	_, err = io.Copy(io.MultiWriter(tempDownload, pbar), resp.Body)
+	stopProgressBar(pbar, err == nil)
 	if err != nil {
 		return err
 	}

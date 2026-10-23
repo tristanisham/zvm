@@ -54,7 +54,9 @@ const (
 // directories, which must never be listed, used, aliased or uninstalled as a
 // Zig version.
 func isReservedName(name string) bool {
-	switch name {
+	// Case-insensitive, like checkReservedVersion: on macOS and Windows
+	// "STORE" names the same directory as "store".
+	switch strings.ToLower(name) {
 	case "bin", "self", storeDirName:
 		return true
 	}

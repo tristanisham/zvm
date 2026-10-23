@@ -57,6 +57,12 @@ var (
 	// Per-file problems (unsupported hard links, cross-device links, permission
 	// errors) never produce it: those files are left untouched and reported.
 	ErrDedupeFailed = errors.New("dedupe failed")
+	// ErrUnknownShell is returned when `zvm env` cannot tell which shell to emit code for.
+	ErrUnknownShell = errors.New("unknown shell")
+	// ErrNotMultishellLink is returned when ZVM_MULTISHELL_PATH is set but does not name a per-shell link created by `zvm env`.
+	ErrNotMultishellLink = errors.New("not a zvm per-shell link")
+	// ErrNoMultishellDir is returned when no directory for per-shell links can be determined.
+	ErrNoMultishellDir = errors.New("cannot determine per-shell link directory")
 )
 
 // Handler-directive errors.

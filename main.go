@@ -18,6 +18,7 @@ import (
 	"github.com/tristanisham/zvm/cli"
 	"github.com/tristanisham/zvm/cli/meta"
 	opts "github.com/urfave/cli/v3"
+	"golang.org/x/mod/semver"
 
 	"github.com/charmbracelet/log"
 )
@@ -215,6 +216,11 @@ var zvmApp = &opts.Command{
 					Name:  "sync",
 					Usage: "sync your current version of Zig with the repository",
 				},
+				&opts.BoolFlag{
+					Name:    "global",
+					Aliases: []string{"g"},
+					Usage:   "change the global default even in a shell set up with `zvm env`",
+				},
 			},
 			Action: func(ctx context.Context, cmd *opts.Command) error {
 				if cmd.Bool("sync") {
@@ -240,12 +246,20 @@ var zvmApp = &opts.Command{
 
 					}
 
-					resolvedVer, err := zvm.Use(versionArg)
+					global := cmd.Bool("global")
+					resolvedVer, perShell, err := zvm.UseVersion(versionArg, global)
 					if err != nil {
 						return err
 					}
 
-					fmt.Printf("Now using Zig %s\n", resolvedVer)
+					switch {
+					case perShell:
+						fmt.Printf("Now using Zig %s in this shell only (run `zvm use --global %s` to change the default)\n", resolvedVer, resolvedVer)
+					case global && os.Getenv(cli.MultishellEnv) != "":
+						fmt.Printf("Now using Zig %s as the global default (this shell keeps its own version; run `zvm use %s` to switch it)\n", resolvedVer, resolvedVer)
+					default:
+						fmt.Printf("Now using Zig %s\n", resolvedVer)
+					}
 					return nil
 				}
 			},
@@ -271,10 +285,16 @@ var zvmApp = &opts.Command{
 							return fmt.Errorf("version %q is not a known Zig version and no minimum_zig_version found: %w", versionArg, err)
 						}
 						log.Debug("falling back to minimum_zig_version", "version", versionArg, "minZig", minZig)
-						redoneArgs := []string{cmd.Args().First()}
-						redoneArgs = append(redoneArgs, cmds...)
-						log.Debug("running with minZig", "minZig", minZig, "args", redoneArgs)
-						return zvm.Run(minZig, redoneArgs)
+						// Without an explicit version, the first argument is
+						// part of the Zig command. Preserve its original spelling.
+						normalizedVersion := versionArg
+						if strings.HasPrefix(normalizedVersion, ".") {
+							normalizedVersion = "0" + normalizedVersion
+						}
+						if versionArg != "" && !semver.IsValid("v"+normalizedVersion) {
+							cmds = cmd.Args().Slice()
+						}
+						return zvm.Run(minZig, cmds)
 					}
 					return err
 				}
@@ -404,8 +424,9 @@ var zvmApp = &opts.Command{
 		{
 			Name:  "clean",
 			Usage: "Remove build artifacts (good if you're a scrub)",
-			Description: "Removes leftover download archives, and dedupe-store entries\n" +
-				"no installed version links to any more.",
+			Description: "Removes downloaded archives from the ZVM base directory, dedupe-store\n" +
+				"entries no installed version links to any more, and per-shell links\n" +
+				"(from `zvm env`) that are over a week old and whose shell has exited.",
 			Action: func(ctx context.Context, cmd *opts.Command) error {
 				if err := zvm.Clean(); err != nil {
 					return err
@@ -416,6 +437,49 @@ var zvmApp = &opts.Command{
 				}
 				if pruned.Removed > 0 {
 					fmt.Printf("Removed %d unreferenced store files (%s)\n", pruned.Removed, cli.FormatBytes(pruned.BytesFreed))
+				}
+				n, err := cli.PruneMultishells(cli.MultishellMaxAge)
+				if n > 0 {
+					fmt.Printf("Removed %d stale per-shell link(s)\n", n)
+				}
+				return err
+			},
+		},
+		{
+			Name:  "env",
+			Usage: "Print shell code that gives this shell its own Zig version",
+			Description: "Creates a per-shell link to the current global Zig version, exports it as\n" +
+				"ZVM_MULTISHELL_PATH and prepends it to PATH. Afterwards `zvm use` switches\n" +
+				"only that shell; `zvm use --global` changes the default.\n" +
+				"With --use-on-cd, entering a directory switches to the version declared by\n" +
+				"the nearest build.zig (`//! zvm-lock: <version>`) or build.zig.zon\n" +
+				"(`.minimum_zig_version`) in it or any parent.\n" +
+				"Example: eval \"$(zvm env --shell bash --use-on-cd)\"          # bash, zsh\n" +
+				"         zvm env --shell fish --use-on-cd | source            # fish\n" +
+				"         zvm env --shell powershell --use-on-cd | Out-String | Invoke-Expression",
+			Flags: []opts.Flag{
+				&opts.StringFlag{
+					Name:  "shell",
+					Usage: "shell to emit code for: bash, zsh, fish, or powershell (default: from $SHELL)",
+				},
+				&opts.BoolFlag{
+					Name:  "use-on-cd",
+					Usage: "switch Zig automatically when entering a directory with a version file",
+				},
+			},
+			Action: func(ctx context.Context, cmd *opts.Command) error {
+				// This output is eval'd by the shell, so errors must go to
+				// stderr: anything on stdout would be run as shell code.
+				shell, err := cli.DetectShell()
+				if name := cmd.String("shell"); name != "" {
+					shell, err = cli.NormalizeShell(name)
+				}
+				if err == nil {
+					err = zvm.Env(os.Stdout, shell, cmd.Bool("use-on-cd"), os.Getppid())
+				}
+				if err != nil {
+					fmt.Fprintf(os.Stderr, "zvm env: %v\n", err)
+					return errors.Join(cli.ErrFailQuietly, err)
 				}
 				return nil
 			},
@@ -500,6 +564,15 @@ var zvmApp = &opts.Command{
 					}
 					fmt.Println("  note:", p)
 				}
+				return nil
+			},
+		},
+		{
+			Name:   cli.OnCdCommand,
+			Usage:  "Internal: called by the `zvm env --use-on-cd` hook",
+			Hidden: true,
+			Action: func(ctx context.Context, cmd *opts.Command) error {
+				zvm.UseOnCd(os.Stdout, os.Stderr)
 				return nil
 			},
 		},
@@ -639,6 +712,14 @@ func main() {
 		checkUpgradeDisabled = true
 	}
 
+	// `zvm env` output is eval'd by the shell and the cd hook runs on every
+	// directory change: neither may wait on the network or print a notice.
+	// Only the subcommand counts: `zvm run 0.15.1 env` runs `zig env` and
+	// should still check for upgrades.
+	if sub := subcommand(os.Args[1:]); sub == "env" || sub == cli.OnCdCommand {
+		checkUpgradeDisabled = true
+	}
+
 	log.Debug("Automatic Upgrade Checker", "disabled", checkUpgradeDisabled, "noAutoUpgrades", meta.NoAutoUpgrades)
 
 	// Upgrade
@@ -752,4 +833,20 @@ func completeZVMCommands(ctx context.Context, cmd *opts.Command) {
 			fmt.Fprintf(cmd.Root().Writer, "%s:%s\n", alias, command.Usage)
 		}
 	}
+}
+
+// subcommand returns the name of the command in args (os.Args[1:]), skipping
+// global flags and the value of --color.
+func subcommand(args []string) string {
+	for i := 0; i < len(args); i++ {
+		arg := args[i]
+		switch {
+		case arg == "--color" || arg == "-color":
+			i++ // skip its value
+		case strings.HasPrefix(arg, "-"):
+		default:
+			return arg
+		}
+	}
+	return ""
 }

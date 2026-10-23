@@ -251,8 +251,14 @@ func (s Settings) save() error {
 		return fmt.Errorf("unable to create settings directory: %w", err)
 	}
 
-	if err := os.WriteFile(s.path, outSettings, 0755); err != nil {
+	if err := os.WriteFile(s.path, outSettings, 0o644); err != nil {
 		return fmt.Errorf("unable to create settings.json file %w", err)
+	}
+
+	// os.WriteFile keeps the mode of an existing file, so correct files left
+	// behind by older releases that wrote settings.json as 0755.
+	if err := os.Chmod(s.path, 0o644); err != nil {
+		return fmt.Errorf("unable to set settings.json permissions %w", err)
 	}
 
 	return nil

@@ -69,3 +69,28 @@ func Link(oldname, newname string) error {
 
 	return nil
 }
+
+// Relink points the junction at newname to oldname, creating it if it does
+// not exist. Windows cannot rename a junction over an existing one, so the old
+// junction is removed first (os.Remove deletes the reparse point only, never
+// the target's contents) and a new one is created; another process may briefly
+// observe the link missing. An existing entry at newname that is not a link
+// is never replaced.
+func Relink(oldname, newname string) error {
+	if fi, err := os.Lstat(newname); err == nil {
+		if !IsLink(fi) {
+			return &os.LinkError{Op: "relink", Old: oldname, New: newname, Err: os.ErrExist}
+		}
+		if err := os.Remove(newname); err != nil {
+			return err
+		}
+	}
+	return Link(oldname, newname)
+}
+
+// IsLink reports whether fi (from os.Lstat) describes a link created by Link.
+// Since Go 1.23, os.Lstat reports junctions (mount points) as ModeIrregular
+// rather than ModeSymlink, so both are accepted.
+func IsLink(fi os.FileInfo) bool {
+	return fi.Mode()&(os.ModeSymlink|os.ModeIrregular) != 0
+}

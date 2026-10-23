@@ -1,7 +1,7 @@
 .\" Copyright 2026 Tristan Isham. All rights reserved.
-.TH ZVM-CLEAN 1 "August 2026" "ZVM" "User Commands"
+.TH ZVM-CLEAN 1 "October 2026" "ZVM" "User Commands"
 .SH NAME
-zvm-clean \- remove downloaded ZVM build archives
+zvm-clean \- remove downloaded ZVM build archives and stale per-shell links
 .SH SYNOPSIS
 .B zvm clean
 .SH DESCRIPTION
@@ -18,7 +18,14 @@ Also garbage-collect the dedupe store: files in
 whose hard-link count is 1 are no longer linked from any installed version and
 are removed. Removing a store file never removes data an installed version
 still links to.
+.PP
+Also remove per-shell links created by
+.BR zvm-env (1)
+that are more than a week old and whose shell is no longer running.
+Only links whose names match ZVM's naming scheme are considered, and links
+are removed without being followed, so nothing they point to is touched.
 .SH SEE ALSO
 .BR zvm (1),
 .BR zvm-dedupe (1),
+.BR zvm-env (1),
 .BR zvm-uninstall (1)

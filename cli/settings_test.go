@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
+	"runtime"
 	"testing"
 )
 
@@ -55,6 +56,39 @@ func TestAutoDedupeSetting(t *testing.T) {
 		if persisted.AutoDedupe != want {
 			t.Fatalf("persisted AutoDedupe = %v, want %v", persisted.AutoDedupe, want)
 		}
+	}
+}
+
+func TestSettingsSaveUsesReadableFileMode(t *testing.T) {
+	settingsPath := filepath.Join(t.TempDir(), "settings.json")
+	settings := Settings{path: settingsPath}
+
+	if err := settings.save(); err != nil {
+		t.Fatalf("save settings: %v", err)
+	}
+
+	info, err := os.Stat(settingsPath)
+	if err != nil {
+		t.Fatalf("stat settings: %v", err)
+	}
+	if got := info.Mode().Perm(); runtime.GOOS != "windows" && got != 0o644 {
+		t.Fatalf("settings mode = %o, want 644", got)
+	}
+
+	// A file left executable by an older release is corrected in place.
+	if err := os.Chmod(settingsPath, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := settings.save(); err != nil {
+		t.Fatalf("save settings: %v", err)
+	}
+
+	info, err = os.Stat(settingsPath)
+	if err != nil {
+		t.Fatalf("stat settings: %v", err)
+	}
+	if got := info.Mode().Perm(); runtime.GOOS != "windows" && got != 0o644 {
+		t.Fatalf("settings mode after rewrite = %o, want 644", got)
 	}
 }
 

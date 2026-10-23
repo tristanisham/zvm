@@ -49,6 +49,7 @@ func Initialize() *ZVM {
 	if err := zvm.loadSettings(); err != nil {
 		if errors.Is(err, ErrNoSettings) {
 			zvm.Settings = DefaultSettings
+			zvm.Settings.path = filepath.Join(zvmPath, "settings.json")
 
 			outSettings, err := json.MarshalIndent(&zvm.Settings, "", "    ")
 			if err != nil {

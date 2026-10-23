@@ -88,3 +88,10 @@ func printSettingJSON(out io.Writer, v any, raw bool) error {
 	_, err = fmt.Fprintln(out, string(data))
 	return err
 }
+
+func plural(n int, one, many string) string {
+	if n == 1 {
+		return one
+	}
+	return many
+}

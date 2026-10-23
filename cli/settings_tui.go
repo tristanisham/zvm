@@ -1,3 +1,5 @@
+//go:build !plan9
+
 // Copyright 2026 Tristan Isham. All rights reserved.
 // Use of this source code is governed by the MIT
 // license that can be found in the LICENSE file.
@@ -384,13 +386,6 @@ func formatSettingValue(v any) string {
 		return fmt.Sprintf("%q", s)
 	}
 	return fmt.Sprint(v)
-}
-
-func plural(n int, one, many string) string {
-	if n == 1 {
-		return one
-	}
-	return many
 }
 
 // RunSettingsTUI opens the interactive settings editor.

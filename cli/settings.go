@@ -16,6 +16,10 @@ import (
 	"github.com/tristanisham/clr"
 )
 
+// Settings holds the persisted ZVM configuration. When adding or restructuring
+// fields, re-evaluate the settings command's field discovery, path parsing,
+// validation, and editor, along with their tests. They currently assume a flat
+// object of strings and booleans; nested fields need explicit support.
 type Settings struct {
 	path               string
 	problems           []SettingProblem // invalid entries found when settings.json was loaded

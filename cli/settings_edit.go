@@ -282,7 +282,7 @@ func (s *Settings) Save() error {
 // Invalid entries leave the field at its current value.
 func decodeSettings(data []byte, s *Settings) []SettingProblem {
 	var raw map[string]json.RawMessage
-	if err := json.Unmarshal(data, &raw); err != nil {
+	if err := decodeNonNullJSON(data, &raw); err != nil {
 		return []SettingProblem{{Err: fmt.Errorf("%w: %s", ErrInvalidSettingsFile, describeJSONError(data, err))}}
 	}
 
@@ -296,7 +296,7 @@ func decodeSettings(data []byte, s *Settings) []SettingProblem {
 		}
 
 		target := reflect.New(reflect.TypeOf(s).Elem().Field(f.index).Type)
-		if err := json.Unmarshal(msg, target.Interface()); err != nil {
+		if err := decodeNonNullJSON(msg, target.Interface()); err != nil {
 			problems = append(problems, SettingProblem{Key: f.Key, Err: fmt.Errorf("%w: expected a %s, got %s", ErrInvalidSetting, kindName(f.Kind), msg)})
 			continue
 		}
@@ -323,6 +323,15 @@ func decodeSettings(data []byte, s *Settings) []SettingProblem {
 		problems = append(problems, SettingProblem{Key: key, Err: fmt.Errorf("%w (it will be dropped the next time settings are saved)", ErrUnknownSetting)})
 	}
 	return problems
+}
+
+// JSON null is valid syntax, but neither a settings object nor a setting value.
+// encoding/json accepts it for maps, strings and booleans without a type error.
+func decodeNonNullJSON(data []byte, target any) error {
+	if bytes.Equal(bytes.TrimSpace(data), []byte("null")) {
+		return errors.New("null is not a JSON object or a setting value")
+	}
+	return json.Unmarshal(data, target)
 }
 
 // WarnProblems logs the invalid entries found when settings.json was loaded.

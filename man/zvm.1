@@ -88,9 +88,14 @@ See
 .BR zvm-uninstall (1).
 .TP
 .B clean
-Remove downloaded build archives from the ZVM base directory.
+Remove downloaded build archives and unreferenced dedupe-store files.
 See
 .BR zvm-clean (1).
+.TP
+.B dedupe
+Hard-link files that are identical across installed Zig versions.
+See
+.BR zvm-dedupe (1).
 .TP
 .B upgrade
 Upgrade ZVM itself when self-upgrades are enabled in the build.
@@ -201,6 +206,11 @@ Link to the currently selected Zig executable on Unix-like systems.
 .TP
 .I ~/.zvm/bin/zls
 Link to the selected ZLS executable, when installed.
+.TP
+.I ~/.zvm/store/
+Content-addressed hard links created by
+.BR zvm-dedupe (1).
+Never a Zig version.
 .PP
 When
 .B ZVM_PATH

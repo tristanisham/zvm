@@ -78,17 +78,15 @@ func (z *ZVM) GetInstalledVersions() ([]string, error) {
 
 	versions := make([]string, 0, len(dir))
 	for _, key := range dir {
-		if key.IsDir() {
-			switch key.Name() {
-			case "bin", "self":
-				continue
-			default:
-				if multishellDir != "" && filepath.Join(z.baseDir, key.Name()) == filepath.Clean(multishellDir) {
-					continue
-				}
-				versions = append(versions, key.Name())
-			}
+		// bin, self and the dedupe store are ZVM's own directories, not
+		// Zig versions; see isReservedName.
+		if !key.IsDir() || isReservedName(key.Name()) {
+			continue
 		}
+		if multishellDir != "" && filepath.Join(z.baseDir, key.Name()) == filepath.Clean(multishellDir) {
+			continue
+		}
+		versions = append(versions, key.Name())
 	}
 	return versions, nil
 }

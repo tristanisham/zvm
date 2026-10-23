@@ -424,11 +424,19 @@ var zvmApp = &opts.Command{
 		{
 			Name:  "clean",
 			Usage: "Remove build artifacts (good if you're a scrub)",
-			Description: "Removes downloaded archives from the ZVM base directory and per-shell\n" +
-				"links (from `zvm env`) that are over a week old and whose shell has exited.",
+			Description: "Removes downloaded archives from the ZVM base directory, dedupe-store\n" +
+				"entries no installed version links to any more, and per-shell links\n" +
+				"(from `zvm env`) that are over a week old and whose shell has exited.",
 			Action: func(ctx context.Context, cmd *opts.Command) error {
 				if err := zvm.Clean(); err != nil {
 					return err
+				}
+				pruned, err := zvm.PruneStore()
+				if err != nil {
+					return err
+				}
+				if pruned.Removed > 0 {
+					fmt.Printf("Removed %d unreferenced store files (%s)\n", pruned.Removed, cli.FormatBytes(pruned.BytesFreed))
 				}
 				n, err := cli.PruneMultishells(cli.MultishellMaxAge)
 				if n > 0 {
@@ -472,6 +480,89 @@ var zvmApp = &opts.Command{
 				if err != nil {
 					fmt.Fprintf(os.Stderr, "zvm env: %v\n", err)
 					return errors.Join(cli.ErrFailQuietly, err)
+				}
+				return nil
+			},
+		},
+		{
+			Name:      "dedupe",
+			Usage:     "Hard-link identical files shared between installed Zig versions",
+			ArgsUsage: " [ZIG VERSION...]",
+			Description: "Hashes every regular file in the given installed versions (default: all)\n" +
+				"and replaces duplicates with hard links into ~/.zvm/store, so files that\n" +
+				"are identical across versions are stored on disk once. Files are only\n" +
+				"merged when content, permissions and owner all match. Safe to re-run\n" +
+				"and to interrupt. Files that cannot be hard-linked are left alone.\n\n" +
+				"Note: a deduped file is shared, so editing one in place edits it in\n" +
+				"every version that shares it.",
+			Flags: []opts.Flag{
+				&opts.StringFlag{
+					Name:  "auto",
+					Usage: "set whether `zvm install` dedupes new versions automatically (on/off), then exit",
+				},
+			},
+			Action: func(ctx context.Context, cmd *opts.Command) error {
+				if cmd.IsSet("auto") {
+					var enabled bool
+					switch strings.ToLower(cmd.String("auto")) {
+					case "on", "yes", "enabled", "y", "true":
+						enabled = true
+					case "off", "no", "disabled", "n", "false":
+						enabled = false
+					default:
+						return fmt.Errorf("%w: --auto expects on or off", cli.ErrInvalidInput)
+					}
+					if err := zvm.Settings.SetAutoDedupe(enabled); err != nil {
+						return err
+					}
+					if enabled {
+						fmt.Println("Auto-dedupe after install: ON. Run `zvm dedupe` once to fold in versions installed earlier.")
+					} else {
+						fmt.Println("Auto-dedupe after install: OFF")
+					}
+					return nil
+				}
+
+				versions := make([]string, 0, cmd.Args().Len())
+				for _, arg := range cmd.Args().Slice() {
+					v, err := resolveVersionArg(ctx, arg)
+					if err != nil {
+						return err
+					}
+					versions = append(versions, v)
+				}
+
+				report, err := zvm.Dedupe(versions)
+				if err != nil {
+					return err
+				}
+				pruned, err := zvm.PruneStore()
+				if err != nil {
+					return err
+				}
+
+				fmt.Printf("Deduped %d version(s): %s\n", len(report.Versions), strings.Join(report.Versions, ", "))
+				fmt.Printf("  files scanned:         %d\n", report.Scanned)
+				fmt.Printf("  added to store:        %d\n", report.Stored)
+				fmt.Printf("  replaced by hard link: %d\n", report.Linked)
+				fmt.Printf("  already deduped:       %d\n", report.AlreadyLinked)
+				fmt.Printf("  ignored (empty/special): %d\n", report.Ignored)
+				fmt.Printf("  left untouched:        %d\n", report.Skipped)
+				if pruned.Removed > 0 {
+					fmt.Printf("  unreferenced store files removed: %d\n", pruned.Removed)
+				}
+				fmt.Printf("Disk used by versions + store: %s -> %s (saved %s)\n",
+					cli.FormatBytes(report.BytesBefore), cli.FormatBytes(report.BytesAfter-pruned.BytesFreed),
+					cli.FormatBytes(report.BytesSaved()+pruned.BytesFreed))
+				fmt.Printf("  exact bytes: %d -> %d\n", report.BytesBefore, report.BytesAfter-pruned.BytesFreed)
+
+				const maxProblems = 20
+				for i, p := range report.Problems {
+					if i == maxProblems {
+						fmt.Printf("  ... and %d more (run with ZVM_DEBUG=1 to see all)\n", len(report.Problems)-maxProblems)
+						break
+					}
+					fmt.Println("  note:", p)
 				}
 				return nil
 			},

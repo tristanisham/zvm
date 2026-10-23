@@ -80,6 +80,10 @@ func confirmUnverifiedDownload(artifact string) error {
 // It handles checking for existing installations, verifying checksums,
 // and extracting the downloaded bundle.
 func (z *ZVM) Install(version string, force bool, skipShasum bool, mirror bool, skipUse bool) (string, error) {
+	if isReservedName(version) {
+		return version, fmt.Errorf("%w: %q", ErrReservedName, version)
+	}
+
 	if err := os.MkdirAll(z.baseDir, 0755); err != nil {
 		return version, err
 	}
@@ -232,6 +236,11 @@ func (z *ZVM) Install(version string, force bool, skipShasum bool, mirror bool, 
 	// The base directory where all Zig files for the appropriate version are installed
 	// installedVersionPath := filepath.Join(z.zvmBaseDir, version)
 	fmt.Println("Extracting bundle...")
+	unlock, err := z.lockStore()
+	if err != nil {
+		return version, err
+	}
+	defer unlock()
 
 	if err := ExtractBundle(tempPath, z.baseDir); err != nil {
 		log.Fatal(err)
@@ -278,6 +287,11 @@ func (z *ZVM) Install(version string, force bool, skipShasum bool, mirror bool, 
 
 	// I figure nobody wants crap just sitting around taking up valuable bytes.
 	_ = z.Clean()
+	unlock()
+
+	if z.Settings.AutoDedupe {
+		z.autoDedupe(version)
+	}
 
 	return version, nil
 }
@@ -438,6 +452,10 @@ func (z *ZVM) SelectZlsVersion(version string, compatMode string) (string, strin
 
 // InstallZls downloads and installs the Zig Language Server (ZLS) for the specified Zig version.
 func (z *ZVM) InstallZls(requestedVersion string, compatMode string, force bool, skipShasum bool, skipUse bool) error {
+	if isReservedName(requestedVersion) {
+		return fmt.Errorf("%w: %q", ErrReservedName, requestedVersion)
+	}
+
 	fmt.Println("Determining installed Zig version...")
 
 	// make sure dir exists
@@ -561,6 +579,11 @@ func (z *ZVM) InstallZls(requestedVersion string, compatMode string, force bool,
 	}
 
 	fmt.Println("Extracting ZLS bundle...")
+	unlock, err := z.lockStore()
+	if err != nil {
+		return err
+	}
+	defer unlock()
 
 	zlsTempDir, err := os.MkdirTemp(z.baseDir, "zls-*")
 	if err != nil {
@@ -834,6 +857,10 @@ func untarXZ(in, out string) error {
 				return fmt.Errorf("failed to create parent directory: %w", err)
 			}
 
+			if err := unlinkExisting(root, target); err != nil {
+				return err
+			}
+
 			outFile, err := root.OpenFile(target, os.O_CREATE|os.O_RDWR|os.O_TRUNC, header.FileInfo().Mode())
 			if err != nil {
 				return fmt.Errorf("failed to create file: %w", err)
@@ -941,6 +968,11 @@ func unzipSource(source, destination string) error {
 			return fmt.Errorf("failed to open file %q: %w", f.Name, err)
 		}
 
+		if err := unlinkExisting(root, name); err != nil {
+			src.Close()
+			return err
+		}
+
 		outFile, err := root.OpenFile(name, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, perm)
 		if err != nil {
 			src.Close()
@@ -965,6 +997,20 @@ func unzipSource(source, destination string) error {
 		log.Debug("unzipSource", "duration", time.Since(timer))
 	}
 
+	return nil
+}
+
+// unlinkExisting removes a regular file about to be overwritten during
+// extraction. Opening it with O_TRUNC instead would write through a hard
+// link — into the dedupe store and every other version sharing that file.
+func unlinkExisting(root *os.Root, name string) error {
+	info, err := root.Lstat(name)
+	if err != nil || !info.Mode().IsRegular() {
+		return nil
+	}
+	if err := root.Remove(name); err != nil {
+		return fmt.Errorf("failed to replace existing file %q: %w", name, err)
+	}
 	return nil
 }
 

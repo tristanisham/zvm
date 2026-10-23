@@ -25,6 +25,9 @@ type Settings struct {
 	UseColor           bool   `json:"useColor"`
 	AlwaysForceInstall bool   `json:"alwaysForceInstall"`
 	AlwaysInstallZLS   bool   `json:"alwaysInstallZLS"`
+	// AutoDedupe hard-links a freshly installed version's files into the
+	// content-addressed store (see store.go) right after `zvm install`.
+	AutoDedupe bool `json:"autoDedupe"`
 }
 
 // MachVersionMapUrl is the version map published by the Mach engine project,
@@ -41,6 +44,7 @@ var DefaultSettings = Settings{
 	UseColor:           true,
 	AlwaysForceInstall: false,
 	AlwaysInstallZLS:   false,
+	AutoDedupe:         false,
 }
 
 // UseMirrorList returns true if the mirror list URL is not set to "disabled".
@@ -130,6 +134,13 @@ func (s *Settings) SetAlwaysInstallZLS(alwaysInstall bool) {
 // ToggleAlwaysInstallZls toggles whether ZLS should always be installed and saves the configuration.
 func (s *Settings) ToggleAlwaysInstallZls() {
 	s.SetAlwaysInstallZLS(!s.AlwaysInstallZLS)
+}
+
+// SetAutoDedupe sets whether `zvm install` dedupes the new version into the
+// store and saves the configuration.
+func (s *Settings) SetAutoDedupe(enabled bool) error {
+	s.AutoDedupe = enabled
+	return s.save()
 }
 
 // SetMirrorListUrl sets the mirror list URL and saves the configuration.

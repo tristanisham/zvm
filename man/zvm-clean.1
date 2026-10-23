@@ -13,6 +13,12 @@ or
 from the top level of the ZVM base directory.
 Installed Zig version directories are not removed.
 .PP
+Also garbage-collect the dedupe store: files in
+.I ~/.zvm/store
+whose hard-link count is 1 are no longer linked from any installed version and
+are removed. Removing a store file never removes data an installed version
+still links to.
+.PP
 Also remove per-shell links created by
 .BR zvm-env (1)
 that are more than a week old and whose shell is no longer running.
@@ -20,5 +26,6 @@ Only links whose names match ZVM's naming scheme are considered, and links
 are removed without being followed, so nothing they point to is touched.
 .SH SEE ALSO
 .BR zvm (1),
+.BR zvm-dedupe (1),
 .BR zvm-env (1),
 .BR zvm-uninstall (1)

@@ -26,7 +26,7 @@ func validateVersionTarget(version, action string) error {
 func checkReservedVersion(version, action string) error {
 	// These entries belong to ZVM itself, not to a Zig installation.
 	switch strings.ToLower(version) {
-	case "settings.json", "self", "bin":
+	case "settings.json", "self", "bin", storeDirName:
 		return fmt.Errorf("%w: cannot %s reserved entry %q", ErrInvalidInput, action, version)
 	}
 	return nil
@@ -67,6 +67,16 @@ func (z *ZVM) Uninstall(version string) error {
 	if err := checkReservedVersion(version, "uninstall"); err != nil {
 		return err
 	}
+	// Never remove the dedupe store either, even though it sits next to the
+	// versions in the base directory.
+	if isReservedName(version) {
+		return fmt.Errorf("%w: %q", ErrReservedName, version)
+	}
+	unlock, err := z.lockStore()
+	if err != nil {
+		return err
+	}
+	defer unlock()
 
 	root, err := os.OpenRoot(z.baseDir)
 	if err != nil {
@@ -83,6 +93,8 @@ func (z *ZVM) Uninstall(version string) error {
 			return fmt.Errorf("%w: %q is not a Zig installation (no zig executable inside)", ErrInvalidInput, version)
 		}
 		activeBin := z.isBinForVersion(version, info)
+		// Deduped files are hard links: removing them only drops this
+		// version's names. Other versions and the store keep their data.
 		if err := root.RemoveAll(version); err != nil {
 			return err
 		}
@@ -92,6 +104,14 @@ func (z *ZVM) Uninstall(version string) error {
 			}
 		}
 		fmt.Printf("✔ Uninstalled %s\nRun `zvm ls` to view installed versions.\n", version)
+		unlock()
+
+		// Store entries only this version referenced are now unreferenced.
+		if pruned, err := z.PruneStore(); err != nil {
+			log.Warn("could not prune dedupe store", "err", err)
+		} else if pruned.Removed > 0 {
+			fmt.Printf("Freed %s from the dedupe store (%d files no longer shared).\n", FormatBytes(pruned.BytesFreed), pruned.Removed)
+		}
 		return nil
 	}
 	if !errors.Is(err, os.ErrNotExist) {

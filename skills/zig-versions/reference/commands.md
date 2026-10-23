@@ -80,8 +80,9 @@ Aliases: `zvm rm`
 
 Remove build artifacts (good if you're a scrub)
 
-Removes downloaded archives from the ZVM base directory and per-shell
-links (from `zvm env`) that are over a week old and whose shell has exited.
+Removes downloaded archives from the ZVM base directory, dedupe-store
+entries no installed version links to any more, and per-shell links
+(from `zvm env`) that are over a week old and whose shell has exited.
 
 ## `zvm env`
 
@@ -99,6 +100,23 @@ Example: eval "$(zvm env --shell bash --use-on-cd)"          # bash, zsh
 
 - `--shell` — shell to emit code for: bash, zsh, fish, or powershell (default: from $SHELL)
 - `--use-on-cd` — switch Zig automatically when entering a directory with a version file
+
+## `zvm dedupe`
+
+Hard-link identical files shared between installed Zig versions
+
+Arguments: `[ZIG VERSION...]`
+
+Hashes every regular file in the given installed versions (default: all)
+and replaces duplicates with hard links into ~/.zvm/store, so files that
+are identical across versions are stored on disk once. Files are only
+merged when content, permissions and owner all match. Safe to re-run
+and to interrupt. Files that cannot be hard-linked are left alone.
+
+Note: a deduped file is shared, so editing one in place edits it in
+every version that shares it.
+
+- `--auto` — set whether `zvm install` dedupes new versions automatically (on/off), then exit
 
 ## `zvm upgrade`
 

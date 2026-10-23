@@ -523,7 +523,7 @@ func TestEnvScriptQuoting(t *testing.T) {
 func TestSetShellLinkRejectsInvalidVersions(t *testing.T) {
 	z, msDir := setupMultishell(t, "0.15.1")
 	link := filepath.Join(msDir, "1_1_00000000")
-	for _, ver := range []string{"x/../../evil", "../evil", `a\b`, "self", "bin", "settings.json", ""} {
+	for _, ver := range []string{"x/../../evil", "../evil", `a\b`, "self", "bin", "settings.json", "store", "STORE", ""} {
 		if err := z.setShellLink(link, ver); err == nil {
 			t.Errorf("setShellLink(%q) succeeded, want an error", ver)
 		}

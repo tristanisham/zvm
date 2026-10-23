@@ -454,8 +454,8 @@ var zvmApp = &opts.Command{
 				"With --use-on-cd, entering a directory switches to the version declared by\n" +
 				"the nearest build.zig (`//! zvm-lock: <version>`) or build.zig.zon\n" +
 				"(`.minimum_zig_version`) in it or any parent.\n" +
-				"Example: eval \"$(zvm env --shell bash --use-on-cd)\"          # bash, zsh\n" +
-				"         zvm env --shell fish --use-on-cd | source            # fish\n" +
+				"Example: eval \"$(zvm env --shell bash --use-on-cd)\"         # bash, zsh\n" +
+				"         zvm env --shell fish --use-on-cd | source          # fish\n" + // This is an alignment hack for running `zvm env --help`.
 				"         zvm env --shell powershell --use-on-cd | Out-String | Invoke-Expression",
 			Flags: []opts.Flag{
 				&opts.StringFlag{

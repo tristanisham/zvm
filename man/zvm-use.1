@@ -1,9 +1,10 @@
 .\" Copyright 2026 Tristan Isham. All rights reserved.
-.TH ZVM-USE 1 "August 2026" "ZVM" "User Commands"
+.TH ZVM-USE 1 "October 2026" "ZVM" "User Commands"
 .SH NAME
 zvm-use \- select the active Zig version
 .SH SYNOPSIS
 .B zvm use
+.RB [ --global ]
 .I version
 .br
 .B zvm use --sync
@@ -14,6 +15,14 @@ ZVM's
 directory.
 The version may be exact, shorthand, or an alias; see
 .BR zvm (1).
+.PP
+In a shell set up with
+.BR zvm-env (1)
+(that is, while
+.B ZVM_MULTISHELL_PATH
+names a per-shell link), only that shell's link is changed and
+.I bin
+is left alone.
 .PP
 When no version is supplied, ZVM attempts to read
 .B minimum_zig_version
@@ -28,14 +37,29 @@ Read a
 directive from
 .I build.zig
 in the current directory and select its version.
+.TP
+.BR -g ", " --global
+Change the global default
+.RI ( ~/.zvm/bin )
+even in a shell set up with
+.BR zvm-env (1).
+That shell keeps its own version until it runs
+.B zvm use
+again.
+Without a per-shell link,
+.B --global
+behaves exactly like plain
+.BR "zvm use" .
 .SH EXAMPLES
 .EX
 zvm use 0.14.1
 zvm use stable
 zvm use --sync
+zvm use --global 0.15.2
 .EE
 .SH SEE ALSO
 .BR zvm (1),
+.BR zvm-env (1),
 .BR zvm-install (1),
 .BR zvm-list (1),
 .BR zvm-alias (1)

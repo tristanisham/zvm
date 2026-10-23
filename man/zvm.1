@@ -56,6 +56,12 @@ Select an installed Zig version.
 See
 .BR zvm-use (1).
 .TP
+.B env
+Print shell code that gives the current shell its own Zig version, optionally
+switching automatically on directory change.
+See
+.BR zvm-env (1).
+.TP
 .B run
 Run Zig from a selected version without changing the current version.
 See
@@ -138,6 +144,19 @@ User-defined aliases may be used where version arguments are accepted.
 .B ZVM_PATH
 ZVM base directory. Defaults to
 .IR ~/.zvm .
+.TP
+.B ZVM_MULTISHELL_PATH
+Set by
+.BR zvm-env (1)
+to the current shell's per-shell link; while it is set,
+.BR zvm-use (1)
+changes only this shell.
+.TP
+.B ZVM_MULTISHELL_DIR
+Directory for per-shell links. Defaults to
+.I $XDG_STATE_HOME/zvm/multishells
+or the user cache directory; see
+.BR zvm-env (1).
 .TP
 .B ZVM_INSTALL
 Directory containing the ZVM executable for self-upgrades.

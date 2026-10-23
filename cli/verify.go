@@ -196,7 +196,9 @@ func downloadVerified(dir, tarURL string, chk tarballCheck) (tempPath string, er
 
 	pbar := progressbar.DefaultBytes(tarResp.ContentLength, fmt.Sprintf("Downloading %s:", chk.label))
 	hash := sha256.New()
-	if _, err := io.Copy(io.MultiWriter(tempFile, pbar, hash), tarResp.Body); err != nil {
+	_, err = io.Copy(io.MultiWriter(tempFile, pbar, hash), tarResp.Body)
+	stopProgressBar(pbar, err == nil)
+	if err != nil {
 		return "", fmt.Errorf("%w: %w", ErrDownloadFail, err)
 	}
 	if err := tempFile.Close(); err != nil {

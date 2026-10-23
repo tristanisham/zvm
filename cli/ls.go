@@ -72,6 +72,10 @@ func (z *ZVM) GetInstalledVersions() ([]string, error) {
 		return nil, err
 	}
 
+	// Per-shell links normally live outside baseDir, but ZVM_MULTISHELL_DIR
+	// may point inside it; never report that directory as a Zig version.
+	multishellDir, _ := MultishellDir()
+
 	versions := make([]string, 0, len(dir))
 	for _, key := range dir {
 		if key.IsDir() {
@@ -79,6 +83,9 @@ func (z *ZVM) GetInstalledVersions() ([]string, error) {
 			case "bin", "self":
 				continue
 			default:
+				if multishellDir != "" && filepath.Join(z.baseDir, key.Name()) == filepath.Clean(multishellDir) {
+					continue
+				}
 				versions = append(versions, key.Name())
 			}
 		}

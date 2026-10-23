@@ -9,8 +9,11 @@ import (
 	"context"
 	"errors"
 	"io"
+	"net/http"
+	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 
@@ -127,6 +130,84 @@ func TestAliasCommandRejectsInvalidArguments(t *testing.T) {
 	err = zvmApp.Run(ctx, []string{"zvm", "alias", "--delete"})
 	if !errors.Is(err, cli.ErrMissingArgument) {
 		t.Fatalf("missing delete name error = %v; want ErrMissingArgument", err)
+	}
+}
+
+func TestRunFallsBackToMinimumZigVersion(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("test uses a shell script as the fake zig binary")
+	}
+
+	baseDir := t.TempDir()
+	installDir := filepath.Join(baseDir, "0.15.1")
+	if err := os.MkdirAll(installDir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	fakeZig := filepath.Join(installDir, "zig")
+	if err := os.WriteFile(fakeZig, []byte("#!/bin/sh\necho \"args:$*\"\n"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+
+	t.Setenv("ZVM_PATH", baseDir)
+	originalZVM := zvm
+	zvm = *cli.Initialize()
+	zvm.Settings.UseColor = false
+	t.Cleanup(func() { zvm = originalZVM })
+
+	// Serve an empty version map so the unknown version is resolved locally
+	// rather than over the network.
+	versionMap := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		_, _ = w.Write([]byte(`{"master": {}}`))
+	}))
+	defer versionMap.Close()
+	zvm.Settings.VersionMapUrl = versionMap.URL
+
+	project := t.TempDir()
+	if err := os.WriteFile(filepath.Join(project, "build.zig.zon"), []byte(`.{
+    .name = "demo",
+    .version = "0.0.0",
+    .minimum_zig_version = "0.15.1",
+    .dependencies = .{},
+    .paths = .{""},
+}
+`), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	originalWd, err := os.Getwd()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Chdir(project); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = os.Chdir(originalWd) })
+
+	for _, tt := range []struct {
+		name string
+		args []string
+		want string
+	}{
+		{"explicit version", []string{"9.9.9", "version"}, "args:version\n"},
+		{"prefixed version", []string{"v9.9.9", "version"}, "args:version\n"},
+		{"shorthand version", []string{".99", "version"}, "args:version\n"},
+		{"build command", []string{"build", "--help"}, "args:build --help\n"},
+		{"version command", []string{"version"}, "args:version\n"},
+		{"no arguments", nil, "args:\n"},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			var runErr error
+			got := captureStdout(t, func(w io.Writer) {
+				zvmApp.Writer = w
+				runErr = zvmApp.Run(context.Background(), append([]string{"zvm", "run"}, tt.args...))
+			})
+			if runErr != nil {
+				t.Fatalf("run fallback: %v", runErr)
+			}
+			if got != tt.want {
+				t.Fatalf("zig args = %q; want %q", got, tt.want)
+			}
+		})
 	}
 }
 
@@ -344,5 +425,29 @@ func TestCompletionCommandVisible(t *testing.T) {
 	}
 	if !found {
 		t.Fatal("completion command not registered on zvmApp")
+	}
+}
+
+func TestSubcommand(t *testing.T) {
+	tests := []struct {
+		args []string
+		want string
+	}{
+		{args: nil, want: ""},
+		{args: []string{"env"}, want: "env"},
+		{args: []string{"env", "--use-on-cd"}, want: "env"},
+		{args: []string{cli.OnCdCommand}, want: cli.OnCdCommand},
+		{args: []string{"run", "0.15.1", "env"}, want: "run"},
+		{args: []string{"install", "env"}, want: "install"},
+		{args: []string{"--color", "off", "env"}, want: "env"},
+		{args: []string{"--color=off", "env"}, want: "env"},
+		{args: []string{"--help"}, want: ""},
+	}
+	for _, tt := range tests {
+		t.Run(strings.Join(tt.args, " "), func(t *testing.T) {
+			if got := subcommand(tt.args); got != tt.want {
+				t.Fatalf("subcommand(%q) = %q, want %q", tt.args, got, tt.want)
+			}
+		})
 	}
 }

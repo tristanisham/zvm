@@ -21,13 +21,20 @@
         {
           default = pkgs.buildGoModule {
             pname = "zvm";
-            version = "0.9.1";
+            version = "0.9.3";
 
             src = ./.;
             vendorHash = "sha256-ouRaZ/mrB84e0T2aGJwYPsLoB3a1/kk7WS5rlKBfImU=";
             subPackages = [ "." ];
 
             tags = [ "noAutoUpgrades" ];
+
+            # The sandbox sets HOME=/homeless-shelter, which is not writable,
+            # and the main package creates ~/.zvm when its tests load.
+            preCheck = ''
+              export HOME=$(mktemp -d)
+            '';
+
             ldflags = [
               "-s"
               "-w"

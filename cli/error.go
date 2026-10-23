@@ -46,6 +46,13 @@ var (
 	ErrFailedAliasClear = errors.New("failed to clear alias")
 	// ErrBadDatabase is returned when the alias file cannot be read or parsed.
 	ErrBadDatabase = errors.New("bad alias store")
+
+	// ErrUnknownShell is returned when `zvm env` cannot tell which shell to emit code for.
+	ErrUnknownShell = errors.New("unknown shell")
+	// ErrNotMultishellLink is returned when ZVM_MULTISHELL_PATH is set but does not name a per-shell link created by `zvm env`.
+	ErrNotMultishellLink = errors.New("not a zvm per-shell link")
+	// ErrNoMultishellDir is returned when no directory for per-shell links can be determined.
+	ErrNoMultishellDir = errors.New("cannot determine per-shell link directory")
 )
 
 // Handler-directive errors.

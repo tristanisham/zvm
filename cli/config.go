@@ -12,6 +12,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strings"
 
 	"github.com/charmbracelet/log"
@@ -53,7 +54,7 @@ func Initialize() *ZVM {
 				log.Warn("Unable to generate settings.json file", err)
 			}
 
-			if err := os.WriteFile(filepath.Join(zvmPath, "settings.json"), outSettings, 0755); err != nil {
+			if err := os.WriteFile(filepath.Join(zvmPath, "settings.json"), outSettings, 0o644); err != nil {
 				log.Warn("Unable to create settings.json file", err)
 			}
 		}
@@ -119,11 +120,21 @@ func (z ZVM) getVersion(version string) error {
 
 	defer root.Close()
 
-	if _, err := root.Stat(version); err != nil {
+	info, err := root.Lstat(version)
+	if err != nil {
 		return err
 	}
+	if !info.IsDir() {
+		return fmt.Errorf("%w: target %q must be an install directory", ErrInvalidInput, version)
+	}
 
-	targetZig := strings.TrimSpace(filepath.Join(root.Name(), version, "zig"))
+	zigExe := "zig"
+	if runtime.GOOS == "windows" {
+		zigExe = "zig.exe"
+	}
+
+	relZig := filepath.Join(version, zigExe)
+	targetZig := strings.TrimSpace(filepath.Join(root.Name(), relZig))
 	cmd := exec.Command(targetZig, "version")
 	var zigVersion strings.Builder
 	cmd.Stdout = &zigVersion
@@ -139,7 +150,7 @@ func (z ZVM) getVersion(version string) error {
 	if version == outputVersion {
 		return nil
 	} else {
-		if _, statErr := root.Stat(targetZig); statErr == nil || version == "master" {
+		if _, statErr := root.Stat(relZig); statErr == nil || version == "master" {
 			return nil
 		}
 		return fmt.Errorf("version %s is not a released version", version)

@@ -25,9 +25,8 @@ func validateVersionTarget(version, action string) error {
 
 func checkReservedVersion(version, action string) error {
 	// These entries belong to ZVM itself, not to a Zig installation.
-	switch strings.ToLower(version) {
-	case "settings.json", "self", "bin", storeDirName:
-		return fmt.Errorf("%w: cannot %s reserved entry %q", ErrInvalidInput, action, version)
+	if isReservedName(version) {
+		return fmt.Errorf("%w: %w: cannot %s %q", ErrInvalidInput, ErrReservedName, action, version)
 	}
 	return nil
 }
@@ -67,11 +66,6 @@ func (z *ZVM) Uninstall(version string) error {
 	if err := checkReservedVersion(version, "uninstall"); err != nil {
 		return err
 	}
-	// Never remove the dedupe store either, even though it sits next to the
-	// versions in the base directory.
-	if isReservedName(version) {
-		return fmt.Errorf("%w: %q", ErrReservedName, version)
-	}
 	unlock, err := z.lockStore()
 	if err != nil {
 		return err
@@ -86,6 +80,9 @@ func (z *ZVM) Uninstall(version string) error {
 
 	info, err := root.Lstat(version)
 	if err == nil {
+		if info.Mode()&os.ModeSymlink != 0 {
+			return fmt.Errorf("%w: %q is a symlink, not a ZVM install; remove the link yourself if you no longer want it", ErrInvalidInput, version)
+		}
 		if !info.IsDir() {
 			return fmt.Errorf("%w: uninstall target %q must be an install directory", ErrInvalidInput, version)
 		}
@@ -125,7 +122,7 @@ func (z *ZVM) Uninstall(version string) error {
 // zig or zig.exe file. Both names are accepted because --target-os can
 // install a Windows build on any host.
 func hasZigExecutable(root *os.Root, dir string) bool {
-	for _, exe := range []string{"zig", "zig.exe"} {
+	for _, exe := range zigExeNames {
 		if info, err := root.Lstat(filepath.Join(dir, exe)); err == nil && info.Mode().IsRegular() {
 			return true
 		}

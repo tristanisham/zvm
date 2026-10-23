@@ -59,7 +59,7 @@ func isReservedName(name string) bool {
 	// Case-insensitive, like checkReservedVersion: on macOS and Windows
 	// "STORE" names the same directory as "store".
 	switch strings.ToLower(name) {
-	case "bin", "self", storeDirName:
+	case "bin", "self", "settings.json", storeDirName:
 		return true
 	}
 	return false

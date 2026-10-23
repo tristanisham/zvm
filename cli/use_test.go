@@ -1,11 +1,11 @@
 package cli
 
 import (
-	"slices"
 	"errors"
 	"os"
 	"path/filepath"
 	"runtime"
+	"slices"
 	"testing"
 )
 

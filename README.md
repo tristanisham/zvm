@@ -218,6 +218,19 @@ zvm i stable      # Install the latest stable release
 zvm i .14         # Shorthand — installs 0.14.x (latest patch)
 ```
 
+### Download checks
+
+ZVM checks official Zig downloads against Zig's signing key, including the
+filename in the signature. If a mirror serves the wrong file, or a download
+fails verification, ZVM tries the next mirror. The original download URL is
+the last fallback.
+
+After a verified download, ZVM records the archive's SHA-256 in
+`~/.zvm/known_hashes.json`. If that same filename ever comes back with a
+different hash, the install fails. `--force` still reinstalls an existing
+version, but it doesn't bypass this check. Custom version maps keep using
+their published checksums and aren't added to this store.
+
 ### Version Shorthand
 
 You can use abbreviated version numbers and ZVM will resolve them to the
@@ -419,6 +432,11 @@ zvm use 0.15.2            # This shell only
 zvm use --global 0.15.2   # The default for new shells
 ```
 
+You can also run `zvm env --shell bash` without `--use-on-cd` if you only
+want per-shell versions. `env` prints the setup code; evaluating it in your
+shell is what updates that shell's environment. `zvm run <version> ...`
+still runs one command without switching either default.
+
 `--use-on-cd` switches versions for you when you `cd` into a project. ZVM looks
 in the current directory and its parents for a `//! zvm-lock: <version>` line in
 `build.zig`, then `.minimum_zig_version` in `build.zig.zon`. If that version
@@ -546,16 +564,22 @@ store (below) that no installed version links to any more.
 zvm dedupe                 # all installed versions
 zvm dedupe 0.15.1 0.15.2   # just these
 zvm dedupe --auto on       # also dedupe every future `zvm install` (default: off)
+zvm dedupe --auto off      # stop deduping future installs automatically
 ```
 
 Zig releases ship mostly the same files: `0.15.1` and `0.15.2` share all but
-~50 of ~18,000 files (only the compiler binary really differs), so two installs
-take roughly half the space once deduped. `zvm dedupe` hashes each file and
+~50 of ~18,000 files. Deduping keeps one copy of the shared files; the space
+saved depends on the sizes of the files that differ. `zvm dedupe` hashes each file and
 replaces duplicates with hard links into `~/.zvm/store/`, the way pnpm and uv
 share packages. Files are only merged if content, permissions and owner match;
 symlinks are left alone. It is safe to re-run or interrupt, and files on a
 filesystem without hard links are simply skipped. `zvm uninstall` and
 `zvm clean` drop store files nothing links to any more.
+
+`--auto` saves your preference and exits. Turning it on doesn't dedupe
+versions you've already installed, so run `zvm dedupe` once to include those.
+Turning it off doesn't make separate copies of files that are already shared.
+You can also read or change this preference with `zvm settings .autoDedupe`.
 
 Because deduped files are shared, **editing one in place (say, patching
 `lib/std` in one version) changes it in every version that shares it.** If you
@@ -832,7 +856,7 @@ Enable or disable colored ZVM output. No value toggles colors.
 
 ZVM keeps its settings in `~/.zvm/settings.json` and creates the file if it
 doesn't exist. You can edit it by hand, use bespoke commands, or use `zvm settings` to view and
-change individual values. It is modeled after `jq` and supports most of its syntax.
+change individual values. It uses jq-style paths to select settings.
 
 Bespoke commands and flags are still work. `--color` updates the same
 `useColor` setting, and `zvm mirrorlist` and `zvm vmu` still set your mirror
@@ -861,7 +885,18 @@ zvm settings .useColor             # Print one value
 zvm settings -r .mirrorListUrl      # Print a string without JSON quotes
 zvm settings .useColor false       # Validate and save a value
 zvm settings .mirrorListUrl disabled
+zvm settings .autoDedupe true       # Dedupe future Zig installs automatically
 zvm settings --check               # Check the file; exit 1 if an entry is invalid
+```
+
+The path selects one setting. `.useColor`, `."useColor"`, and
+`.["useColor"]` all work. Settings are currently flat, so nested paths and
+jq filters such as `.useColor | not` aren't supported. To change a value,
+pass the replacement as the next argument. Quotes around a path belong to
+your shell, for example:
+
+```sh
+zvm settings '.["useColor"]' false
 ```
 
 Without a terminal, `zvm settings` prints JSON. It does the same on Plan 9,

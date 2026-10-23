@@ -46,6 +46,7 @@ func TestUninstallRemovesFullInstallation(t *testing.T) {
 					t.Fatal(err)
 				}
 			}
+			writeZig(t, filepath.Join(z.baseDir, version))
 			if err := os.WriteFile(filepath.Join(z.baseDir, version, "lib", "keep"), []byte("data"), 0600); err != nil {
 				t.Fatal(err)
 			}
@@ -90,6 +91,7 @@ func TestUninstallRemovesActiveBinLink(t *testing.T) {
 		if err := os.MkdirAll(filepath.Join(z.baseDir, ver), 0700); err != nil {
 			t.Fatal(err)
 		}
+		writeZig(t, filepath.Join(z.baseDir, ver))
 	}
 
 	if err := z.setBin("0.15.1"); err != nil {
@@ -110,5 +112,91 @@ func TestUninstallRemovesActiveBinLink(t *testing.T) {
 	}
 	if _, err := os.Lstat(filepath.Join(z.baseDir, "bin")); !errors.Is(err, os.ErrNotExist) {
 		t.Fatalf("expected active bin link to be removed, got err=%v", err)
+	}
+}
+
+// Uninstall must only remove directories that hold a Zig installation.
+func TestUninstallOnlyRemovesZigInstalls(t *testing.T) {
+	tests := []struct {
+		name    string
+		arg     string
+		setup   func(t *testing.T, base string)
+		target  string // path under base that must (not) survive
+		wantErr bool
+		removed bool
+	}{
+		{
+			name:    "zig install",
+			arg:     "0.15.1",
+			setup:   func(t *testing.T, base string) { writeZig(t, filepath.Join(base, "0.15.1")) },
+			target:  "0.15.1",
+			removed: true,
+		},
+		{
+			name: "windows zig install",
+			arg:  "0.15.1",
+			setup: func(t *testing.T, base string) {
+				if err := os.MkdirAll(filepath.Join(base, "0.15.1"), 0700); err != nil {
+					t.Fatal(err)
+				}
+				if err := os.WriteFile(filepath.Join(base, "0.15.1", "zig.exe"), []byte("x"), 0600); err != nil {
+					t.Fatal(err)
+				}
+			},
+			target:  "0.15.1",
+			removed: true,
+		},
+		{
+			name: "folder without zig",
+			arg:  "my-notes",
+			setup: func(t *testing.T, base string) {
+				if err := os.MkdirAll(filepath.Join(base, "my-notes"), 0700); err != nil {
+					t.Fatal(err)
+				}
+				if err := os.WriteFile(filepath.Join(base, "my-notes", "important.txt"), []byte("x"), 0600); err != nil {
+					t.Fatal(err)
+				}
+			},
+			target:  "my-notes",
+			wantErr: true,
+		},
+		{
+			name: "zig is a directory",
+			arg:  "fake",
+			setup: func(t *testing.T, base string) {
+				if err := os.MkdirAll(filepath.Join(base, "fake", "zig"), 0700); err != nil {
+					t.Fatal(err)
+				}
+			},
+			target:  "fake",
+			wantErr: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			base := t.TempDir()
+			tt.setup(t, base)
+			err := (&ZVM{baseDir: base}).Uninstall(tt.arg)
+			if tt.wantErr != errors.Is(err, ErrInvalidInput) {
+				t.Fatalf("Uninstall(%q) = %v, wantErr %v", tt.arg, err, tt.wantErr)
+			}
+			if !tt.wantErr && err != nil {
+				t.Fatal(err)
+			}
+			_, statErr := os.Lstat(filepath.Join(base, tt.target))
+			if removed := errors.Is(statErr, os.ErrNotExist); removed != tt.removed {
+				t.Fatalf("Uninstall(%q): %s removed = %v, want %v", tt.arg, tt.target, removed, tt.removed)
+			}
+		})
+	}
+}
+
+func writeZig(t *testing.T, dir string) {
+	t.Helper()
+	if err := os.MkdirAll(dir, 0700); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(dir, "zig"), []byte("#!/bin/sh\n"), 0700); err != nil {
+		t.Fatal(err)
 	}
 }

@@ -82,6 +82,22 @@ go install -ldflags "-s -w" github.com/tristanisham/zvm@latest
 Please grab the
 [latest release](https://github.com/tristanisham/zvm/releases/latest).
 
+### Verifying a download
+
+Releases are built by GitHub Actions, which publishes a `SHA256SUMS` file and a
+signed [build provenance attestation](https://docs.github.com/en/actions/how-tos/secure-your-work/use-artifact-attestations)
+for every archive. To check that an archive is exactly what CI built from this
+repository:
+
+```bash
+gh attestation verify zvm-linux-amd64.tar --repo tristanisham/zvm
+# or, without the GitHub CLI, just the checksum:
+sha256sum --check --ignore-missing SHA256SUMS
+```
+
+This covers releases built by the workflow, starting after v0.9.3. The install
+scripts and `zvm upgrade` don't check it yet.
+
 Alternatively, you can build the app by cloning the repository and running
 
 ```bash

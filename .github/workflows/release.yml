@@ -1,0 +1,99 @@
+name: Release
+
+# Pushing a vX.Y.Z tag builds every release archive, writes SHA256SUMS,
+# attests build provenance for each archive and uploads them to a draft
+# release. Publishing the draft stays manual: a release published by
+# GITHUB_TOKEN would not trigger winget.yml.
+#
+# Pull requests that touch the release build run everything except the
+# attestation and the upload.
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing tag to build and attach to its release, for example v0.9.4
+        required: true
+        type: string
+  pull_request:
+    paths:
+      - .github/workflows/release.yml
+      - build.ts
+      - pkg.ts
+      - deno.jsonc
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ inputs.tag || github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      id-token: write
+      attestations: write
+      artifact-metadata: write
+    env:
+      PUBLISH: ${{ github.event_name != 'pull_request' }}
+      TAG: ${{ inputs.tag || github.ref_name }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.tag || github.ref }}
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.26"
+
+      - name: Set up Deno
+        uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+
+      - name: Check versions
+        run: |
+          deno task pkg:check
+          version=$(sed -n 's/^[[:space:]]*VERSION = "\(v[^"]*\)".*/\1/p' cli/meta/version.go)
+          echo "cli/meta/version.go: $version"
+          if [ "$PUBLISH" = true ] && [ "$TAG" != "$version" ]; then
+            echo "::error::Tag $TAG does not match VERSION $version in cli/meta/version.go"
+            exit 1
+          fi
+
+      - name: Build release archives
+        run: |
+          deno task build
+          cd build
+          sha256sum zvm-*.tar zvm-*.zip > SHA256SUMS
+          cat SHA256SUMS
+
+      - name: Attest build provenance
+        if: env.PUBLISH == 'true'
+        uses: actions/attest@v4
+        with:
+          subject-checksums: build/SHA256SUMS
+
+      - name: Verify attestation
+        if: env.PUBLISH == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh attestation verify build/zvm-linux-amd64.tar --repo "$GITHUB_REPOSITORY"
+
+      - name: Upload to draft release
+        if: env.PUBLISH == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh release view "$TAG" > /dev/null 2>&1; then
+            gh release upload "$TAG" build/zvm-*.tar build/zvm-*.zip build/SHA256SUMS --clobber
+          else
+            gh release create "$TAG" build/zvm-*.tar build/zvm-*.zip build/SHA256SUMS \
+              --draft --verify-tag --title "$TAG" --generate-notes
+          fi

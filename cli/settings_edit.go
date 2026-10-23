@@ -49,6 +49,8 @@ var settingUsage = map[string]string{
 	"useColor":           "colored terminal output",
 	"alwaysForceInstall": "reinstall versions that are already installed",
 	"alwaysInstallZLS":   "install ZLS together with Zig",
+	// Added by `zvm dedupe` (#209); listed here so either PR can merge first.
+	"autoDedupe": "hard-link identical files after each zvm install (see zvm dedupe)",
 }
 
 var settingValidators = map[string]func(string) error{

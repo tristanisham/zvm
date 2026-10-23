@@ -1,0 +1,98 @@
+.\" Copyright 2026 Tristan Isham. All rights reserved.
+.TH ZVM-ENV 1 "October 2026" "ZVM" "User Commands"
+.SH NAME
+zvm-env \- give the current shell its own Zig version
+.SH SYNOPSIS
+.B zvm env
+.RB [ --shell
+.IR shell ]
+.RB [ --use-on-cd ]
+.SH DESCRIPTION
+Print shell code that gives the shell evaluating it a private Zig version.
+.B zvm env
+creates a per-shell link that points at the current global version (what
+.I ~/.zvm/bin
+points to), exports its path as
+.BR ZVM_MULTISHELL_PATH ,
+and prepends it to
+.BR PATH ,
+where it shadows
+.IR ~/.zvm/bin .
+If no global version is set, the link points at
+.I ~/.zvm/bin
+itself, so the shell follows the global version until it selects its own.
+.PP
+While
+.B ZVM_MULTISHELL_PATH
+names such a link,
+.BR zvm-use (1)
+repoints only that link; other shells and the global default are unchanged.
+Use
+.B zvm use --global
+to change the default.
+.PP
+Per-shell links are stored in
+.BR $ZVM_MULTISHELL_DIR ,
+otherwise
+.IR $XDG_STATE_HOME/zvm/multishells ,
+otherwise
+.I zvm/multishells
+in the user cache directory
+.RI ( ~/.cache
+on Linux,
+.I ~/Library/Caches
+on macOS,
+.I %LocalAppData%
+on Windows).
+Links older than a week whose shell has exited are removed by
+.B zvm env
+and
+.BR zvm-clean (1).
+.SH OPTIONS
+.TP
+.BI --shell " shell"
+Emit code for
+.BR bash ,
+.BR zsh ,
+.BR fish ,
+or
+.B powershell
+.RB ( pwsh
+is accepted).
+Defaults to the basename of
+.BR $SHELL ;
+an unrecognised shell is an error.
+.TP
+.B --use-on-cd
+Also install a hook that runs whenever the working directory changes.
+It searches the new directory and then each parent for the nearest
+.B //! zvm-lock:
+line in
+.I build.zig
+or, failing that in the same directory,
+.B .minimum_zig_version
+in
+.IR build.zig.zon ,
+and switches this shell to that version.
+If the version is not installed it prints a one-line hint and changes nothing;
+if no version file is found it does nothing.
+The hook never prompts and never changes the global version.
+In bash the hook runs from
+.B PROMPT_COMMAND
+before the next prompt; zsh uses
+.BR chpwd ,
+fish a
+.B PWD
+variable handler, and PowerShell
+.BR LocationChangedAction .
+.SH EXAMPLES
+.EX
+eval "$(zvm env --shell bash --use-on-cd)"     # ~/.bashrc
+eval "$(zvm env --shell zsh --use-on-cd)"      # ~/.zshrc
+zvm env --shell fish --use-on-cd | source      # config.fish
+zvm env --shell powershell --use-on-cd | Out-String | Invoke-Expression
+.EE
+.SH SEE ALSO
+.BR zvm (1),
+.BR zvm-use (1),
+.BR zvm-clean (1)

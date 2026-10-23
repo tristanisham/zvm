@@ -40,6 +40,7 @@ if (!args.autoUpgrades) {
 }
 
 const GOARCH = [
+  "386",
   "amd64",
   "arm64",
   "loong64",
@@ -53,7 +54,7 @@ const GOOS = [
   "freebsd",
   "netbsd",
   "openbsd",
-  // "plan9",
+  "plan9",
   "solaris",
 ];
 
@@ -68,8 +69,9 @@ function getTargets(): Target[] {
   for (const os of GOOS) {
     for (const arch of GOARCH) {
       if (
-        os === "solaris" && arch === "arm64" ||
-        os === "plan9" && arch === "arm64" ||
+        os === "solaris" && arch !== "amd64" ||
+        os === "darwin" && arch === "386" ||
+        os === "plan9" && arch !== "386" ||
         os !== "linux" && arch === "loong64" ||
         os !== "linux" && arch === "ppc64le"
       ) {
@@ -92,38 +94,42 @@ const baseEnv = { ...Deno.env.toObject(), CGO_ENABLED: "0" };
 // compiles, and removing each directory as soon as it's archived keeps peak
 // disk usage to one uncompressed binary per worker.
 async function buildTarget({ os, arch, label }: Target): Promise<void> {
-  const outDir = `${buildDir}/${label}`;
-  const binName = `zvm${os === "windows" ? ".exe" : ""}`;
-  const binPath = `${outDir}/${binName}`;
+  // Older builds left binaries at build/<label>. Use a unique workspace so
+  // those files and other build invocations cannot collide with this target.
+  const outDir = await Deno.makeTempDir({ dir: buildDir, prefix: `${label}-` });
+  try {
+    const binName = `zvm${os === "windows" ? ".exe" : ""}`;
+    const binPath = `${outDir}/${binName}`;
 
-  console.time(`Build zvm: ${label}`);
-  const { code, stderr } = await new Deno.Command("go", {
-    args: [
-      "build",
-      ...(args.autoUpgrades ? [] : ["-tags", "noAutoUpgrades"]),
-      "-o",
-      binPath,
-      `-ldflags=-w -s -X 'main.BuildUpgradeMessage=${BuildUpgradeMessage}'`,
-      "-trimpath",
-    ],
-    env: { ...baseEnv, GOOS: os, GOARCH: arch },
-  }).output();
-  if (code !== 0) {
-    throw new Error(
-      `Failed to build ${label}:\n${new TextDecoder().decode(stderr)}`,
-    );
+    console.time(`Build zvm: ${label}`);
+    const { code, stderr } = await new Deno.Command("go", {
+      args: [
+        "build",
+        ...(args.autoUpgrades ? [] : ["-tags", "noAutoUpgrades"]),
+        "-o",
+        binPath,
+        `-ldflags=-w -s -X 'main.BuildUpgradeMessage=${BuildUpgradeMessage}'`,
+        "-trimpath",
+      ],
+      env: { ...baseEnv, GOOS: os, GOARCH: arch },
+    }).output();
+    if (code !== 0) {
+      throw new Error(
+        `Failed to build ${label}:\n${new TextDecoder().decode(stderr)}`,
+      );
+    }
+    console.timeEnd(`Build zvm: ${label}`);
+
+    console.time(`Compress zvm: ${label}`);
+    if (os === "windows") {
+      await zipFile(binPath, binName, `${buildDir}/${label}.zip`);
+    } else {
+      await tarFile(binPath, binName, `${buildDir}/${label}.tar`);
+    }
+    console.timeEnd(`Compress zvm: ${label}`);
+  } finally {
+    await Deno.remove(outDir, { recursive: true });
   }
-  console.timeEnd(`Build zvm: ${label}`);
-
-  console.time(`Compress zvm: ${label}`);
-  if (os === "windows") {
-    await zipFile(binPath, binName, `${buildDir}/${label}.zip`);
-  } else {
-    await tarFile(binPath, binName, `${buildDir}/${label}.tar`);
-  }
-  console.timeEnd(`Compress zvm: ${label}`);
-
-  await Deno.remove(outDir, { recursive: true });
 }
 
 async function tarFile(

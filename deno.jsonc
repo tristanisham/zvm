@@ -4,8 +4,9 @@
     "clean": "rm -r build",
     "pkg": "deno run -A pkg.ts",
     "pkg:check": "deno run -A pkg.ts --check",
-    "release:sign": "minisign -S -m build/SHA256SUMS",
+    "release:sign": "deno run -A release_sign.ts",
     "test:pkg": "deno test -A pkg_test.ts",
+    "test:release-sign": "deno test -A release_sign_test.ts",
     "test:star-history": "deno test -A .github/scripts/star-history_test.ts",
     "star-history": "deno run -A .github/scripts/star-history.ts"
   },

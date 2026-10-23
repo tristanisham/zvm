@@ -21,16 +21,25 @@ and publish.
 private key lives only on the maintainer's machine, never in CI; the public key
 is `minisign.pub` and is also printed in the README.
 
-After the workflow finishes, sign the checksum file it uploaded, not one from a
-local build, which can differ:
+After the workflow finishes, run:
 
 ```sh
-tag=<version>
-gh release download "$tag" --repo tristanisham/zvm --pattern SHA256SUMS --dir build --clobber
-deno task release:sign -t "ZVM $tag release checksums"
-minisign -Vm build/SHA256SUMS -p minisign.pub
-gh release upload "$tag" build/SHA256SUMS.minisig --repo tristanisham/zvm --clobber
+deno task release:sign          # tag from cli/meta/version.go
+deno task release:sign v0.9.5   # or an explicit tag
 ```
+
+It prompts for your key password, then:
+
+1. refuses unless the tag's release is still a draft;
+2. downloads the `SHA256SUMS` CI uploaded (not a local build, which can differ);
+3. signs it with the trusted comment `ZVM <tag> release checksums`;
+4. verifies the signature against `minisign.pub`, so a wrong key fails here
+   instead of in users' hands;
+5. uploads `SHA256SUMS.minisig` to the draft.
+
+It needs `gh` (logged in) and `minisign` on your `PATH`. The key is read from
+`~/.minisign/minisign.key`; set `MINISIGN_CONFIG_DIR` to the directory holding
+`minisign.key` if you keep it elsewhere.
 
 Sign last. Re-running the workflow on a draft replaces `SHA256SUMS`, which
 invalidates an uploaded signature; download and sign again before publishing.

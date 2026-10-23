@@ -48,22 +48,19 @@ key at `~/.minisign/minisign.key`. Back up the private key and password. Publish
 the public key on your website or in the repository so users can verify your
 signatures. Keep the private key out of the repository and CI.
 
-After CI creates the draft release, download its checksum file, sign it, and
-attach the signature before publishing:
+After CI creates the draft release, sign it before publishing:
 
 ```sh
-tag=v0.9.4
-gh release download "$tag" --repo tristanisham/zvm \
-  --pattern SHA256SUMS --dir build --clobber
-deno task release:sign -t "ZVM $tag release checksums"
-gh release upload "$tag" build/SHA256SUMS.minisig --repo tristanisham/zvm --clobber
+deno task release:sign          # tag from cli/meta/version.go
+deno task release:sign v0.9.5   # or an explicit tag
 ```
 
-Sign the checksum file from the release, since a local rebuild can produce
-different archives. The task prompts for your key password and writes
-`build/SHA256SUMS.minisig`. For a key stored elsewhere, append
-`-s /path/to/minisign.key` to the task. If you rebuild or replace the draft's
-archives, download and sign its new checksum file again.
+The task downloads the draft's `SHA256SUMS`, prompts for your key password,
+signs it, checks the signature against `minisign.pub`, and uploads
+`SHA256SUMS.minisig`. It refuses releases that are already published. For a
+key stored elsewhere, set `MINISIGN_CONFIG_DIR` to the directory holding
+`minisign.key`. If you rebuild or replace the draft's archives, run it again.
+See `RELEASING.md` for details.
 
 To verify a download, put the archives, `SHA256SUMS`, and `SHA256SUMS.minisig`
 in the same directory. Use the public key you published:

@@ -39,7 +39,7 @@ export interface SyncPackageVersionResult {
   updated: string[];
 }
 
-function packageVersion(contents: string): string {
+export function packageVersion(contents: string): string {
   const matches = [
     ...contents.matchAll(/^\s*VERSION\s*=\s*"([^"]+)"/gm),
   ];

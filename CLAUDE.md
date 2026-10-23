@@ -35,7 +35,7 @@ go build -tags noAutoUpgrades \
 Deno tasks (see `deno.jsonc`):
 ```bash
 deno task build          # cross-platform release artifacts into build/
-deno task release:sign   # sign build/SHA256SUMS with Minisign (requires a signing key)
+deno task release:sign   # sign a draft release's SHA256SUMS and upload the .minisig (needs gh + key)
 deno task star-history   # regenerate the README star chart (token or gh auth login)
 ```
 

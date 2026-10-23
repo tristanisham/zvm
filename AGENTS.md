@@ -19,8 +19,9 @@ ZVM is a Go CLI for installing and switching Zig and ZLS versions. `main.go` def
   Run it alongside tests and vet during reviews and implementation work. Install
   it with `go install golang.org/x/vuln/cmd/govulncheck@latest` if needed.
 - `deno task build` (or `deno run -A build.ts`) creates cross-platform release artifacts.
-- `deno task release:sign` signs `build/SHA256SUMS` with Minisign; see
-  `CONTRIBUTING.MD` for key setup and signing CI-built releases.
+- `deno task release:sign [tag]` downloads a draft release's `SHA256SUMS`, signs
+  it with Minisign, verifies it against `minisign.pub`, and uploads the
+  signature; see `RELEASING.md`. `deno task test:release-sign` tests it.
 - `deno task star-history` regenerates the README star chart; uses `GH_TOKEN`,
   `GITHUB_TOKEN`, or your saved `gh auth login` credentials.
 - Package-manager builds should also set `-ldflags "-X 'main.BuildUpgradeMessage=...'"` so `zvm upgrade` points at the right updater. Quote it; the value contains spaces.

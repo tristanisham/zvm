@@ -24,7 +24,7 @@ a language gets updated frequently.
 # Installing ZVM
 
 ZVM lives entirely in `$HOME/.zvm` on all platforms it supports. Inside of the
-directory, ZVM will download new ZIG versions and symlink whichever version you
+directory, ZVM will download new Zig versions and symlink whichever version you
 specify with `zvm use` to `$HOME/.zvm/bin`. You should add this folder to your
 path. After ZVM 0.2.3, ZVM's installer will now add ZVM to `$HOME/.zvm/self`.
 You should also add this directory as the environment variable `ZVM_INSTALL`.

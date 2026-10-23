@@ -175,7 +175,9 @@ func isIdentifier(s string) bool {
 		return false
 	}
 	for i, r := range s {
-		if r != '_' && !('a' <= r && r <= 'z') && !('A' <= r && r <= 'Z') && (i == 0 || !('0' <= r && r <= '9')) {
+		letter := r == '_' || ('a' <= r && r <= 'z') || ('A' <= r && r <= 'Z')
+		digit := '0' <= r && r <= '9'
+		if !letter && (i == 0 || !digit) {
 			return false
 		}
 	}

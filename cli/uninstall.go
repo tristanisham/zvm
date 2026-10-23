@@ -79,6 +79,9 @@ func (z *ZVM) Uninstall(version string) error {
 		if !info.IsDir() {
 			return fmt.Errorf("%w: uninstall target %q must be an install directory", ErrInvalidInput, version)
 		}
+		if !hasZigExecutable(root, version) {
+			return fmt.Errorf("%w: %q is not a Zig installation (no zig executable inside)", ErrInvalidInput, version)
+		}
 		activeBin := z.isBinForVersion(version, info)
 		if err := root.RemoveAll(version); err != nil {
 			return err
@@ -96,4 +99,16 @@ func (z *ZVM) Uninstall(version string) error {
 	}
 	fmt.Printf("Version: %s not found locally.\nHere are your installed versions:\n", version)
 	return z.ListVersions()
+}
+
+// hasZigExecutable reports whether the install directory dir in root holds a
+// zig or zig.exe file. Both names are accepted because --target-os can
+// install a Windows build on any host.
+func hasZigExecutable(root *os.Root, dir string) bool {
+	for _, exe := range []string{"zig", "zig.exe"} {
+		if info, err := root.Lstat(filepath.Join(dir, exe)); err == nil && info.Mode().IsRegular() {
+			return true
+		}
+	}
+	return false
 }

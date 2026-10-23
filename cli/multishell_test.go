@@ -117,11 +117,11 @@ func TestNewMultishellLinkTargetsGlobal(t *testing.T) {
 		t.Errorf("link -> %q, want %q", got, want)
 	}
 
-	// The link directory must never be listed as a version, even if placed
-	// inside the base dir.
+	// The link directory must never be listed as a version: creating it
+	// inside the base dir is refused.
 	t.Setenv(MultishellDirEnv, filepath.Join(z.baseDir, "multishells"))
-	if _, err := z.NewMultishellLink(1); err != nil {
-		t.Fatal(err)
+	if _, err := z.NewMultishellLink(1); !errors.Is(err, ErrNoMultishellDir) {
+		t.Fatalf("NewMultishellLink inside baseDir: err = %v, want ErrNoMultishellDir", err)
 	}
 	versions, err := z.GetInstalledVersions()
 	if err != nil {
@@ -335,6 +335,7 @@ func TestUseOnCd(t *testing.T) {
 		wantShell  string // version the shell link should end up on
 		wantStdout string
 		wantStderr string
+		dirs       []string // extra directories to create, relative to baseDir
 	}{
 		{
 			name:       "switches to the nearest minimum_zig_version",
@@ -375,6 +376,33 @@ func TestUseOnCd(t *testing.T) {
 			wantShell: "0.15.1",
 		},
 		{
+			name:       "zvm-lock cannot point outside baseDir",
+			files:      map[string]string{"proj/build.zig": buildZigLock("x/../../evil")},
+			dirs:       []string{"../evil"},
+			start:      "proj",
+			shellLink:  true,
+			wantShell:  "0.15.1",
+			wantStderr: "zvm: ignoring invalid Zig version",
+		},
+		{
+			name:       "minimum_zig_version cannot point outside baseDir",
+			files:      map[string]string{"proj/build.zig.zon": zon("x/../../evil")},
+			dirs:       []string{"../evil"},
+			start:      "proj",
+			shellLink:  true,
+			wantShell:  "0.15.1",
+			wantStderr: "zvm: ignoring invalid Zig version",
+		},
+		{
+			name:       "reserved entries are not versions",
+			files:      map[string]string{"proj/build.zig": buildZigLock("self")},
+			dirs:       []string{"self"},
+			start:      "proj",
+			shellLink:  true,
+			wantShell:  "0.15.1",
+			wantStderr: "zvm: ignoring invalid Zig version",
+		},
+		{
 			name:  "without a per-shell link the global link is never touched",
 			files: map[string]string{"proj/build.zig.zon": zon("0.15.2")},
 			start: "proj",
@@ -385,6 +413,11 @@ func TestUseOnCd(t *testing.T) {
 			z, _ := setupMultishell(t, "0.15.1", "0.15.2")
 			if err := z.setBin("0.15.1"); err != nil {
 				t.Fatal(err)
+			}
+			for _, d := range tt.dirs {
+				if err := os.MkdirAll(filepath.Join(z.baseDir, filepath.FromSlash(d)), 0o755); err != nil {
+					t.Fatal(err)
+				}
 			}
 			var link string
 			if tt.shellLink {
@@ -484,5 +517,52 @@ func TestEnvScriptQuoting(t *testing.T) {
 		if strings.Contains(EnvScript(shell, link, false), OnCdCommand) {
 			t.Errorf("%s script without --use-on-cd installs a hook", shell)
 		}
+	}
+}
+
+func TestSetShellLinkRejectsInvalidVersions(t *testing.T) {
+	z, msDir := setupMultishell(t, "0.15.1")
+	link := filepath.Join(msDir, "1_1_00000000")
+	for _, ver := range []string{"x/../../evil", "../evil", `a\b`, "self", "bin", "settings.json", ""} {
+		if err := z.setShellLink(link, ver); err == nil {
+			t.Errorf("setShellLink(%q) succeeded, want an error", ver)
+		}
+	}
+	if _, err := os.Lstat(link); !os.IsNotExist(err) {
+		t.Errorf("link was created: %v", err)
+	}
+}
+
+func TestMultishellDirRejectsRelativeOverride(t *testing.T) {
+	t.Setenv(MultishellDirEnv, ".zvm-shells")
+	if dir, err := MultishellDir(); !errors.Is(err, ErrNoMultishellDir) {
+		t.Fatalf("MultishellDir() = %q, %v; want ErrNoMultishellDir", dir, err)
+	}
+}
+
+func TestNewMultishellLinkRejectsDirInsideBaseDir(t *testing.T) {
+	z, _ := setupMultishell(t, "0.15.1")
+	for _, dir := range []string{z.baseDir, filepath.Join(z.baseDir, "state", "shells")} {
+		t.Setenv(MultishellDirEnv, dir)
+		if link, err := z.NewMultishellLink(os.Getpid()); !errors.Is(err, ErrNoMultishellDir) {
+			t.Errorf("NewMultishellLink with %s = %q, %v; want ErrNoMultishellDir", dir, link, err)
+		}
+	}
+	// A sibling whose name merely starts with the base dir's name is fine.
+	t.Setenv(MultishellDirEnv, z.baseDir+"-shells")
+	if _, err := z.NewMultishellLink(os.Getpid()); err != nil {
+		t.Errorf("sibling dir rejected: %v", err)
+	}
+}
+
+func TestEnvScriptPowerShellInstallsHookOnce(t *testing.T) {
+	script := EnvScript(ShellPowerShell, `C:\links\1`, true)
+	for _, want := range []string{"if (-not $global:__ZvmUseOnCdInstalled)", ".Invoke($zvmSource, $zvmArgs)"} {
+		if !strings.Contains(script, want) {
+			t.Errorf("PowerShell script missing %q:\n%s", want, script)
+		}
+	}
+	if strings.Contains(script, "& $global:__ZvmPrevLocationChangedAction") {
+		t.Errorf("PowerShell script still calls the previous handler with &:\n%s", script)
 	}
 }

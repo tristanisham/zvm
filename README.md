@@ -799,7 +799,8 @@ Enable or disable colored ZVM output. No value toggles colors.
     downloads any safer.
 - `ZVM_MULTISHELL_PATH` is set by `zvm env` to the current shell's own Zig
   link. While it is set, `zvm use` only affects that shell.
-- `ZVM_MULTISHELL_DIR` overrides where `zvm env` creates per-shell links.
+- `ZVM_MULTISHELL_DIR` overrides where `zvm env` creates per-shell links. It
+  must be an absolute path outside `~/.zvm`.
 - `BROWSER` is the command `zvm bug` uses to open a report URL. Without it, ZVM falls back to the platform's default handler.
 
 ## Settings

@@ -15,6 +15,7 @@ require (
 	github.com/rogpeppe/go-internal v1.14.1
 	github.com/schollz/progressbar/v3 v3.19.0
 	github.com/tristanisham/clr v0.0.0-20221004001624-00ee60046d85
+	github.com/tristanisham/zon v0.0.1
 	github.com/ulikunitz/xz v0.5.15
 	golang.org/x/mod v0.37.0
 	golang.org/x/sys v0.47.0

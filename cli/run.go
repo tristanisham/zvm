@@ -8,8 +8,6 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
-	"path/filepath"
-	"runtime"
 	"slices"
 	"strings"
 
@@ -87,22 +85,11 @@ func (z *ZVM) IsInstalled(version string) bool {
 
 // runZig executes the Zig compiler for the specified version with the given arguments.
 func (z *ZVM) runZig(version string, cmd []string) error {
-	zigExe := "zig"
-	if runtime.GOOS == "windows" {
-		zigExe = "zig.exe"
+	bin, err := z.zigExecutable(version)
+	if err != nil {
+		return err
 	}
-
-	bin := strings.TrimSpace(filepath.Join(z.baseDir, version, zigExe))
-
 	log.Debug("runZig", "bin", bin)
-	if stat, err := os.Lstat(bin); err != nil {
-
-		name := version
-		if stat != nil {
-			name = stat.Name()
-		}
-		return fmt.Errorf("%w: %s", err, name)
-	}
 
 	// the logging here really muddies up the output of the Zig compiler
 	// and adds a lot of noise. For that reason this function exits with

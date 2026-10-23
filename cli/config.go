@@ -13,7 +13,6 @@ import (
 	"os/exec"
 	"path/filepath"
 	"reflect"
-	"runtime"
 	"strings"
 
 	"github.com/charmbracelet/log"
@@ -110,33 +109,49 @@ func validVmuAlis(version string) bool {
 	return version == "default" || version == "mach"
 }
 
+// zigExeNames are the executable names an install directory may hold. Both are
+// accepted on every host because --target-os can install a Windows build
+// anywhere.
+var zigExeNames = []string{"zig", "zig.exe"}
+
+// zigExecutable returns the path of the zig executable for the installed
+// version ver. ver must name a single entry in the base directory; that entry
+// may be a symlink (for example to a Zig you built yourself), which is
+// followed. A missing entry returns an error matching os.ErrNotExist.
+func (z *ZVM) zigExecutable(ver string) (string, error) {
+	if err := validateVersionTarget(ver, "use"); err != nil {
+		return "", err
+	}
+	if err := checkReservedVersion(ver, "use"); err != nil {
+		return "", err
+	}
+
+	dir := filepath.Join(z.baseDir, ver)
+	info, err := os.Stat(dir)
+	if err != nil {
+		return "", err
+	}
+	if !info.IsDir() {
+		return "", fmt.Errorf("%w: target %q must be an install directory", ErrInvalidInput, ver)
+	}
+	for _, name := range zigExeNames {
+		exe := filepath.Join(dir, name)
+		if info, err := os.Stat(exe); err == nil && info.Mode().IsRegular() {
+			return exe, nil
+		}
+	}
+	return "", fmt.Errorf("%w: %q is not a Zig installation (no zig executable inside)", ErrInvalidInput, ver)
+}
+
 // getVersion determines the actual version string for a given input (e.g., resolving "master").
 // It checks if the version is installed and returns an error if it's not a valid release
 // or if the installed version doesn't match expectations.
 func (z ZVM) getVersion(version string) error {
-
-	root, err := os.OpenRoot(z.baseDir)
+	targetZig, err := z.zigExecutable(version)
 	if err != nil {
 		return err
 	}
 
-	defer root.Close()
-
-	info, err := root.Lstat(version)
-	if err != nil {
-		return err
-	}
-	if !info.IsDir() {
-		return fmt.Errorf("%w: target %q must be an install directory", ErrInvalidInput, version)
-	}
-
-	zigExe := "zig"
-	if runtime.GOOS == "windows" {
-		zigExe = "zig.exe"
-	}
-
-	relZig := filepath.Join(version, zigExe)
-	targetZig := strings.TrimSpace(filepath.Join(root.Name(), relZig))
 	cmd := exec.Command(targetZig, "version")
 	var zigVersion strings.Builder
 	cmd.Stdout = &zigVersion
@@ -149,14 +164,9 @@ func (z ZVM) getVersion(version string) error {
 
 	log.Debug("getVersion:", "output", outputVersion, "version", version, "program", targetZig)
 
-	if version == outputVersion {
-		return nil
-	} else {
-		if _, statErr := root.Stat(relZig); statErr == nil || version == "master" {
-			return nil
-		}
-		return fmt.Errorf("version %s is not a released version", version)
-	}
+	// Dev builds, master and local builds report a different version string;
+	// the executable exists, which is all `use` needs.
+	return nil
 }
 
 // loadSettings loads the ZVM configuration from settings.json.

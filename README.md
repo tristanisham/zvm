@@ -82,6 +82,22 @@ go install -ldflags "-s -w" github.com/tristanisham/zvm@latest
 Please grab the
 [latest release](https://github.com/tristanisham/zvm/releases/latest).
 
+### Verifying a download
+
+Releases are built by GitHub Actions, which publishes a `SHA256SUMS` file and a
+signed [build provenance attestation](https://docs.github.com/en/actions/how-tos/secure-your-work/use-artifact-attestations)
+for every archive. To check that an archive is exactly what CI built from this
+repository:
+
+```bash
+gh attestation verify zvm-linux-amd64.tar --repo tristanisham/zvm
+# or, without the GitHub CLI, just the checksum:
+sha256sum --check --ignore-missing SHA256SUMS
+```
+
+This covers releases built by the workflow, starting after v0.9.3. The install
+scripts and `zvm upgrade` don't check it yet.
+
 Alternatively, you can build the app by cloning the repository and running
 
 ```bash
@@ -411,6 +427,19 @@ zvm use 0.13       # Resolves to 0.13.x (latest installed patch)
 zvm use .14        # Same — leading dot implies "0."
 ```
 
+To use a Zig you built yourself, link it into `~/.zvm` under any name. ZVM
+treats the link like an installed version once the directory it points to
+holds a `zig` executable:
+
+```sh
+ln -s ~/src/zig/zig-out/bin ~/.zvm/local   # the directory that contains `zig`
+zvm use local
+zvm run local version
+```
+
+`zvm uninstall` won't remove a linked build, and `zvm dedupe` leaves its files
+alone. Delete the link yourself when you're done with it.
+
 ### Give each shell its own Zig version
 
 By default, `zvm use` switches Zig for every terminal at once. If you'd rather
@@ -575,6 +604,10 @@ share packages. Files are only merged if content, permissions and owner match;
 symlinks are left alone. It is safe to re-run or interrupt, and files on a
 filesystem without hard links are simply skipped. `zvm uninstall` and
 `zvm clean` drop store files nothing links to any more.
+
+Hashing every file takes a while (around 20 seconds for four versions), so
+`zvm dedupe` shows a progress bar and ends by telling you how much space it
+reclaimed.
 
 `--auto` saves your preference and exits. Turning it on doesn't dedupe
 versions you've already installed, so run `zvm dedupe` once to include those.

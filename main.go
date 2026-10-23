@@ -551,9 +551,10 @@ var zvmApp = &opts.Command{
 				if pruned.Removed > 0 {
 					fmt.Printf("  unreferenced store files removed: %d\n", pruned.Removed)
 				}
+				reclaimed := report.BytesSaved() + pruned.BytesFreed
 				fmt.Printf("Disk used by versions + store: %s -> %s (saved %s)\n",
 					cli.FormatBytes(report.BytesBefore), cli.FormatBytes(report.BytesAfter-pruned.BytesFreed),
-					cli.FormatBytes(report.BytesSaved()+pruned.BytesFreed))
+					cli.FormatBytes(reclaimed))
 				fmt.Printf("  exact bytes: %d -> %d\n", report.BytesBefore, report.BytesAfter-pruned.BytesFreed)
 
 				const maxProblems = 20
@@ -564,6 +565,7 @@ var zvmApp = &opts.Command{
 					}
 					fmt.Println("  note:", p)
 				}
+				fmt.Printf("ZVM reclaimed %s\n", cli.FormatBytes(reclaimed))
 				return nil
 			},
 		},
@@ -762,7 +764,7 @@ func main() {
 	}
 
 	// `zvm settings` reports problems itself.
-	if !isSettingsCommand(os.Args[1:]) {
+	if subcommand(os.Args[1:]) != "settings" {
 		zvm.Settings.WarnProblems()
 	}
 
@@ -862,11 +864,6 @@ func completeZVMCommands(ctx context.Context, cmd *opts.Command) {
 			fmt.Fprintf(cmd.Root().Writer, "%s:%s\n", alias, command.Usage)
 		}
 	}
-}
-
-// isSettingsCommand reports whether args name the settings command.
-func isSettingsCommand(args []string) bool {
-	return subcommand(args) == "settings"
 }
 
 // subcommand returns the name of the command in args (os.Args[1:]), skipping

@@ -10,7 +10,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"regexp"
 
 	"strings"
 
@@ -59,10 +58,6 @@ func (z *ZVM) UseVersion(ver string, global bool) (resolved string, perShell boo
 	}
 	if err := checkReservedVersion(ver, "use"); err != nil {
 		return ver, false, err
-	}
-
-	if isReservedName(ver) {
-		return ver, false, fmt.Errorf("%w: %q", ErrReservedName, ver)
 	}
 
 	if err := z.getVersion(ver); err != nil {
@@ -136,8 +131,6 @@ func getConfirmation() bool {
 	answer := strings.TrimSpace(strings.ToLower(text))
 	return answer == "y" || answer == "ye" || answer == "yes"
 }
-
-var minZigVersionRe = regexp.MustCompile(`(?m)^\s*\.minimum_zig_version\s*=\s*"([^"]+)"`)
 
 // ExtractMinimumZigVersion reads `.minimum_zig_version` from build.zig.zon in
 // the current directory only. It deliberately does not search parent

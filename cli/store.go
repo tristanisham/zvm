@@ -20,6 +20,7 @@ import (
 
 	"github.com/charmbracelet/log"
 	"github.com/rogpeppe/go-internal/lockedfile"
+	"github.com/schollz/progressbar/v3"
 )
 
 // The dedupe store is a content-addressed directory of hard links, modelled
@@ -164,12 +165,29 @@ func (z *ZVM) Dedupe(versions []string) (DedupeReport, error) {
 		return report, errors.Join(ErrDedupeFailed, err)
 	}
 
-	d := &deduper{store: z.storeDir(), report: &report, verified: map[string]fs.FileInfo{}}
-	for _, v := range versions {
-		if err := d.dedupeTree(filepath.Join(z.baseDir, v)); err != nil {
+	roots := make([]string, len(versions))
+	for i, v := range versions {
+		roots[i] = filepath.Join(z.baseDir, v)
+	}
+	// Hashing dominates the run time, so progress is measured in bytes read.
+	// Every path counts, including hard links that share an inode.
+	_, toHash, err := regularFileBytes(roots)
+	if err != nil {
+		return report, errors.Join(ErrDedupeFailed, err)
+	}
+
+	bar := progressbar.DefaultBytesSilent(0)
+	if toHash > 0 {
+		bar = progressbar.DefaultBytes(toHash, "Deduping:")
+	}
+	d := &deduper{store: z.storeDir(), report: &report, verified: map[string]fs.FileInfo{}, bar: bar}
+	for _, root := range roots {
+		if err := d.dedupeTree(root); err != nil {
+			stopProgressBar(d.bar, false)
 			return report, errors.Join(ErrDedupeFailed, err)
 		}
 	}
+	stopProgressBar(d.bar, true)
 
 	if report.BytesAfter, err = z.diskUsage(); err != nil {
 		return report, errors.Join(ErrDedupeFailed, err)
@@ -182,6 +200,7 @@ type deduper struct {
 	report *DedupeReport
 	// verified caches store entries whose content has been re-hashed this run.
 	verified map[string]fs.FileInfo
+	bar      *progressbar.ProgressBar
 }
 
 type dedupeOutcome int
@@ -233,6 +252,9 @@ func (d *deduper) dedupeTree(root string) error {
 		}
 
 		d.report.Scanned++
+		if info, err := entry.Info(); err == nil {
+			_ = d.bar.Add64(info.Size())
+		}
 		switch outcome := d.dedupeFile(path); outcome {
 		case outcomeIgnored:
 			d.report.Ignored++
@@ -455,8 +477,14 @@ func (z *ZVM) diskUsage() (int64, error) {
 	}
 	roots = append(roots, z.storeDir())
 
+	unique, _, err := regularFileBytes(roots)
+	return unique, err
+}
+
+// regularFileBytes sums the sizes of regular files under roots. unique counts
+// each inode once; total counts every path. Missing roots count as empty.
+func regularFileBytes(roots []string) (unique, total int64, err error) {
 	seen := make(map[fileID]struct{})
-	var total int64
 	for _, root := range roots {
 		err := filepath.WalkDir(root, func(path string, entry fs.DirEntry, err error) error {
 			if err != nil {
@@ -472,20 +500,21 @@ func (z *ZVM) diskUsage() (int64, error) {
 			if err != nil {
 				return nil
 			}
+			total += info.Size()
 			if id, _, ok := fileIdentity(path, info); ok {
 				if _, dup := seen[id]; dup {
 					return nil
 				}
 				seen[id] = struct{}{}
 			}
-			total += info.Size()
+			unique += info.Size()
 			return nil
 		})
 		if err != nil {
-			return 0, err
+			return 0, 0, err
 		}
 	}
-	return total, nil
+	return unique, total, nil
 }
 
 // PruneStore garbage-collects the store: an entry whose link count is 1 is no

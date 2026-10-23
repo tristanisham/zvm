@@ -633,10 +633,38 @@ func TestFormatBytes(t *testing.T) {
 		{1024, "1.0 KiB"},
 		{176 * 1024 * 1024, "176.0 MiB"},
 		{3 << 30, "3.0 GiB"},
+		{5 << 40, "5.0 TiB"},
 	}
 	for _, tt := range tests {
 		if got := FormatBytes(tt.in); got != tt.want {
 			t.Errorf("FormatBytes(%d) = %q, want %q", tt.in, got, tt.want)
 		}
+	}
+}
+
+// The progress bar's total counts every path dedupe will hash, while disk
+// usage counts each inode once.
+func TestRegularFileBytes(t *testing.T) {
+	z := newStoreTestZVM(t, []storeTestFile{
+		{path: "0.15.1/lib/a.zig", content: "12345"},
+		{path: "0.15.1/zig", content: "123"},
+		{path: "0.15.2/lib/link", symlink: "../../0.15.1/zig"},
+	})
+	a := filepath.Join(z.baseDir, "0.15.1", "lib", "a.zig")
+	if err := os.Link(a, filepath.Join(z.baseDir, "0.15.2", "a.zig")); err != nil {
+		t.Skipf("hard links unsupported: %v", err)
+	}
+
+	roots := []string{
+		filepath.Join(z.baseDir, "0.15.1"),
+		filepath.Join(z.baseDir, "0.15.2"),
+		filepath.Join(z.baseDir, "missing"),
+	}
+	unique, total, err := regularFileBytes(roots)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if unique != 8 || total != 13 {
+		t.Fatalf("regularFileBytes = (unique %d, total %d), want (8, 13)", unique, total)
 	}
 }

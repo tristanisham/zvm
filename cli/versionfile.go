@@ -14,6 +14,7 @@ import (
 	"strings"
 
 	"github.com/charmbracelet/log"
+	zonfile "github.com/tristanisham/zon"
 )
 
 // VersionSource describes where a project's Zig version was found.
@@ -106,12 +107,18 @@ func parseZvmLock(data []byte) (string, bool) {
 	return "", false
 }
 
-// parseMinimumZigVersion returns the uncommented `.minimum_zig_version` value
-// from a build.zig.zon file.
+// parseMinimumZigVersion returns the `.minimum_zig_version` value from a
+// build.zig.zon file. A file that isn't valid ZON has no usable value.
 func parseMinimumZigVersion(data []byte) (string, bool) {
-	matches := minZigVersionRe.FindSubmatch(data)
-	if len(matches) < 2 {
+	var manifest struct {
+		MinimumZigVersion string `zon:"minimum_zig_version"`
+	}
+	if err := zonfile.Unmarshal(data, &manifest); err != nil {
+		log.Debug("build.zig.zon is not valid ZON", "err", err)
 		return "", false
 	}
-	return strings.TrimPrefix(string(matches[1]), "v"), true
+	if manifest.MinimumZigVersion == "" {
+		return "", false
+	}
+	return strings.TrimPrefix(manifest.MinimumZigVersion, "v"), true
 }

@@ -538,9 +538,11 @@ func TestReservedDirsAreNotVersions(t *testing.T) {
 		for _, tt := range tests {
 			t.Run(tt.op+" "+name, func(t *testing.T) {
 				err := tt.run()
-				// uninstall and use reject bin and self in master's
-				// checkReservedVersion before isReservedName is reached.
-				if !errors.Is(err, tt.wantErr) && !(tt.wantErr == ErrReservedName && errors.Is(err, ErrInvalidInput)) {
+				// uninstall and use reject bin and self in
+				// checkReservedVersion (ErrInvalidInput) before
+				// isReservedName is reached.
+				rejectedEarlier := tt.wantErr == ErrReservedName && errors.Is(err, ErrInvalidInput)
+				if !errors.Is(err, tt.wantErr) && !rejectedEarlier {
 					t.Fatalf("err = %v, want %v", err, tt.wantErr)
 				}
 				if z.IsInstalled(name) {

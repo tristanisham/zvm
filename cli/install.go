@@ -278,6 +278,11 @@ func (z *ZVM) Install(version string, force bool, skipShasum bool, mirror bool, 
 	// The base directory where all Zig files for the appropriate version are installed
 	// installedVersionPath := filepath.Join(z.zvmBaseDir, version)
 	fmt.Println("Extracting bundle...")
+	unlock, err := z.lockStore()
+	if err != nil {
+		return version, err
+	}
+	defer unlock()
 
 	if err := ExtractBundle(tempFile.Name(), z.baseDir); err != nil {
 		log.Fatal(err)
@@ -335,6 +340,7 @@ func (z *ZVM) Install(version string, force bool, skipShasum bool, mirror bool, 
 
 	// I figure nobody wants crap just sitting around taking up valuable bytes.
 	_ = z.Clean()
+	unlock()
 
 	if z.Settings.AutoDedupe {
 		z.autoDedupe(version)
@@ -672,6 +678,11 @@ func (z *ZVM) InstallZls(requestedVersion string, compatMode string, force bool,
 	}
 
 	fmt.Println("Extracting ZLS bundle...")
+	unlock, err := z.lockStore()
+	if err != nil {
+		return err
+	}
+	defer unlock()
 
 	zlsTempDir, err := os.MkdirTemp(z.baseDir, "zls-*")
 	if err != nil {

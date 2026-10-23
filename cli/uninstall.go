@@ -26,7 +26,7 @@ func validateVersionTarget(version, action string) error {
 func checkReservedVersion(version, action string) error {
 	// These entries belong to ZVM itself, not to a Zig installation.
 	switch strings.ToLower(version) {
-	case "settings.json", "self", "bin":
+	case "settings.json", "self", "bin", storeDirName:
 		return fmt.Errorf("%w: cannot %s reserved entry %q", ErrInvalidInput, action, version)
 	}
 	return nil
@@ -72,6 +72,11 @@ func (z *ZVM) Uninstall(version string) error {
 	if isReservedName(version) {
 		return fmt.Errorf("%w: %q", ErrReservedName, version)
 	}
+	unlock, err := z.lockStore()
+	if err != nil {
+		return err
+	}
+	defer unlock()
 
 	root, err := os.OpenRoot(z.baseDir)
 	if err != nil {
@@ -99,6 +104,7 @@ func (z *ZVM) Uninstall(version string) error {
 			}
 		}
 		fmt.Printf("✔ Uninstalled %s\nRun `zvm ls` to view installed versions.\n", version)
+		unlock()
 
 		// Store entries only this version referenced are now unreferenced.
 		if pruned, err := z.PruneStore(); err != nil {

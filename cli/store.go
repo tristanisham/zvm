@@ -19,6 +19,7 @@ import (
 	"sync"
 
 	"github.com/charmbracelet/log"
+	"github.com/rogpeppe/go-internal/lockedfile"
 )
 
 // The dedupe store is a content-addressed directory of hard links, modelled
@@ -110,9 +111,26 @@ func (z *ZVM) storeDir() string {
 	return filepath.Join(z.baseDir, storeDirName)
 }
 
+// lockStore serializes version-file changes with dedupe and store pruning.
+// Keep the lock file in place: removing it would let processes lock different
+// inodes. The returned unlock is safe to call before a deferred unlock.
+func (z *ZVM) lockStore() (func(), error) {
+	unlock, err := lockedfile.MutexAt(filepath.Join(z.baseDir, "store.lock")).Lock()
+	if err != nil {
+		return nil, err
+	}
+	return sync.OnceFunc(unlock), nil
+}
+
 // Dedupe hard-links identical files across installed versions through the
 // store. With no versions given it processes every installed version.
 func (z *ZVM) Dedupe(versions []string) (DedupeReport, error) {
+	unlock, err := z.lockStore()
+	if err != nil {
+		return DedupeReport{}, errors.Join(ErrDedupeFailed, err)
+	}
+	defer unlock()
+
 	installed, err := z.GetInstalledVersions()
 	if err != nil {
 		return DedupeReport{}, errors.Join(ErrDedupeFailed, err)
@@ -146,7 +164,7 @@ func (z *ZVM) Dedupe(versions []string) (DedupeReport, error) {
 		return report, errors.Join(ErrDedupeFailed, err)
 	}
 
-	d := &deduper{store: z.storeDir(), report: &report, verified: map[string]bool{}}
+	d := &deduper{store: z.storeDir(), report: &report, verified: map[string]fs.FileInfo{}}
 	for _, v := range versions {
 		if err := d.dedupeTree(filepath.Join(z.baseDir, v)); err != nil {
 			return report, errors.Join(ErrDedupeFailed, err)
@@ -163,7 +181,7 @@ type deduper struct {
 	store  string
 	report *DedupeReport
 	// verified caches store entries whose content has been re-hashed this run.
-	verified map[string]bool
+	verified map[string]fs.FileInfo
 }
 
 type dedupeOutcome int
@@ -264,8 +282,7 @@ func (d *deduper) dedupeFile(path string) dedupeOutcome {
 	}
 
 	// Refuse to store a file that changed while it was being hashed.
-	if after, err := os.Lstat(path); err != nil || !os.SameFile(info, after) ||
-		after.Size() != info.Size() || !after.ModTime().Equal(info.ModTime()) || after.Mode() != mode {
+	if after, err := os.Lstat(path); err != nil || !unchangedStoreFile(info, after) {
 		d.problem("%s: changed while hashing; left untouched", path)
 		return outcomeSkipped
 	}
@@ -290,7 +307,13 @@ func (d *deduper) dedupeFile(path string) dedupeOutcome {
 				d.problem("%s: cannot hard link into store: %v", path, err)
 				return outcomeLinkFailure
 			}
-			d.verified[entry] = true
+			linked, err := os.Lstat(entry)
+			if err != nil || !unchangedStoreFile(info, linked) {
+				_ = os.Remove(entry)
+				d.problem("%s: changed before linking into store; left untouched", path)
+				return outcomeSkipped
+			}
+			d.verified[entry] = linked
 			return outcomeStored
 		}
 		if err != nil {
@@ -330,18 +353,28 @@ func (d *deduper) dedupeFile(path string) dedupeOutcome {
 // verify re-hashes a pre-existing store entry once per run before anything is
 // linked to it, so a store file edited in place is never propagated further.
 func (d *deduper) verify(entry string, sinfo fs.FileInfo, sum string, mode fs.FileMode) bool {
-	if d.verified[entry] {
+	if cached := d.verified[entry]; cached != nil && unchangedStoreFile(cached, sinfo) {
 		return true
 	}
-	if !sinfo.Mode().IsRegular() || sinfo.Mode() != mode {
+	if !sinfo.Mode().IsRegular() || sinfo.Mode() != mode || storeEntryName(sum, sinfo) != filepath.Base(entry) {
 		return false
 	}
 	got, err := hashFile(entry)
 	if err != nil || got != sum {
 		return false
 	}
-	d.verified[entry] = true
+	after, err := os.Lstat(entry)
+	if err != nil || !unchangedStoreFile(sinfo, after) {
+		return false
+	}
+	d.verified[entry] = after
 	return true
+}
+
+func unchangedStoreFile(before, after fs.FileInfo) bool {
+	return after != nil && os.SameFile(before, after) && before.Size() == after.Size() &&
+		before.ModTime().Equal(after.ModTime()) && before.Mode() == after.Mode() &&
+		ownerTag(before) == ownerTag(after)
 }
 
 // replaceWithLink makes path a hard link to entry without ever leaving path
@@ -465,8 +498,13 @@ func (z *ZVM) PruneStore() (PruneReport, error) {
 	if _, err := os.Lstat(store); errors.Is(err, fs.ErrNotExist) {
 		return report, nil
 	}
+	unlock, err := z.lockStore()
+	if err != nil {
+		return report, err
+	}
+	defer unlock()
 
-	err := filepath.WalkDir(store, func(path string, entry fs.DirEntry, err error) error {
+	err = filepath.WalkDir(store, func(path string, entry fs.DirEntry, err error) error {
 		if err != nil {
 			log.Debug("prune store", "path", path, "err", err)
 			return nil

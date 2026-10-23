@@ -7,6 +7,7 @@ require (
 	github.com/charmbracelet/log v1.0.0
 	github.com/jedisct1/go-minisign v0.0.0-20260527172527-a09352b57a22
 	github.com/nyaosorg/go-windows-junction v0.2.0
+	github.com/rogpeppe/go-internal v1.14.1
 	github.com/schollz/progressbar/v3 v3.19.0
 	github.com/tristanisham/clr v0.0.0-20221004001624-00ee60046d85
 	github.com/ulikunitz/xz v0.5.15

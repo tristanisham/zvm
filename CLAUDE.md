@@ -57,9 +57,10 @@ deno task star-history   # regenerate the README star chart (token or gh auth lo
 
 ## Packaging & Generated Files
 
+- `installer/windows/` is a **build input**, not documentation — `.github/workflows/winget.yml` runs `dotnet build installer/windows/ZVM.wixproj`. Breaking `Package.wxs` breaks the MSI. It pins WiX 5.0.2 deliberately (WiX 6+ is under Open Source Maintenance Fee terms). Per-user MSI components must key off an HKCU registry value and register a `RemoveFolder`, or ICE38/ICE64 fail the build.
 - `.github/assets/star-history-*.svg` are **generated** by `.github/workflows/star-history.yml`. Never hand-edit; run `deno task star-history`. They embed no timestamp, so an unchanged star count produces no commit.
 - `docs/` is gitignored.
-- `.github/workflows/release.yml` builds the release on a `v*` tag push: `deno task release`, `SHA256SUMS`, a provenance attestation per archive, then a **draft** release. Review and publish the draft manually. The tag must equal `VERSION` in `cli/meta/version.go`.
+- `.github/workflows/release.yml` builds the release on a `v*` tag push: `deno task release`, `SHA256SUMS`, a provenance attestation per archive, then a **draft** release. Publishing stays manual because a release published by `GITHUB_TOKEN` would not trigger `winget.yml`. The tag must equal `VERSION` in `cli/meta/version.go`.
 
 ## Environment Variables
 

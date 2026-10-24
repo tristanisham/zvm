@@ -1,5 +1,5 @@
 <p align="center">
-  <img width="400px"  src ="https://github.com/tristanisham/zvm/assets/23124818/be5c3713-8aaf-4419-a1ae-acb29da36eae"/>
+  <img src="assets/logo.png" alt="ZVM orange planet logo" width="400" height="400" />
 </p>
 
 Zig Version Manager (zvm) is a tool for managing your

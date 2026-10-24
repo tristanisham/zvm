@@ -27,6 +27,7 @@ To install the latest version, use `master`
 - `--force`, `-f` — force installation even if the version is already installed
 - `--skip-shasum`, `-s` — skip SHA-256 verification and the unverified-download confirmation
 - `--skip-use`, `-k` — install without setting the version as active
+- `--keep-and-rename`, `--keep` — when installing a new master build, keep the old one and alias it as `NAME`
 - `--full` — use the 'full' zls compatibility mode
 - `--nomirror` — download Zig from ziglang.org instead of a community mirror
 - `--target-os` — override the target operating system (e.g., linux, macos, windows, freebsd)

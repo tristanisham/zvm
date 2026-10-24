@@ -324,6 +324,21 @@ zvm i --skip-use 0.15.2
 
 This also applies when installing ZLS with `--zls`.
 
+### Keep the Old Master Build
+
+Installing `master` replaces the master build you already have. Pass
+`--keep-and-rename <name>` (or `--keep <name>`) to keep the old build instead:
+ZVM moves it to a directory named after its version and saves `<name>` as an
+[alias](#alias-your-zig-versions) for it.
+
+```sh
+zvm i --keep before-upgrade master
+zvm use before-upgrade
+```
+
+The flag does nothing for other versions, when `master` is not installed, or
+when the installed `master` is already the latest build.
+
 ### Install a Specific Development Build
 
 Zig development builds can be installed by their full build identifier, such as

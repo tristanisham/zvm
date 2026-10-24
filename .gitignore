@@ -20,3 +20,6 @@ zvm-*
 .claude
 __pycache__
 docs/
+
+# nix build output link
+/result

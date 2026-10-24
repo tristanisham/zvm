@@ -10,9 +10,7 @@ and publish.
    workflow builds every archive, writes `SHA256SUMS`, attests build
    provenance, and uploads them to a **draft** release. It fails if the tag
    doesn't match `VERSION`.
-4. Review the draft's notes on GitHub and publish it. Publishing stays manual
-   because a release published by the workflow's token wouldn't trigger
-   `winget.yml`.
+4. Review the draft's notes on GitHub and publish it manually.
 
 `.github/scripts/pkg.ts` keeps `flake.nix` and the Claude/Codex plugin
 manifests aligned with `cli/meta/version.go`. `deno task build` runs it

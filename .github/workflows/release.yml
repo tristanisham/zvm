@@ -2,8 +2,7 @@ name: Release
 
 # Pushing a vX.Y.Z tag builds every release archive, writes SHA256SUMS,
 # attests build provenance for each archive and uploads them to a draft
-# release. Publishing the draft stays manual: a release published by
-# GITHUB_TOKEN would not trigger winget.yml.
+# release. Review and publish the draft manually.
 #
 # Pull requests that touch the release build run everything except the
 # attestation and the upload.

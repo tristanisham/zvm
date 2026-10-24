@@ -21,7 +21,9 @@ on:
     paths:
       - .github/workflows/release.yml
       - build.ts
-      - pkg.ts
+      - build_test.ts
+      - .github/scripts/pkg.ts
+      - .github/scripts/pkg_test.ts
       - deno.jsonc
 
 permissions:
@@ -57,9 +59,8 @@ jobs:
         with:
           deno-version: v2.x
 
-      - name: Check versions
+      - name: Check tag version
         run: |
-          deno task pkg:check
           version=$(sed -n 's/^[[:space:]]*VERSION = "\(v[^"]*\)".*/\1/p' cli/meta/version.go)
           echo "cli/meta/version.go: $version"
           if [ "$PUBLISH" = true ] && [ "$TAG" != "$version" ]; then
@@ -67,9 +68,9 @@ jobs:
             exit 1
           fi
 
-      - name: Build release archives
+      - name: Test and build release archives
         run: |
-          deno task build
+          deno task release
           cd build
           sha256sum zvm-*.tar zvm-*.zip > SHA256SUMS
           cat SHA256SUMS

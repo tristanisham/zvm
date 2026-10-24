@@ -1,6 +1,6 @@
 # Releasing ZVM
 
-Releasing ZVM is meant to be simple. CI builds the archives; you tag, sign,
+Releasing ZVM is meant to be simple. CI builds the archives; you tag
 and publish.
 
 1. Update the `<version>` in `cli/meta/version.go`, run `deno task pkg`, and
@@ -10,38 +10,19 @@ and publish.
    workflow builds every archive, writes `SHA256SUMS`, attests build
    provenance, and uploads them to a **draft** release. It fails if the tag
    doesn't match `VERSION`.
-4. Sign the draft's checksums with Minisign (see below)
-5. Review the draft's notes on GitHub and publish it. Publishing stays manual
+4. Review the draft's notes on GitHub and publish it. Publishing stays manual
    because a release published by the workflow's token wouldn't trigger
    `winget.yml`.
 
-## Signing
+`.github/scripts/pkg.ts` keeps `flake.nix` and the Claude/Codex plugin
+manifests aligned with `cli/meta/version.go`. `deno task build` runs it
+automatically, but run `deno task pkg` before tagging so those changes are
+included in the release commit. Use `deno task pkg:check` to verify that the
+versions already match.
 
-`SHA256SUMS` covers every archive, so signing it signs the whole release. The
-private key lives only on the maintainer's machine, never in CI; the public key
-is `minisign.pub` and is also printed in the README.
-
-After the workflow finishes, sign the checksum file it uploaded, not one from a
-local build, which can differ:
-
-```sh
-tag=<version>
-gh release download "$tag" --repo tristanisham/zvm --pattern SHA256SUMS --dir build --clobber
-deno task release:sign -t "ZVM $tag release checksums"
-minisign -Vm build/SHA256SUMS -p minisign.pub
-gh release upload "$tag" build/SHA256SUMS.minisig --repo tristanisham/zvm --clobber
-```
-
-Sign last. Re-running the workflow on a draft replaces `SHA256SUMS`, which
-invalidates an uploaded signature; download and sign again before publishing.
-
-First-time key setup and backup are covered in `CONTRIBUTING.MD`. If the key is
-ever lost or rotated, update both `minisign.pub` and the key in the README.
-
-`pkg.ts` keeps `flake.nix` and the Claude/Codex plugin manifests aligned with
-`cli/meta/version.go`. `deno task build` runs it automatically, but run
-`deno task pkg` before tagging so those changes are included in the release
-commit. Use `deno task pkg:check` to verify that the versions already match.
+`deno task release` runs the package tests, then the build tests, checks package
+versions, and builds the release archives. It stops if any step fails. The
+`Release` workflow uses this task; you can also run it locally before tagging.
 
 The `Plugin Sync` workflow is a release-time backstop and also regenerates the
 skill's command reference from the CLI. Drift is normally caught earlier by

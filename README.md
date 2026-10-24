@@ -98,18 +98,6 @@ sha256sum --check --ignore-missing SHA256SUMS
 This covers releases built by the workflow, starting after v0.9.3. The install
 scripts and `zvm upgrade` don't check it yet.
 
-Starting with v0.9.4, `SHA256SUMS` is also signed with
-[Minisign](https://jedisct1.github.io/minisign/) by a key that never touches CI,
-so a compromised workflow can't forge it. Download `SHA256SUMS.minisig` from the
-release next to `SHA256SUMS`, then check the signature before the checksums:
-
-```bash
-minisign -Vm SHA256SUMS -P RWRTmpaExld+Az57etAp2QLsiWfQOxXSwZX652fzdAqiQheSZhSaJJmC
-sha256sum --check --ignore-missing SHA256SUMS
-```
-
-The public key is also in [`minisign.pub`](minisign.pub).
-
 Alternatively, you can build the app by cloning the repository and running
 
 ```bash

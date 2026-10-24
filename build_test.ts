@@ -4,7 +4,7 @@
 
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { packageVersionFiles } from "./pkg.ts";
+import { packageVersionFiles } from "./.github/scripts/pkg.ts";
 
 for (const fail of [false, true]) {
   Deno.test({

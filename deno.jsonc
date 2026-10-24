@@ -2,10 +2,11 @@
   "tasks": {
     "build": "deno run -A build.ts",
     "clean": "rm -r build",
-    "pkg": "deno run -A pkg.ts",
-    "pkg:check": "deno run -A pkg.ts --check",
-    "release:sign": "minisign -S -m build/SHA256SUMS",
-    "test:pkg": "deno test -A pkg_test.ts",
+    "pkg": "deno run -A .github/scripts/pkg.ts",
+    "pkg:check": "deno run -A .github/scripts/pkg.ts --check",
+    "release": "deno task test:pkg && deno task test:build && deno task pkg:check && deno task build",
+    "test:build": "deno test -A build_test.ts",
+    "test:pkg": "deno test -A .github/scripts/pkg_test.ts",
     "test:star-history": "deno test -A .github/scripts/star-history_test.ts",
     "star-history": "deno run -A .github/scripts/star-history.ts"
   },

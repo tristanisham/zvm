@@ -1,9 +1,13 @@
 .\" Copyright 2026 Tristan Isham. All rights reserved.
-.TH ZVM-INSTALL 1 "August 2026" "ZVM" "User Commands"
+.TH ZVM-INSTALL 1 "August 2026" "ZVM v0.9.4" "User Commands"
 .SH NAME
 zvm-install \- download and install Zig and ZLS versions
 .SH SYNOPSIS
 .B zvm install
+.RI [ options ]
+.I version
+.br
+.B zvm i
 .RI [ options ]
 .I version
 .SH DESCRIPTION
@@ -13,6 +17,31 @@ Use
 for the latest development build.
 Version shorthand and aliases are accepted; see
 .BR zvm (1).
+.PP
+By default, a new installation becomes the global default through
+.IR ~/.zvm/bin .
+In a shell set up with
+.BR zvm-env (1),
+the shell keeps its own version; run
+.B zvm use
+to switch it too.
+Use
+.B --skip-use
+to install without changing the global default.
+.PP
+If automatic deduplication is enabled with
+.BR "zvm dedupe --auto on" ,
+new installations are deduplicated after installation; see
+.BR zvm-dedupe (1).
+.SH DOWNLOAD VERIFICATION
+ZVM checks the download's SHA-256 checksum when the source supplies one.
+If no checksum is available, it asks for confirmation before downloading.
+Official Zig archives also require a valid Minisign signature using the
+configured
+.B minisignPubKey
+and are checked against previously recorded hashes.
+Custom version maps do not use these official-source signature checks.
+ZLS archives use SHA-256 verification without Minisign signatures.
 .SH OPTIONS
 .TP
 .BR --zls
@@ -25,9 +54,10 @@ Install even when the version is already present.
 Skip SHA-256 verification and the confirmation normally required for an
 unverified download.
 This weakens download verification.
+Official Zig Minisign signature verification remains enabled.
 .TP
 .BR -k , " " --skip-use
-Install without setting the installed Zig version as active.
+Install Zig and any requested ZLS without changing the global default.
 .TP
 .BR --full
 Use the full ZLS compatibility mode instead of the default runtime-only mode.
@@ -62,6 +92,8 @@ zvm install --target-os freebsd --target-arch x86_64 0.14.1
 .SH SEE ALSO
 .BR zvm (1),
 .BR zvm-use (1),
+.BR zvm-env (1),
+.BR zvm-dedupe (1),
 .BR zvm-list-remote (1),
 .BR zvm-mirrorlist (1),
 .BR zvm-vmu (1)

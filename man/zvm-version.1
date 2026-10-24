@@ -1,13 +1,15 @@
 .\" Copyright 2026 Tristan Isham. All rights reserved.
-.TH ZVM-VERSION 1 "August 2026" "ZVM" "User Commands"
+.TH ZVM-VERSION 1 "August 2026" "ZVM v0.9.4" "User Commands"
 .SH NAME
 zvm-version \- print the installed ZVM version
 .SH SYNOPSIS
 .B zvm version
 .SH DESCRIPTION
-Print the installed ZVM release version.
+Print the installed ZVM release version and target operating system and
+architecture, for example
+.BR "zvm version v0.9.4 linux/amd64" .
 The global
 .B zvm --version
-option additionally prints the target operating system and architecture.
+option prints the same version and platform information.
 .SH SEE ALSO
 .BR zvm (1)

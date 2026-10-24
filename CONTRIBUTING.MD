@@ -31,50 +31,12 @@ When reviewing or changing Go code, run `go test ./...`, `go vet ./...`, and
 `govulncheck`, install it with
 `go install golang.org/x/vuln/cmd/govulncheck@latest`.
 
-## Signing a release
-
-CI builds the archives, checksums, and GitHub provenance attestations. You can
-also sign `SHA256SUMS` locally with [Minisign](https://jedisct1.github.io/minisign/).
-The signed checksums cover every release archive.
-
-Install Minisign and generate a key pair once:
-
-```sh
-minisign -G
-```
-
-This writes `minisign.pub` in the current directory and an encrypted private
-key at `~/.minisign/minisign.key`. Back up the private key and password. Publish
-the public key on your website or in the repository so users can verify your
-signatures. Keep the private key out of the repository and CI.
-
-After CI creates the draft release, download its checksum file, sign it, and
-attach the signature before publishing:
-
-```sh
-tag=v0.9.4
-gh release download "$tag" --repo tristanisham/zvm \
-  --pattern SHA256SUMS --dir build --clobber
-deno task release:sign -t "ZVM $tag release checksums"
-gh release upload "$tag" build/SHA256SUMS.minisig --repo tristanisham/zvm --clobber
-```
-
-Sign the checksum file from the release, since a local rebuild can produce
-different archives. The task prompts for your key password and writes
-`build/SHA256SUMS.minisig`. For a key stored elsewhere, append
-`-s /path/to/minisign.key` to the task. If you rebuild or replace the draft's
-archives, download and sign its new checksum file again.
-
-To verify a download, put the archives, `SHA256SUMS`, and `SHA256SUMS.minisig`
-in the same directory. Use the public key you published:
-
-```sh
-minisign -V -m SHA256SUMS -p /path/to/minisign.pub
-sha256sum --check --ignore-missing SHA256SUMS
-```
-
-Run the checksum check only after the signature verifies. The install scripts
-and `zvm upgrade` don't verify these Minisign signatures yet.
+When adding a command or changing its behavior, arguments, flags, aliases, or
+defaults, update the corresponding page in `man/` and the command overview in
+`man/zvm.1` in the same P.R. Include affected examples and environment variables.
+Keep the `.TH` release fields in sync with `cli/meta/version.go`.
+Run `go test . -run TestMan` to check command coverage and release headers;
+review behavior descriptions against the implementation as well.
 
 ## AI
 

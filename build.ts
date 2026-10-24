@@ -5,7 +5,7 @@
 import { parseArgs } from "@std/cli/parse-args";
 import { TarStream, type TarStreamInput } from "@std/tar";
 import * as zip from "@zip-js/zip-js";
-import { syncPackageVersions } from "./pkg.ts";
+import { syncPackageVersions } from "./.github/scripts/pkg.ts";
 
 // Command to count final build results
 //  find ./build -type f \( -name "*.tar" -o -name "*.zip" \) | wc -l

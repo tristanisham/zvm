@@ -240,7 +240,7 @@ func TestInstallKeepingMasterIgnoresAliasWhenNothingToKeep(t *testing.T) {
 	if err := z.writeAliases(map[string]string{"old": "another"}); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := z.InstallKeepingMaster("master", "old", false, false, false, false); err != nil || *asked {
+	if _, err := z.InstallKeepingMaster("master", "old", InstallOptions{}); err != nil || *asked {
 		t.Fatalf("InstallKeepingMaster error = %v, asked %v; want no error and no prompt", err, *asked)
 	}
 	if got, ok, err := z.ResolveAlias(t.Context(), "old"); err != nil || !ok || got != "another" {
@@ -278,7 +278,7 @@ func TestInstallKeepingMasterEndToEnd(t *testing.T) {
 	if err := z.setBin("master"); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := z.InstallKeepingMaster("master", "before-upgrade", false, false, false, false); err != nil {
+	if _, err := z.InstallKeepingMaster("master", "before-upgrade", InstallOptions{}); err != nil {
 		t.Fatal(err)
 	}
 	if data, err := os.ReadFile(filepath.Join(z.baseDir, oldVersion, "zig")); err != nil || !strings.Contains(string(data), oldVersion) {

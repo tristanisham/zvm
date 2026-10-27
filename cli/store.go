@@ -112,7 +112,7 @@ func (z *ZVM) storeDir() string {
 	return filepath.Join(z.baseDir, storeDirName)
 }
 
-// lockStore serializes version-file changes with dedupe and store pruning.
+// lockStore serializes version and alias changes with dedupe and store pruning.
 // Keep the lock file in place: removing it would let processes lock different
 // inodes. The returned unlock is safe to call before a deferred unlock.
 func (z *ZVM) lockStore() (func(), error) {

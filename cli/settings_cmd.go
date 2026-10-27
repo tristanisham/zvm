@@ -13,19 +13,29 @@ import (
 	"github.com/charmbracelet/x/term"
 )
 
+// SettingsOptions controls the output and validation modes of SettingsCommand.
+type SettingsOptions struct {
+	Check      bool
+	Raw        bool
+	JSONOutput bool
+}
+
 // SettingsCommand implements `zvm settings [.key [value]]`.
 //
 // With no path it opens the editor when attached to a terminal and prints
 // settings.json otherwise. A path prints that value; a path and a value
 // validate the value and save it.
-func (z *ZVM) SettingsCommand(args []string, check, raw bool, out io.Writer) error {
-	if check {
+func (z *ZVM) SettingsCommand(args []string, options SettingsOptions, out io.Writer) error {
+	if options.JSONOutput && (options.Check || options.Raw) {
+		return fmt.Errorf("%w: --json cannot be combined with --check or --raw-output", ErrInvalidInput)
+	}
+	if options.Check {
 		return z.checkSettings(out)
 	}
 
 	switch len(args) {
 	case 0:
-		if term.IsTerminal(os.Stdin.Fd()) && term.IsTerminal(os.Stdout.Fd()) {
+		if !options.JSONOutput && term.IsTerminal(os.Stdin.Fd()) && term.IsTerminal(os.Stdout.Fd()) {
 			return z.RunSettingsTUI(os.Stdin, os.Stdout)
 		}
 		return printSettingJSON(out, z.Settings, false)
@@ -55,10 +65,10 @@ func (z *ZVM) SettingsCommand(args []string, check, raw bool, out io.Writer) err
 	if err != nil {
 		return err
 	}
-	if len(args) == 2 {
+	if len(args) == 2 && !options.JSONOutput {
 		fmt.Fprintf(out, ".%s = ", key)
 	}
-	return printSettingJSON(out, v, raw)
+	return printSettingJSON(out, v, options.Raw)
 }
 
 func (z *ZVM) checkSettings(out io.Writer) error {

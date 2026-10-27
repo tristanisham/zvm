@@ -530,7 +530,10 @@ func TestReservedDirsAreNotVersions(t *testing.T) {
 		}{
 			{"uninstall", func() error { return z.Uninstall(name) }, ErrReservedName},
 			{"use", func() error { _, err := z.Use(name); return err }, ErrReservedName},
-			{"install", func() error { _, err := z.Install(name, true, true, false, true); return err }, ErrReservedName},
+			{"install", func() error {
+				_, err := z.Install(name, InstallOptions{Force: true, SkipShasum: true, SkipUse: true})
+				return err
+			}, ErrReservedName},
 			{"install zls", func() error { return z.InstallZls(name, "only-runtime", true, true, true) }, ErrReservedName},
 			{"dedupe", func() error { _, err := z.Dedupe([]string{name}); return err }, ErrReservedName},
 			{"alias", func() error { v := name; return z.Alias(ctx, "x", &v) }, ErrInvalidAliasValue},

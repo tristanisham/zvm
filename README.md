@@ -324,6 +324,17 @@ zvm i --skip-use 0.15.2
 
 This also applies when installing ZLS with `--zls`.
 
+### Keep the Old Master Build
+
+Installing `master` replaces the master build you already have. Pass `--keep-and-rename <name>` (or `--keep <name>` or `-n <name>`) to keep the old build instead: ZVM moves it to a directory named after its version and saves `<name>` as an [alias](#alias-your-zig-versions) for it.
+
+```sh
+zvm i --keep before-upgrade master
+zvm use before-upgrade
+```
+
+The flag is ignored for other versions, and when there is no old build to keep. If `<name>` is already an alias, ZVM asks before pointing it at the old build; answering no, or running without input, stops the install without replacing `master`. If the old version’s destination already exists, the command also stops without replacing `master`.
+
 ### Install a Specific Development Build
 
 Zig development builds can be installed by their full build identifier, such as
@@ -346,7 +357,7 @@ zvm i --skip-shasum 0.16.0-dev.1334+06d08daba
 ```
 
 ### Customize HTTP Timeout
-Set a positive HTTP timeout in seconds for version metadata and installation downloads with `ZVM_HTTP_TIMEOUT`. For `zvm i`, you can also use the `--http.timeout` flag. The default is 180 seconds.
+Set the HTTP timeout in seconds for version metadata and installation downloads with `ZVM_HTTP_TIMEOUT`. For `zvm i`, you can also use the `--http.timeout` flag. The default is 180 seconds; `0` disables the timeout.
 
 ```sh
 zvm i --http.timeout 30
@@ -380,7 +391,8 @@ If you're on a platform where pre-built Zig binaries aren't available for a
 specific version (e.g., FreeBSD for Zig 0.14.x), you can override the target
 OS and/or architecture to download a compatible build.
 
-Use the `--target-os` and `--target-arch` flags:
+Use the `--target-os` and `--target-arch` flags (also available as
+`--target.os` and `--target.arch`):
 
 ```sh
 zvm i --target-os linux --target-arch x86_64 0.14.0
@@ -914,6 +926,7 @@ it. Values are validated before anything is saved:
 
 ```sh
 zvm settings .                     # Print all settings as JSON
+zvm settings --json                # Print all settings as JSON, even in a terminal
 zvm settings .useColor             # Print one value
 zvm settings -r .mirrorListUrl      # Print a string without JSON quotes
 zvm settings .useColor false       # Validate and save a value
@@ -935,6 +948,9 @@ zvm settings '.["useColor"]' false
 Without a terminal, `zvm settings` prints JSON. It does the same on Plan 9,
 where the interactive editor isn't available. Reading and setting individual
 values works there too.
+
+`--json` also prints a selected or updated value as JSON without the usual
+update prefix. It cannot be combined with `--check` or `--raw-output`.
 
 If the file has malformed JSON, a value of the wrong type, an invalid URL,
 or an invalid signing key, ZVM warns and uses defaults for the affected

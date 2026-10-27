@@ -41,6 +41,14 @@ func (z *ZVM) Alias(ctx context.Context, key string, val *string) error {
 		return ErrMissingArgument
 	}
 
+	if val != nil {
+		unlock, err := z.lockStore()
+		if err != nil {
+			return err
+		}
+		defer unlock()
+	}
+
 	aliases, err := z.readAliases()
 	if err != nil {
 		return err
@@ -99,6 +107,12 @@ func (z *ZVM) DeleteAlias(ctx context.Context, key string) error {
 		return ErrMissingArgument
 	}
 
+	unlock, err := z.lockStore()
+	if err != nil {
+		return err
+	}
+	defer unlock()
+
 	aliases, err := z.readAliases()
 	if err != nil {
 		return err
@@ -116,6 +130,11 @@ func (z *ZVM) DeleteAlias(ctx context.Context, key string) error {
 
 // ClearAliases deletes all aliases.
 func (z *ZVM) ClearAliases(ctx context.Context) error {
+	unlock, err := z.lockStore()
+	if err != nil {
+		return err
+	}
+	defer unlock()
 	if err := z.writeAliases(map[string]string{}); err != nil {
 		return fmt.Errorf("%w: %w", ErrFailedAliasClear, err)
 	}

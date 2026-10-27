@@ -120,8 +120,8 @@ var zvmApp = &opts.Command{
 				},
 				&opts.StringFlag{
 					Name:    "keep-and-rename",
-					Aliases: []string{"keep"},
-					Usage:   "when installing a new master build, keep the old one and alias it as `NAME`",
+					Aliases: []string{"keep", "n"}, // Putting the 'n' here cause I want a single letter
+					Usage:   "when installing a new master build, keep the old one under a new alias `NAME`",
 				},
 				&opts.BoolFlag{
 					Name:  "full",
@@ -133,11 +133,14 @@ var zvmApp = &opts.Command{
 				},
 				&opts.StringFlag{
 					Name:    "target-os",
+					Aliases: []string{"target.os"},
 					Usage:   "override the target operating system (e.g., linux, macos, windows, freebsd)",
 					Sources: opts.EnvVars("ZVM_TARGET_OS"),
 				},
 				&opts.StringFlag{
 					Name:    "target-arch",
+					Aliases: []string{"target.arch"},
+
 					Usage:   "override the target architecture (e.g., x86_64, aarch64, arm, riscv64)",
 					Sources: opts.EnvVars("ZVM_TARGET_ARCH"),
 				},
@@ -190,7 +193,12 @@ var zvmApp = &opts.Command{
 				var WellsFargo error
 
 				// Install Zig
-				resolvedVersion, err := zvm.InstallKeepingMaster(req.Package, cmd.String("keep-and-rename"), force, cmd.Bool("skip-shasum"), !cmd.Bool("nomirror"), cmd.Bool("skip-use"))
+				resolvedVersion, err := zvm.InstallKeepingMaster(req.Package, cmd.String("keep-and-rename"), cli.InstallOptions{
+					Force:      force,
+					SkipShasum: cmd.Bool("skip-shasum"),
+					Mirror:     !cmd.Bool("nomirror"),
+					SkipUse:    cmd.Bool("skip-use"),
+				})
 				if err != nil {
 					if !zvm.Settings.AlwaysInstallZLS {
 						return err
@@ -612,13 +620,21 @@ var zvmApp = &opts.Command{
 					Usage: "report invalid entries in settings.json and exit non-zero if there are any",
 				},
 				&opts.BoolFlag{
+					Name:  "json",
+					Usage: "print settings or the selected value as JSON, without opening the editor",
+				},
+				&opts.BoolFlag{
 					Name:    "raw-output",
 					Aliases: []string{"r"},
 					Usage:   "print string values without JSON quotes, like jq -r",
 				},
 			},
 			Action: func(ctx context.Context, cmd *opts.Command) error {
-				return zvm.SettingsCommand(cmd.Args().Slice(), cmd.Bool("check"), cmd.Bool("raw-output"), os.Stdout)
+				return zvm.SettingsCommand(cmd.Args().Slice(), cli.SettingsOptions{
+					Check:      cmd.Bool("check"),
+					Raw:        cmd.Bool("raw-output"),
+					JSONOutput: cmd.Bool("json"),
+				}, os.Stdout)
 			},
 		},
 		{

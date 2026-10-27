@@ -10,6 +10,9 @@ zvm-settings \- view, edit, and check ZVM's settings.json
 .RI [ value ]
 .br
 .B zvm settings --check
+.br
+.B zvm settings --json
+.RI [ .key " [value]]"
 .SH DESCRIPTION
 With no arguments in a terminal, open an interactive editor for
 .IR settings.json .
@@ -74,6 +77,11 @@ Vim-style save and quit commands.
 Quit. With unsaved changes, press q again to quit without saving.
 .SH OPTIONS
 .TP
+.B --json
+Print all settings as JSON instead of opening the editor. With a key, print
+the selected or updated value as JSON without an update prefix. Cannot be
+combined with --check or --raw-output.
+.TP
 .B --check
 Report every invalid entry in settings.json and exit with a non-zero status if there are any.
 .TP
@@ -83,6 +91,7 @@ Print string values without JSON quotes, like
 .SH EXAMPLES
 .nf
 zvm settings .useColor
+zvm settings --json
 zvm settings .useColor false
 zvm settings -r .mirrorListUrl
 zvm settings .mirrorListUrl disabled

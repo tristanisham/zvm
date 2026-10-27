@@ -59,7 +59,7 @@ Official Zig Minisign signature verification remains enabled.
 .BR -k , " " --skip-use
 Install Zig and any requested ZLS without changing the global default.
 .TP
-.BR --keep-and-rename " \fINAME\fR, " --keep " \fINAME\fR"
+.BR --keep-and-rename " \fINAME\fR, " --keep " \fINAME\fR, " -n " \fINAME\fR"
 When a new
 .B master
 build replaces an installed one, keep the old build instead of deleting it.
@@ -69,13 +69,16 @@ and
 .I NAME
 is saved as an alias for it; see
 .BR zvm-alias (1).
-Has no effect for other versions, when
-.B master
-is not installed, or when the installed
-.B master
-is already the latest build.
-If the old version\(aqs destination already exists, installation stops without
-replacing the installed master.
+Has no effect for versions other than
+.BR master .
+Also has no effect when there is no old build to keep.
+If
+.I NAME
+is already an alias, zvm asks before pointing it at the old build;
+answering no, or closed standard input, stops installation without replacing
+master or changing the alias.
+If the old version\(aqs destination already exists, installation stops the
+same way.
 .TP
 .BR --full
 Use the full ZLS compatibility mode instead of the default runtime-only mode.
@@ -83,13 +86,13 @@ Use the full ZLS compatibility mode instead of the default runtime-only mode.
 .BR --nomirror
 Download Zig directly from ziglang.org instead of a community mirror.
 .TP
-.BR --target-os " " os
+.BR --target-os " " os ", " --target.os " " os
 Override the target operating system.
 This also sets
 .B ZVM_TARGET_OS
 for the operation.
 .TP
-.BR --target-arch " " architecture
+.BR --target-arch " " architecture ", " --target.arch " " architecture
 Override the target architecture.
 This also sets
 .B ZVM_TARGET_ARCH

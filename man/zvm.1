@@ -52,9 +52,11 @@ Print the ZVM version and target platform.
 .TP
 .BR install ", " i
 Download and install a Zig version, optionally with ZLS.
+Use --target-os or --target.os and --target-arch or --target.arch to override the download target.
 Use
 .B --keep
-when replacing master to retain the old build under an alias.
+when replacing master to retain the old build under a new alias.
+An existing alias is not overwritten.
 See
 .BR zvm-install (1).
 .TP
@@ -115,7 +117,8 @@ See
 .BR zvm-mirrorlist (1).
 .TP
 .B settings
-View, edit, or check settings.json, interactively or with jq-style paths.
+View, edit, or check settings.json, interactively or with jq-style paths;
+use --json for JSON output even in a terminal.
 See
 .BR zvm-settings (1).
 .TP

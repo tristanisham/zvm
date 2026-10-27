@@ -573,7 +573,7 @@ func TestInstallFallsBackPastBadMirror(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			f := newInstallFixture(t, tt.bad)
 
-			got, err := f.z.Install("0.15.2", false, tt.skipShasum, true, true)
+			got, err := f.z.Install("0.15.2", InstallOptions{SkipShasum: tt.skipShasum, Mirror: true, SkipUse: true})
 			if err != nil {
 				t.Fatalf("Install() error = %v", err)
 			}
@@ -609,7 +609,7 @@ func TestInstallFailsWhenNoCandidateVerifies(t *testing.T) {
 	f := newInstallFixture(t, func(f *installFixture) map[string][]byte { return map[string][]byte{} })
 	delete(f.goodMirr.files, "/"+f.name+".minisig") // every candidate now lacks a valid signature
 
-	_, err := f.z.Install("0.15.2", false, false, true, true)
+	_, err := f.z.Install("0.15.2", InstallOptions{Mirror: true, SkipUse: true})
 	if !errors.Is(err, ErrDownloadFail) || !errors.Is(err, ErrMinisignVerify) {
 		t.Fatalf("Install() error = %v, want %v and %v", err, ErrDownloadFail, ErrMinisignVerify)
 	}
@@ -630,7 +630,7 @@ func TestInstallRejectsIndexPointingAtOtherVersion(t *testing.T) {
 	})
 	f.origin.files["/index.json"] = index
 
-	_, err := f.z.Install("0.15.2", false, true, true, true)
+	_, err := f.z.Install("0.15.2", InstallOptions{SkipShasum: true, Mirror: true, SkipUse: true})
 	if !errors.Is(err, ErrTarballVersionMismatch) {
 		t.Fatalf("Install() error = %v, want %v", err, ErrTarballVersionMismatch)
 	}
@@ -640,7 +640,7 @@ func TestInstallRejectsIndexPointingAtOtherVersion(t *testing.T) {
 // under that name is refused from every source, including with --force.
 func TestInstallPinnedHashMismatch(t *testing.T) {
 	f := newInstallFixture(t, func(f *installFixture) map[string][]byte { return map[string][]byte{} })
-	if _, err := f.z.Install("0.15.2", false, false, true, true); err != nil {
+	if _, err := f.z.Install("0.15.2", InstallOptions{Mirror: true, SkipUse: true}); err != nil {
 		t.Fatalf("first Install() error = %v", err)
 	}
 
@@ -660,7 +660,7 @@ func TestInstallPinnedHashMismatch(t *testing.T) {
 	})
 	f.origin.files["/index.json"] = index
 
-	_, err := f.z.Install("0.15.2", true, false, true, true)
+	_, err := f.z.Install("0.15.2", InstallOptions{Force: true, Mirror: true, SkipUse: true})
 	if !errors.Is(err, ErrKnownHashMismatch) {
 		t.Fatalf("Install() error = %v, want %v", err, ErrKnownHashMismatch)
 	}

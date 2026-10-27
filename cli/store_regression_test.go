@@ -154,7 +154,7 @@ func TestInstallAutoDedupeReleasesLock(t *testing.T) {
 	z := &ZVM{baseDir: t.TempDir(), Settings: DefaultSettings}
 	z.Settings.VersionMapUrl = server.URL + "/index.json"
 	z.Settings.AutoDedupe = true
-	if _, err := z.Install("0.15.2", false, false, false, true); err != nil {
+	if _, err := z.Install("0.15.2", InstallOptions{SkipUse: true}); err != nil {
 		t.Fatal(err)
 	}
 	if entries := storeEntries(t, z); len(entries) != 1 {

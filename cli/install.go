@@ -77,10 +77,27 @@ func confirmUnverifiedDownload(artifact string) error {
 	return nil
 }
 
+// InstallOptions controls how a Zig version is downloaded and activated.
+type InstallOptions struct {
+	Force      bool
+	SkipShasum bool
+	Mirror     bool
+	SkipUse    bool
+}
+
 // Install downloads and installs the specified Zig version.
 // It handles checking for existing installations, verifying checksums,
 // and extracting the downloaded bundle.
-func (z *ZVM) Install(version string, force bool, skipShasum bool, mirror bool, skipUse bool) (string, error) {
+func (z *ZVM) Install(version string, options InstallOptions) (string, error) {
+	return z.InstallKeepingMaster(version, "", options)
+}
+
+// InstallKeepingMaster is Install, except that when keepAs is set and a new
+// master build replaces an installed one, the old build is moved to a
+// directory named after its version and keepAs is saved as an alias for it.
+// keepAs is ignored for any version other than master, and when master is not
+// installed or is already the remote build.
+func (z *ZVM) InstallKeepingMaster(version string, keepAs string, options InstallOptions) (string, error) {
 	if isReservedName(version) {
 		return version, fmt.Errorf("%w: %q", ErrReservedName, version)
 	}
@@ -112,7 +129,20 @@ func (z *ZVM) Install(version string, force bool, skipShasum bool, mirror bool, 
 		}
 	}
 
-	if !force {
+	var kept *keptMaster
+	if keepAs != "" {
+		if version != "master" {
+			fmt.Printf("--keep-and-rename only applies when installing master; ignoring it for %s.\n", version)
+		} else {
+			remoteVersion, _ := rawVersionStructure["master"]["version"].(string)
+			kept, err = z.planKeepMaster(keepAs, remoteVersion)
+			if err != nil {
+				return version, err
+			}
+		}
+	}
+
+	if !options.Force {
 		installedVersions, err := z.GetInstalledVersions()
 		if err != nil {
 			return version, err
@@ -165,7 +195,7 @@ func (z *ZVM) Install(version string, force bool, skipShasum bool, mirror bool, 
 		}
 	}
 
-	if requiresUnverifiedDownloadConfirmation(shasum, skipShasum) {
+	if requiresUnverifiedDownloadConfirmation(shasum, options.SkipShasum) {
 		if err := confirmUnverifiedDownload(fmt.Sprintf("Zig version %s", version)); err != nil {
 			return version, err
 		}
@@ -187,7 +217,7 @@ func (z *ZVM) Install(version string, force bool, skipShasum bool, mirror bool, 
 	}
 
 	chk := tarballCheck{name: tarFileName, label: clrOptVerStr}
-	if skipShasum {
+	if options.SkipShasum {
 		fmt.Println("Skipping shasum check (user requested)")
 	} else {
 		chk.shasum = shasum
@@ -221,7 +251,7 @@ func (z *ZVM) Install(version string, force bool, skipShasum bool, mirror bool, 
 	}
 
 	candidates := []string{tarPath}
-	if !isDevelopmentVersion && mirror && z.Settings.UseMirrorList() && isOfficialSource {
+	if !isDevelopmentVersion && options.Mirror && z.Settings.UseMirrorList() && isOfficialSource {
 		candidates = mirrorCandidates(z.Settings.MirrorListUrl, tarPath)
 	}
 
@@ -254,6 +284,12 @@ func (z *ZVM) Install(version string, force bool, skipShasum bool, mirror bool, 
 		tarName = version
 	}
 
+	if kept != nil {
+		if err := z.keepMaster(kept); err != nil {
+			return version, err
+		}
+	}
+
 	if err := os.Rename(filepath.Join(z.baseDir, tarName), filepath.Join(z.baseDir, version)); err != nil {
 		if _, err := os.Stat(filepath.Join(z.baseDir, version)); err == nil {
 			// Room here to make the backup file.
@@ -280,7 +316,7 @@ func (z *ZVM) Install(version string, force bool, skipShasum bool, mirror bool, 
 		log.Warn(err)
 	}
 
-	if !skipUse {
+	if !options.SkipUse {
 		if err := z.createSymlink(version); err != nil {
 			return version, err
 		}
@@ -320,11 +356,14 @@ func attemptMinisigDownload(tarURL string, client *http.Client) (minisign.Signat
 // although every download repeats the short warning.
 var skipTLSDangerOnce sync.Once
 
+// downloadTimeout reads ZVM_HTTP_TIMEOUT in seconds. Zero disables the timeout;
+// negative, invalid, or overflowing values fall back to httpDefaultTimeout.
 func downloadTimeout() time.Duration {
-	if seconds, err := strconv.Atoi(os.Getenv("ZVM_HTTP_TIMEOUT")); err == nil && seconds > 0 && int64(seconds) <= math.MaxInt64/int64(time.Second) {
-		return time.Duration(seconds) * time.Second
+	seconds, err := strconv.Atoi(os.Getenv("ZVM_HTTP_TIMEOUT"))
+	if err != nil || seconds < 0 || int64(seconds) > math.MaxInt64/int64(time.Second) {
+		return httpDefaultTimeout
 	}
-	return httpDefaultTimeout
+	return time.Duration(seconds) * time.Second
 }
 
 // attemptDownload creates a generic http request for ZVM.

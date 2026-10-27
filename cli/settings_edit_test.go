@@ -265,7 +265,7 @@ func TestSettingsCommand(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			z := newSettingsTestZVM(t)
 			var out bytes.Buffer
-			err := z.SettingsCommand(tt.args, false, tt.raw, &out)
+			err := z.SettingsCommand(tt.args, SettingsOptions{Raw: tt.raw}, &out)
 			if tt.wantErr != nil {
 				if !errors.Is(err, tt.wantErr) {
 					t.Fatalf("err = %v, want %v", err, tt.wantErr)
@@ -283,10 +283,42 @@ func TestSettingsCommand(t *testing.T) {
 	}
 }
 
+func TestSettingsCommandJSON(t *testing.T) {
+	for _, tt := range []struct {
+		name string
+		args []string
+	}{
+		{"all settings", nil},
+		{"selected value", []string{".mirrorListUrl"}},
+		{"updated value", []string{".useColor", "false"}},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			z := newSettingsTestZVM(t)
+			var out bytes.Buffer
+			if err := z.SettingsCommand(tt.args, SettingsOptions{JSONOutput: true}, &out); err != nil {
+				t.Fatal(err)
+			}
+			if !json.Valid(out.Bytes()) {
+				t.Fatalf("output is not JSON: %q", out.String())
+			}
+			if len(tt.args) == 2 && readSettings(t, z.Settings.Path()).UseColor {
+				t.Fatal("updated value was not saved")
+			}
+		})
+	}
+	for _, flags := range [][2]bool{{true, false}, {false, true}} {
+		z := newSettingsTestZVM(t)
+		var out bytes.Buffer
+		if err := z.SettingsCommand(nil, SettingsOptions{Check: flags[0], Raw: flags[1], JSONOutput: true}, &out); !errors.Is(err, ErrInvalidInput) {
+			t.Fatalf("incompatible flags: got %v", err)
+		}
+	}
+}
+
 func TestSettingsCommandCheck(t *testing.T) {
 	z := newSettingsTestZVM(t)
 	var out bytes.Buffer
-	if err := z.SettingsCommand(nil, true, false, &out); err != nil || !strings.Contains(out.String(), "is valid") {
+	if err := z.SettingsCommand(nil, SettingsOptions{Check: true}, &out); err != nil || !strings.Contains(out.String(), "is valid") {
 		t.Fatalf("valid file: err=%v out=%q", err, out.String())
 	}
 
@@ -294,7 +326,7 @@ func TestSettingsCommandCheck(t *testing.T) {
 		t.Fatal(err)
 	}
 	out.Reset()
-	err := z.SettingsCommand(nil, true, false, &out)
+	err := z.SettingsCommand(nil, SettingsOptions{Check: true}, &out)
 	if !errors.Is(err, ErrSettingsProblems) || !strings.Contains(out.String(), ".useColor") {
 		t.Fatalf("invalid file: err=%v out=%q", err, out.String())
 	}
@@ -305,7 +337,7 @@ func TestSettingsCommandOnFirstRun(t *testing.T) {
 	t.Setenv("ZVM_PATH", base)
 	z := Initialize()
 	var out bytes.Buffer
-	if err := z.SettingsCommand([]string{".useColor", "false"}, false, false, &out); err != nil {
+	if err := z.SettingsCommand([]string{".useColor", "false"}, SettingsOptions{}, &out); err != nil {
 		t.Fatal(err)
 	}
 	if path := filepath.Join(base, "settings.json"); z.Settings.Path() != path || readSettings(t, path).UseColor {
@@ -327,7 +359,7 @@ func TestLoadSettingsRejectsNullWithoutRewriting(t *testing.T) {
 				t.Fatal(err)
 			}
 			var out bytes.Buffer
-			if err := z.SettingsCommand(nil, true, false, &out); !errors.Is(err, ErrSettingsProblems) {
+			if err := z.SettingsCommand(nil, SettingsOptions{Check: true}, &out); !errors.Is(err, ErrSettingsProblems) {
 				t.Fatalf("settings --check = %v, want ErrSettingsProblems", err)
 			}
 			after, err := os.ReadFile(path)

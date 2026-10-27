@@ -68,7 +68,7 @@ func (z *ZVM) UseVersion(ver string, global bool) (resolved string, perShell boo
 				// Install must not switch versions itself: UseVersion repoints
 				// the right link below, and a second switch would print a second,
 				// conflicting message.
-				if ver, err = z.Install(ver, false, false, true, true); err != nil {
+				if ver, err = z.Install(ver, InstallOptions{Mirror: true, SkipUse: true}); err != nil {
 					return ver, false, err
 				}
 			} else {
@@ -92,6 +92,9 @@ func (z *ZVM) setBin(ver string) error {
 	binDir := filepath.Join(z.baseDir, "bin")
 	log.Debug("updating bin link", "path", binDir, "target", versionPath)
 	if err := meta.Relink(versionPath, binDir); err != nil {
+		if errors.Is(err, os.ErrExist) {
+			return fmt.Errorf("%s is not a link; move it aside and run the command again: %w", redactPath(binDir), os.ErrExist)
+		}
 		return err
 	}
 

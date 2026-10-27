@@ -15,6 +15,7 @@ import (
 	"fmt"
 	"io"
 	"io/fs"
+	"math"
 	"net/http"
 	"net/url"
 	"os"
@@ -280,7 +281,9 @@ func (z *ZVM) Install(version string, force bool, skipShasum bool, mirror bool, 
 	}
 
 	if !skipUse {
-		z.createSymlink(version)
+		if err := z.createSymlink(version); err != nil {
+			return version, err
+		}
 	}
 
 	fmt.Println("Successfully installed Zig!")
@@ -317,6 +320,13 @@ func attemptMinisigDownload(tarURL string, client *http.Client) (minisign.Signat
 // although every download repeats the short warning.
 var skipTLSDangerOnce sync.Once
 
+func downloadTimeout() time.Duration {
+	if seconds, err := strconv.Atoi(os.Getenv("ZVM_HTTP_TIMEOUT")); err == nil && seconds > 0 && int64(seconds) <= math.MaxInt64/int64(time.Second) {
+		return time.Duration(seconds) * time.Second
+	}
+	return httpDefaultTimeout
+}
+
 // attemptDownload creates a generic http request for ZVM.
 func attemptDownload(url string, client *http.Client) (*http.Response, error) {
 	req, err := createDownloadReq(url)
@@ -328,17 +338,7 @@ func attemptDownload(url string, client *http.Client) (*http.Response, error) {
 		client = &http.Client{}
 	}
 
-	envTimeout := os.Getenv("ZVM_HTTP_TIMEOUT")
-	if envTimeout != "" {
-		timeout, err := strconv.Atoi(envTimeout)
-		if err == nil {
-			client.Timeout = time.Duration(timeout) * time.Second
-		} else {
-			client.Timeout = httpDefaultTimeout
-		}
-	} else {
-		client.Timeout = httpDefaultTimeout
-	}
+	client.Timeout = downloadTimeout()
 
 	log.Debug("using client", "timeout", client.Timeout.String())
 
@@ -405,9 +405,10 @@ func (z *ZVM) SelectZlsVersion(version string, compatMode string) (string, strin
 	tarPath, err := getTarPath(version, &rawVersionStructure)
 	if err == nil {
 		shasum, err := getVersionShasum(version, &rawVersionStructure)
-		if err == nil {
-			return version, tarPath, shasum, nil
+		if err != nil {
+			return "", "", "", err
 		}
+		return version, tarPath, shasum, nil
 	}
 
 	// master/nightly releases.
@@ -613,7 +614,9 @@ func (z *ZVM) InstallZls(requestedVersion string, compatMode string, force bool,
 	}
 
 	if !skipUse {
-		z.createSymlink(requestedVersion)
+		if err := z.createSymlink(requestedVersion); err != nil {
+			return err
+		}
 	}
 	fmt.Println("Done! 🎉")
 	return nil
@@ -654,31 +657,14 @@ func findZlsExecutable(dir string) (string, error) {
 
 // createSymlink creates a symbolic link for the installed version
 // pointing to the 'bin' directory in the ZVM base path.
-func (z *ZVM) createSymlink(version string) {
-	// .zvm/master
-	versionPath := filepath.Join(z.baseDir, version)
-	binDir := filepath.Join(z.baseDir, "bin")
-
-	stat, err := os.Lstat(binDir)
-
-	// See zvm.Use() for an explanation.
-	if stat != nil {
-		if err == nil {
-			fmt.Println("Removing old inode link")
-			if err := os.RemoveAll(binDir); err != nil {
-				log.Fatal("could not remove bin", "err", err, "dir", binDir)
-			}
-
-		}
+func (z *ZVM) createSymlink(version string) error {
+	if err := z.setBin(version); err != nil {
+		return err
 	}
-
-	if err := meta.Link(versionPath, binDir); err != nil {
-		log.Fatal("meta.Link error", err)
-	}
-
 	if _, ok, _ := ActiveMultishellLink(); ok {
 		fmt.Printf("Set Zig %s as the global default. This shell has its own Zig link; run `zvm use %s` to switch it too.\n", version, version)
 	}
+	return nil
 }
 
 // getTarPath determines the download URL for the Zig binary based on the version and system architecture.

@@ -118,6 +118,11 @@ var zvmApp = &opts.Command{
 					Aliases: []string{"k"},
 					Usage:   "install without setting the version as active",
 				},
+				&opts.StringFlag{
+					Name:    "keep-and-rename",
+					Aliases: []string{"keep"},
+					Usage:   "when installing a new master build, keep the old one and alias it as `NAME`",
+				},
 				&opts.BoolFlag{
 					Name:  "full",
 					Usage: "use the 'full' zls compatibility mode",
@@ -178,14 +183,14 @@ var zvmApp = &opts.Command{
 				}
 
 				// HTTP Settings
-				if v := cmd.Int64("http.timeout"); v != 0 {
-					os.Setenv("ZVM_HTTP_TIMEOUT", strconv.FormatInt(v, 10))
+				if cmd.IsSet("http.timeout") {
+					os.Setenv("ZVM_HTTP_TIMEOUT", strconv.FormatInt(cmd.Int64("http.timeout"), 10))
 				}
 
 				var WellsFargo error
 
 				// Install Zig
-				resolvedVersion, err := zvm.Install(req.Package, force, cmd.Bool("skip-shasum"), !cmd.Bool("nomirror"), cmd.Bool("skip-use"))
+				resolvedVersion, err := zvm.InstallKeepingMaster(req.Package, cmd.String("keep-and-rename"), force, cmd.Bool("skip-shasum"), !cmd.Bool("nomirror"), cmd.Bool("skip-use"))
 				if err != nil {
 					if !zvm.Settings.AlwaysInstallZLS {
 						return err

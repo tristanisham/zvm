@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"slices"
+	"strings"
 	"testing"
 )
 
@@ -108,5 +109,24 @@ func TestUseAcceptsSymlinkToZigBuild(t *testing.T) {
 	}
 	if exe, err := z.zigExecutable("local"); err != nil || exe != filepath.Join(z.baseDir, "local", "zig") {
 		t.Fatalf("zigExecutable(local) = %q, %v", exe, err)
+	}
+}
+
+func TestCreateSymlinkPreservesNonLinkBin(t *testing.T) {
+	z := &ZVM{baseDir: t.TempDir()}
+	bin := filepath.Join(z.baseDir, "bin")
+	if err := os.Mkdir(bin, 0700); err != nil {
+		t.Fatal(err)
+	}
+	keep := filepath.Join(bin, "keep")
+	if err := os.WriteFile(keep, []byte("keep"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	err := z.createSymlink("0.15.0")
+	if !errors.Is(err, os.ErrExist) || !strings.Contains(err.Error(), "move it aside") {
+		t.Fatalf("got %v; want ErrExist with move-aside hint", err)
+	}
+	if data, err := os.ReadFile(keep); err != nil || string(data) != "keep" {
+		t.Fatalf("bin contents changed: %q, %v", data, err)
 	}
 }

@@ -88,34 +88,10 @@ func (z *ZVM) UseVersion(ver string, global bool) (resolved string, perShell boo
 
 // setBin updates the symbolic link 'bin' in the ZVM base directory to point to the specified version's bin directory.
 func (z *ZVM) setBin(ver string) error {
-	// .zvm/master
-	version_path := filepath.Join(z.baseDir, ver)
+	versionPath := filepath.Join(z.baseDir, ver)
 	binDir := filepath.Join(z.baseDir, "bin")
-
-	// Came across https://pkg.go.dev/os#Lstat
-	// which is specifically to check symbolic links.
-	// Seemed like the more appropriate solution here
-	stat, err := os.Lstat(binDir)
-
-	// Actually we need to check if the symbolic link to ~/.zvm/bin
-	// exists yet, otherwise we get err:
-	//
-	// CreateFile C:\Users\gs\.zvm\bin: The system cannot find the file specified.
-	//
-	// which leads to evaluation of the else case (line 59) and to an early return
-	// therefore the the initial symbolic link is never created.
-	if stat != nil {
-		if err == nil {
-			log.Debugf("Removing old %s", binDir)
-			if err := os.Remove(binDir); err != nil {
-				return err
-			}
-		} else {
-			return fmt.Errorf("%w: %s", err, stat.Name())
-		}
-	}
-
-	if err := meta.Link(version_path, binDir); err != nil {
+	log.Debug("updating bin link", "path", binDir, "target", versionPath)
+	if err := meta.Relink(versionPath, binDir); err != nil {
 		return err
 	}
 

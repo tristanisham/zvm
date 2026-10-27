@@ -346,7 +346,7 @@ zvm i --skip-shasum 0.16.0-dev.1334+06d08daba
 ```
 
 ### Customize HTTP Timeout
-You can pass a custom HTTP timeout (in seconds) for `zvm i` using the `--http.timeout` flag or by setting the `ZVM_HTTP_TIMEOUT` environment variable.
+Set a positive HTTP timeout in seconds for version metadata and installation downloads with `ZVM_HTTP_TIMEOUT`. For `zvm i`, you can also use the `--http.timeout` flag. The default is 180 seconds.
 
 ```sh
 zvm i --http.timeout 30

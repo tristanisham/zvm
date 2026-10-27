@@ -52,6 +52,9 @@ Print the ZVM version and target platform.
 .TP
 .BR install ", " i
 Download and install a Zig version, optionally with ZLS.
+Use
+.B --keep
+when replacing master to retain the old build under an alias.
 See
 .BR zvm-install (1).
 .TP
@@ -183,7 +186,8 @@ Override the operating system selected for an installation download.
 Override the architecture selected for an installation download.
 .TP
 .B ZVM_HTTP_TIMEOUT
-HTTP timeout in seconds for installation requests.
+HTTP timeout in seconds for version metadata and installation downloads.
+The default is 180 seconds; 0 disables the timeout, and negative or invalid values use the default.
 .TP
 .B ZVM_SET_CU
 If set, disable the automatic ZVM upgrade check.

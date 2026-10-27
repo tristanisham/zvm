@@ -14,7 +14,6 @@ import (
 	"os"
 	"path/filepath"
 
-	"strconv"
 	"strings"
 
 	"github.com/tristanisham/zvm/cli/meta"
@@ -25,45 +24,80 @@ import (
 // fetchVersionMap downloads the Zig version map from the configured URL.
 // It parses the JSON response and writes it to a "versions.json" file in the base directory.
 func (z *ZVM) fetchVersionMap() (zigVersionMap, error) {
-
 	log.Debug("setting's VMU", "url", z.Settings.VersionMapUrl)
+	return z.fetchAndSaveVersionMap(z.Settings.VersionMapUrl, "versions.json")
+}
 
-	req, err := http.NewRequest("GET", z.Settings.VersionMapUrl, nil)
+const maxVersionMapSize = 32 << 20
+
+// versionHTTPError reports a non-200 response from a version endpoint.
+// Message holds the server's JSON "error" field when it sent one.
+type versionHTTPError struct {
+	Status  string
+	Message string
+}
+
+func (e *versionHTTPError) Error() string {
+	if e.Message != "" {
+		return fmt.Sprintf("version request failed: %s: %s", e.Status, e.Message)
+	}
+	return "version request failed: " + e.Status
+}
+
+// fetchVersionJSON bounds network time and response size for all version endpoints.
+func fetchVersionJSON(endpoint string, result any) ([]byte, error) {
+	req, err := http.NewRequest(http.MethodGet, endpoint, nil)
 	if err != nil {
 		return nil, err
 	}
-
 	req.Header.Set("User-Agent", "zvm "+meta.VERSION)
-	client := http.DefaultClient
+	client := &http.Client{Timeout: downloadTimeout()}
 	resp, err := client.Do(req)
 	if err != nil {
 		return nil, err
 	}
 	defer resp.Body.Close()
-
-	versions, err := io.ReadAll(resp.Body)
+	if resp.StatusCode != http.StatusOK {
+		httpErr := &versionHTTPError{Status: resp.Status}
+		var body struct {
+			Error string `json:"error"`
+		}
+		if data, err := io.ReadAll(io.LimitReader(resp.Body, 64<<10)); err == nil && json.Unmarshal(data, &body) == nil {
+			httpErr.Message = body.Error
+		}
+		return nil, httpErr
+	}
+	body, err := io.ReadAll(io.LimitReader(resp.Body, maxVersionMapSize+1))
 	if err != nil {
 		return nil, err
 	}
-
-	rawVersionStructure := make(zigVersionMap)
-	if err := json.Unmarshal(versions, &rawVersionStructure); err != nil {
+	if len(body) > maxVersionMapSize {
+		return nil, fmt.Errorf("%w: response exceeds %d bytes", ErrInvalidVersionMap, maxVersionMapSize)
+	}
+	if err := json.Unmarshal(body, result); err != nil {
 		var syntaxErr *json.SyntaxError
 		if errors.As(err, &syntaxErr) {
 			return nil, fmt.Errorf("%w: %w", ErrInvalidVersionMap, err)
 		}
-
 		return nil, err
 	}
+	return body, nil
+}
 
-	if err := os.WriteFile(filepath.Join(z.baseDir, "versions.json"), versions, 0o644); err != nil {
+func (z *ZVM) fetchAndSaveVersionMap(endpoint, filename string) (zigVersionMap, error) {
+	versions := make(zigVersionMap)
+	body, err := fetchVersionJSON(endpoint, &versions)
+	if err != nil {
 		return nil, err
 	}
-	if err := os.Chmod(filepath.Join(z.baseDir, "versions.json"), 0o644); err != nil {
+	file := filepath.Join(z.baseDir, filename)
+	if err := os.WriteFile(file, body, 0o644); err != nil {
 		return nil, err
 	}
-
-	return rawVersionStructure, nil
+	if err := os.Chmod(file, 0o644); err != nil {
+		return nil, err
+	}
+	return versions, nil
 }
 
 // cleanURL removes consecutive slashes from a URL while preserving the protocol.
@@ -90,46 +124,9 @@ func cleanURL(url string) string {
 // It writes the result to "versions-zls.json" in the base directory.
 func (z *ZVM) fetchZlsTaggedVersionMap() (zigVersionMap, error) {
 	log.Debug("setting's ZRW", "url", z.Settings.ZlsVMU)
-
-	fullVersionMapAPI := cleanURL(z.Settings.ZlsVMU + "v1/zls/index.json")
-
-	log.Debug("Version Map Url (95)", "func", "fetchZlsTaggedVersionMap", "url", fullVersionMapAPI)
-	req, err := http.NewRequest("GET", fullVersionMapAPI, nil)
-	if err != nil {
-		return nil, err
-	}
-
-	req.Header.Set("User-Agent", "zvm "+meta.VERSION)
-	client := http.DefaultClient
-	resp, err := client.Do(req)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-
-	versions, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, err
-	}
-
-	rawVersionStructure := make(zigVersionMap)
-	if err := json.Unmarshal(versions, &rawVersionStructure); err != nil {
-		var syntaxErr *json.SyntaxError
-		if errors.As(err, &syntaxErr) {
-			return nil, fmt.Errorf("%w: %w", ErrInvalidVersionMap, err)
-		}
-
-		return nil, err
-	}
-
-	if err := os.WriteFile(filepath.Join(z.baseDir, "versions-zls.json"), versions, 0o644); err != nil {
-		return nil, err
-	}
-	if err := os.Chmod(filepath.Join(z.baseDir, "versions-zls.json"), 0o644); err != nil {
-		return nil, err
-	}
-
-	return rawVersionStructure, nil
+	endpoint := cleanURL(z.Settings.ZlsVMU + "v1/zls/index.json")
+	log.Debug("fetching zls version map", "url", endpoint)
+	return z.fetchAndSaveVersionMap(endpoint, "versions-zls.json")
 }
 
 // note: the zls release-worker uses the same index format as zig, but without the latest master entry.
@@ -145,31 +142,13 @@ func (z *ZVM) fetchZlsVersionByZigVersion(version string, compatMode string) (zi
 	//   only-runtime: Request a ZLS build that can be used at runtime with the given Zig version but may not be able to build ZLS from source.
 	selectVersionUrl := cleanURL(fmt.Sprintf("%s/v1/zls/select-version?zig_version=%s&compatibility=%s", z.Settings.ZlsVMU, url.QueryEscape(version), compatMode))
 	log.Debug("fetching zls version", "zigVersion", version, "url", selectVersionUrl)
-	req, err := http.NewRequest("GET", selectVersionUrl, nil)
-	if err != nil {
-		return nil, err
-	}
-
-	req.Header.Set("User-Agent", "zvm "+meta.VERSION)
-	client := http.DefaultClient
-	resp, err := client.Do(req)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-
-	versions, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, err
-	}
-
 	rawVersionStructure := make(zigVersion)
-	if err := json.Unmarshal(versions, &rawVersionStructure); err != nil {
-		var syntaxErr *json.SyntaxError
-		if errors.As(err, &syntaxErr) {
-			return nil, fmt.Errorf("%w: %w", ErrInvalidVersionMap, err)
+	if _, err := fetchVersionJSON(selectVersionUrl, &rawVersionStructure); err != nil {
+		// The release worker answers invalid queries with 400 {"error": "..."}.
+		var httpErr *versionHTTPError
+		if errors.As(err, &httpErr) && httpErr.Message != "" {
+			return nil, fmt.Errorf("%w: %s", ErrNoZlsVersion, httpErr.Message)
 		}
-
 		return nil, err
 	}
 
@@ -178,12 +157,10 @@ func (z *ZVM) fetchZlsVersionByZigVersion(version string, compatMode string) (zi
 	}
 
 	if code, ok := rawVersionStructure["code"]; ok {
-		codeStr := strconv.FormatFloat(code.(float64), 'f', 0, 64)
+		codeStr := fmt.Sprint(code)
 		msg := rawVersionStructure["message"]
 		return nil, fmt.Errorf("%w: code %s: %s", ErrNoZlsVersion, codeStr, msg)
 	}
 
 	return rawVersionStructure, nil
 }
-
-// statelessFetchVersionMap is the same as fetchVersionMap but it doesn't write to disk. Will probably be depreciated and nuked from orbit when my

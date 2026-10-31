@@ -9,6 +9,7 @@ real; anything not listed here does not exist.
 
 ## Global flags
 
+- `--silent` — silence parts of ZVM for this run; bare --silent silences everything, or name tags (comma-separated): auc = automatic upgrade checker
 - `--color` — enable (on, yes/y, enabled, true) or disable (off, no/n, disabled, false) colored ZVM output
 - `--help`, `-h` — show help
 - `--version`, `-v` — print the version

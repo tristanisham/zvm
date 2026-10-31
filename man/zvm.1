@@ -43,6 +43,31 @@ Other values, including the default
 toggle the saved setting.
 The option requires a value when specified.
 .TP
+.BR --silent [= \fItags\fR]
+Silence parts of ZVM for this run only.
+A bare
+.B --silent
+silences everything.
+Otherwise
+.I tags
+is a comma-separated list; the only tag is
+.BR auc ,
+the automatic upgrade checker, which then neither contacts GitHub nor prints
+an upgrade notice.
+Tags must be attached with
+.BR = ;
+.B --silent auc
+reads
+.B auc
+as the command.
+Give the option before the command.
+The checker is also skipped for shell completion requests,
+.BR "zvm completion" ,
+.BR "zvm env" ,
+and when
+.B ZVM_SET_CU
+is set.
+.TP
 .BR -h , " " --help
 Show help.
 .TP

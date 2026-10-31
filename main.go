@@ -26,7 +26,8 @@ import (
 var (
 	zvm                      = *cli.Initialize()
 	printUpgradeNotice  bool = true
-	BuildUpgradeMessage      = "You should probably use your system package manager to update ZVM."
+	ranSelfUpgrade      bool
+	BuildUpgradeMessage = "You should probably use your system package manager to update ZVM."
 )
 
 func init() {
@@ -72,6 +73,7 @@ var zvmApp = &opts.Command{
 	ExitErrHandler: func(ctx context.Context, cmd *opts.Command, err error) {},
 	// app-global flags
 	Flags: []opts.Flag{
+		silentFlag,
 		&opts.StringFlag{
 			Name:  "color",
 			Usage: "enable (on, yes/y, enabled, true) or disable (off, no/n, disabled, false) colored ZVM output",
@@ -587,7 +589,7 @@ var zvmApp = &opts.Command{
 					// zvm on your system.
 					meta.CtaBuilderMsg(BuildUpgradeMessage)
 				}
-				printUpgradeNotice = false
+				ranSelfUpgrade = true
 				return zvm.Upgrade()
 
 			},
@@ -732,19 +734,7 @@ func main() {
 		log.SetLevel(log.DebugLevel)
 	}
 
-	_, checkUpgradeDisabled := os.LookupEnv("ZVM_SET_CU")
-
-	if meta.NoAutoUpgrades {
-		checkUpgradeDisabled = true
-	}
-
-	// `zvm env` output is eval'd by the shell and the cd hook runs on every
-	// directory change: neither may wait on the network or print a notice.
-	// Only the subcommand counts: `zvm run 0.15.1 env` runs `zig env` and
-	// should still check for upgrades.
-	if sub := subcommand(os.Args[1:]); sub == "env" || sub == cli.OnCdCommand {
-		checkUpgradeDisabled = true
-	}
+	checkUpgradeDisabled := upgradeCheckDisabled(os.Args[1:])
 
 	log.Debug("Automatic Upgrade Checker", "disabled", checkUpgradeDisabled, "noAutoUpgrades", meta.NoAutoUpgrades)
 
@@ -800,16 +790,13 @@ func main() {
 		}
 	}
 
-	if tag := <-upSig; tag != "" {
-
-		if !meta.NoAutoUpgrades {
-			if printUpgradeNotice {
-				meta.CtaUpgradeAvailable(tag)
-			} else {
-				fmt.Printf("You are now using ZVM %s\n", tag)
-			}
+	if tag := <-upSig; tag != "" && !meta.NoAutoUpgrades {
+		switch {
+		case ranSelfUpgrade:
+			fmt.Printf("You are now using ZVM %s\n", tag)
+		case printUpgradeNotice:
+			meta.CtaUpgradeAvailable(tag)
 		}
-
 	}
 }
 
@@ -854,6 +841,9 @@ func printZVMHelp(w io.Writer, templ string, data any) {
 // canonical name, even though aliases are part of the public CLI surface.
 func completeZVMCommands(ctx context.Context, cmd *opts.Command) {
 	opts.DefaultCompleteWithFlags(ctx, cmd)
+
+	// Don't emit upgrade notice when handling completions
+	printUpgradeNotice = false
 
 	for _, command := range cmd.VisibleCommands() {
 		for _, alias := range command.Aliases {

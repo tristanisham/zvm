@@ -30,6 +30,7 @@ const bugReportEndpoint = "https://github.com/tristanisham/zvm/issues/new"
 var bugReportEnvVars = []string{
 	"ZVM_PATH",
 	"ZVM_DEBUG",
+	"ZVM_DISABLE_AUC",
 	"ZVM_SET_CU",
 	"ZVM_SKIP_TLS_VERIFY",
 	"ZVM_TARGET_OS",

@@ -846,12 +846,31 @@ Enable or disable colored ZVM output. No value toggles colors.
 --color # Toggle ANSI color printing on or off for ZVM's output, i.e. --color=true
 ```
 
+### Silence
+
+```sh
+--silent       # Silence everything that can be silenced, for this run only
+--silent=auc   # Silence only the named tags (comma-separated)
+```
+
+Tags:
+
+- `auc`: the automatic upgrade checker. ZVM neither contacts GitHub nor
+  prints an upgrade notice.
+
+Tags must be attached with `=` (`zvm --silent=auc ls`). `zvm --silent auc ls`
+reads `auc` as the command. Put `--silent` before the command.
+
+The upgrade checker never runs for shell completion requests,
+`zvm completion`, or `zvm env`. To turn it off for every run, set
+`ZVM_DISABLE_AUC` (see [Environment Variables](#environment-variables)).
+
 ## Environment Variables
 
 - `ZVM_DEBUG` enables DEBUG logging for your executable. This is meant for
   contributors and developers.
-- `ZVM_SET_CU` Toggle the automatic upgrade checker. If you want to reenable the
-  checker, just `unset ZVM_SET_CU`.
+- `ZVM_DISABLE_AUC` Turn off the automatic upgrade checker. If you want to
+  reenable the checker, just `unset ZVM_DISABLE_AUC`.
 - `ZVM_PATH` replaces the default install location for ZVM Set the environment
   variable to the parent directory of where you've placed the `.zvm` directory.
 - `ZVM_TARGET_OS` Override the target operating system for downloads (e.g.,

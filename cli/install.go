@@ -80,6 +80,15 @@ func confirmUnverifiedDownload(artifact string) error {
 // It handles checking for existing installations, verifying checksums,
 // and extracting the downloaded bundle.
 func (z *ZVM) Install(version string, force bool, skipShasum bool, mirror bool, skipUse bool) (string, error) {
+	return z.InstallKeepingMaster(version, "", force, skipShasum, mirror, skipUse)
+}
+
+// InstallKeepingMaster is Install, except that when keepAs is set and a new
+// master build replaces an installed one, the old build is moved to a
+// directory named after its version and keepAs is saved as an alias for it.
+// keepAs is ignored for any version other than master, and when master is not
+// installed or is already the remote build.
+func (z *ZVM) InstallKeepingMaster(version string, keepAs string, force bool, skipShasum bool, mirror bool, skipUse bool) (string, error) {
 	if isReservedName(version) {
 		return version, fmt.Errorf("%w: %q", ErrReservedName, version)
 	}
@@ -141,6 +150,19 @@ func (z *ZVM) Install(version string, force bool, skipShasum bool, mirror bool, 
 			if alreadyInstalled {
 				fmt.Printf("Zig version %s is already installed\nRerun with the `--force` flag to install anyway\n", installedVersion)
 				return version, nil
+			}
+		}
+	}
+
+	var kept *keptMaster
+	if keepAs != "" {
+		if version != "master" {
+			log.Debug("ignoring --keep-and-rename", "version", version)
+		} else {
+			remoteVersion, _ := rawVersionStructure["master"]["version"].(string)
+			kept, err = z.planKeepMaster(keepAs, remoteVersion)
+			if err != nil {
+				return version, err
 			}
 		}
 	}
@@ -251,6 +273,12 @@ func (z *ZVM) Install(version string, force bool, skipShasum bool, mirror bool, 
 
 	if tarName == "" {
 		tarName = version
+	}
+
+	if kept != nil {
+		if err := z.keepMaster(kept); err != nil {
+			return version, err
+		}
 	}
 
 	if err := os.Rename(filepath.Join(z.baseDir, tarName), filepath.Join(z.baseDir, version)); err != nil {

@@ -59,6 +59,22 @@ Official Zig Minisign signature verification remains enabled.
 .BR -k , " " --skip-use
 Install Zig and any requested ZLS without changing the global default.
 .TP
+.BR --keep-and-rename " \fINAME\fR, " --keep " \fINAME\fR"
+When a new
+.B master
+build replaces an installed one, keep the old build instead of deleting it.
+The old build moves to a directory named after its version, such as
+.IR 0.16.0-dev.1334+06d08daba ,
+and
+.I NAME
+is saved as an alias for it; see
+.BR zvm-alias (1).
+Has no effect for other versions, when
+.B master
+is not installed, or when the installed
+.B master
+is already the latest build.
+.TP
 .BR --full
 Use the full ZLS compatibility mode instead of the default runtime-only mode.
 .TP
@@ -87,10 +103,12 @@ for the operation.
 zvm install 0.14.1
 zvm i .14
 zvm install --zls --full master
+zvm install --keep-and-rename before-upgrade master
 zvm install --target-os freebsd --target-arch x86_64 0.14.1
 .EE
 .SH SEE ALSO
 .BR zvm (1),
+.BR zvm-alias (1),
 .BR zvm-use (1),
 .BR zvm-env (1),
 .BR zvm-dedupe (1),

@@ -142,6 +142,12 @@ func parseSilence(args []string) *silenceValue {
 // upgradeCheckDisabled reports whether the automatic upgrade checker should
 // stay off for this run. args is os.Args[1:].
 func upgradeCheckDisabled(args []string) bool {
+	if _, ok := os.LookupEnv("ZVM_DISABLE_AUC"); ok {
+		return true
+	}
+
+	// ZVM_SET_CU is the old name for ZVM_DISABLE_AUC, kept for backwards
+	// compatibility.
 	if _, ok := os.LookupEnv("ZVM_SET_CU"); ok {
 		return true
 	}

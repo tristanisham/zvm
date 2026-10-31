@@ -96,8 +96,10 @@ func TestUpgradeCheckDisabled(t *testing.T) {
 		t.Skip("the checker is always disabled in noAutoUpgrades builds")
 	}
 	// Make sure the environment does not disable the checker for every case.
-	t.Setenv("ZVM_SET_CU", "")
-	os.Unsetenv("ZVM_SET_CU")
+	for _, env := range []string{"ZVM_DISABLE_AUC", "ZVM_SET_CU"} {
+		t.Setenv(env, "")
+		os.Unsetenv(env)
+	}
 
 	tests := []struct {
 		args []string
@@ -130,12 +132,14 @@ func TestUpgradeCheckDisabled(t *testing.T) {
 		})
 	}
 
-	t.Run("ZVM_SET_CU", func(t *testing.T) {
-		t.Setenv("ZVM_SET_CU", "1")
-		if !upgradeCheckDisabled([]string{"ls"}) {
-			t.Fatal("ZVM_SET_CU should disable the checker")
-		}
-	})
+	for _, env := range []string{"ZVM_DISABLE_AUC", "ZVM_SET_CU"} {
+		t.Run(env, func(t *testing.T) {
+			t.Setenv(env, "1")
+			if !upgradeCheckDisabled([]string{"ls"}) {
+				t.Fatalf("%s should disable the checker", env)
+			}
+		})
+	}
 }
 
 // TestSilentFlagParsing checks that urfave/cli parses --silent the way

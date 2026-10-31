@@ -862,15 +862,17 @@ Tags must be attached with `=` (`zvm --silent=auc ls`). `zvm --silent auc ls`
 reads `auc` as the command. Put `--silent` before the command.
 
 The upgrade checker never runs for shell completion requests,
-`zvm completion`, or `zvm env`. To turn it off for every run, set `ZVM_SET_CU`
-(see below).
+`zvm completion`, or `zvm env`. To turn it off for every run, set
+`ZVM_DISABLE_AUC` (see below).
 
 ## Environment Variables
 
 - `ZVM_DEBUG` enables DEBUG logging for your executable. This is meant for
   contributors and developers.
-- `ZVM_SET_CU` Toggle the automatic upgrade checker. If you want to reenable the
-  checker, just `unset ZVM_SET_CU`.
+- `ZVM_DISABLE_AUC` Turn off the automatic upgrade checker. If you want to
+  reenable the checker, just `unset ZVM_DISABLE_AUC`.
+- `ZVM_SET_CU` Turn off the automatic upgrade checker. If you want to reenable
+  the checker, just `unset ZVM_SET_CU`.
 - `ZVM_PATH` replaces the default install location for ZVM Set the environment
   variable to the parent directory of where you've placed the `.zvm` directory.
 - `ZVM_TARGET_OS` Override the target operating system for downloads (e.g.,

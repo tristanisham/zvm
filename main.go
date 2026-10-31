@@ -855,6 +855,9 @@ func printZVMHelp(w io.Writer, templ string, data any) {
 func completeZVMCommands(ctx context.Context, cmd *opts.Command) {
 	opts.DefaultCompleteWithFlags(ctx, cmd)
 
+	// Don't emit upgrade notice when handling completions
+	printUpgradeNotice = false
+
 	for _, command := range cmd.VisibleCommands() {
 		for _, alias := range command.Aliases {
 			if command.Usage == "" {

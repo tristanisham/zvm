@@ -65,7 +65,8 @@ deno task star-history   # regenerate the README star chart (token or gh auth lo
 
 - `ZVM_PATH` — override default `~/.zvm` base directory
 - `ZVM_DEBUG` — enable debug logging
-- `ZVM_SET_CU` — disable background upgrade checker
+- `ZVM_DISABLE_AUC` — disable background upgrade checker
+- `ZVM_SET_CU` — disable background upgrade checker (old name for `ZVM_DISABLE_AUC`, kept for backwards compatibility)
 - `ZVM_SKIP_TLS_VERIFY` — skip TLS verification for restricted networks
 
 ## Conventions

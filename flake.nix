@@ -21,7 +21,7 @@
         {
           default = pkgs.buildGo127Module {
             pname = "zvm";
-            version = "0.9.4";
+            version = "0.9.5";
 
             src = ./.;
             vendorHash = "sha256-YIhYRq55WWcXz50DDRgMzzXNKbA16vlfKqlrgziD1qA=";

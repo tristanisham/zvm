@@ -65,7 +65,8 @@ deno task star-history   # regenerate the README star chart (token or gh auth lo
 
 - `ZVM_PATH` — override default `~/.zvm` base directory
 - `ZVM_DEBUG` — enable debug logging
-- `ZVM_SET_CU` — disable background upgrade checker
+- `ZVM_DISABLE_AUC` — disable background upgrade checker
+- `ZVM_SET_CU` — disable background upgrade checker (old name for `ZVM_DISABLE_AUC`, kept for backwards compatibility)
 - `ZVM_SKIP_TLS_VERIFY` — skip TLS verification for restricted networks
 
 ## Conventions
@@ -75,6 +76,7 @@ deno task star-history   # regenerate the README star chart (token or gh auth lo
 - Download integrity is verified with minisign signatures using Zig's public key, then SHA256 checksums.
 - Errors are defined as sentinel values in `cli/error.go` and composed with `errors.Join()`.
 - Tests use table-driven patterns with struct slices.
+- The upgrade checker starts before `zvmApp.Run`, so `--silent` is pre-parsed from `os.Args` in `silence.go` (`upgradeCheckDisabled`). The flag is `Local` and only read before the subcommand; keep `parseSilence` in step with urfave/cli if either changes.
 - `ZVM_INSTALL` is read only in `cli/upgrade.go`, behind `//go:build !noAutoUpgrades` — it is dead code in package-manager builds.
 - Exercise the CLI against a scratch home rather than your real one: `env -i HOME=$(mktemp -d) PATH=/usr/bin:/bin ./zvm ls`. Any command that initializes creates `~/.zvm/settings.json` and `~/.zvm/self`.
 - lipgloss strips ANSI automatically when stdout is not a TTY, so piped output is clean for assertions. Do not reach for `--color=false` to achieve this — it prints an extra `Terminal color output: OFF` line that breaks naive matching.

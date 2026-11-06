@@ -191,6 +191,12 @@ claude plugin marketplace add tristanisham/zvm
 claude plugin install zvm@zvm
 ```
 
+Print the bundled skill and command reference as Markdown with `zvm --skill`:
+
+```sh
+zvm --skill > zig-versions.md
+```
+
 ### Codex and other agents
 
 The repository includes a Codex plugin manifest at `.codex-plugin/plugin.json`.

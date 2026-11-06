@@ -177,5 +177,7 @@ func upgradeCheckDisabled(args []string) bool {
 		return true
 	}
 
-	return false
+	return subcommand(args) == "" && (slices.Contains(args, "--skill") ||
+		slices.Contains(args, "--skill=true") || slices.Contains(args, "-skill") ||
+		slices.Contains(args, "-skill=true"))
 }

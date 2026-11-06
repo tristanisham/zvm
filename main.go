@@ -6,6 +6,7 @@ package main
 
 import (
 	"context"
+	_ "embed"
 	"errors"
 	"fmt"
 	"io"
@@ -22,6 +23,12 @@ import (
 
 	"github.com/charmbracelet/log"
 )
+
+//go:embed skills/zig-versions/SKILL.md
+var skillMarkdown string
+
+//go:embed skills/zig-versions/reference/commands.md
+var skillCommands string
 
 var (
 	zvm                      = *cli.Initialize()
@@ -74,6 +81,11 @@ var zvmApp = &opts.Command{
 	// app-global flags
 	Flags: []opts.Flag{
 		silentFlag,
+		&opts.BoolFlag{
+			Name:  "skill",
+			Usage: "print the Zig Versions agent skill and command reference to stdout",
+			Local: true,
+		},
 		&opts.StringFlag{
 			Name:  "color",
 			Usage: "enable (on, yes/y, enabled, true) or disable (off, no/n, disabled, false) colored ZVM output",
@@ -93,6 +105,13 @@ var zvmApp = &opts.Command{
 				return nil
 			},
 		},
+	},
+	Action: func(ctx context.Context, cmd *opts.Command) error {
+		if cmd.Bool("skill") {
+			_, err := fmt.Fprint(cmd.Writer, skillMarkdown, "\n", skillCommands)
+			return err
+		}
+		return opts.ShowAppHelp(cmd)
 	},
 	Commands: []*opts.Command{
 		{

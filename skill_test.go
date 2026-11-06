@@ -5,6 +5,8 @@
 package main
 
 import (
+	"bytes"
+	"context"
 	"flag"
 	"fmt"
 	"os"
@@ -207,5 +209,27 @@ func TestPluginVersionMatchesMeta(t *testing.T) {
 				t.Errorf("%s declares version %q, want %q (from cli/meta.VERSION).\nSync with: deno task pkg", manifest, got, want)
 			}
 		}
+	}
+}
+
+func TestSkillOutput(t *testing.T) {
+	t.Setenv("ZVM_PATH", t.TempDir())
+	var out bytes.Buffer
+	original := zvmApp.Writer
+	t.Cleanup(func() { zvmApp.Writer = original })
+	zvmApp.Writer = &out
+	if err := zvmApp.Run(context.Background(), []string{"zvm", "--skill"}); err != nil {
+		t.Fatal(err)
+	}
+	skill, err := os.ReadFile("skills/zig-versions/SKILL.md")
+	if err != nil {
+		t.Fatal(err)
+	}
+	reference, err := os.ReadFile(skillReferencePath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if want := string(skill) + "\n" + string(reference); out.String() != want {
+		t.Fatal("--skill output does not match the bundled skill and reference")
 	}
 }

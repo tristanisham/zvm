@@ -108,6 +108,8 @@ func TestUpgradeCheckDisabled(t *testing.T) {
 		{args: []string{"ls"}, want: false},
 		{args: nil, want: false},
 		{args: []string{"--help"}, want: false},
+		{args: []string{"--skill"}, want: true},
+		{args: []string{"run", "0.15.1", "--skill"}, want: false},
 		{args: []string{"--silent", "ls"}, want: true},
 		{args: []string{"--silent=auc", "install", "0.15.1"}, want: true},
 		{args: []string{"env"}, want: true},

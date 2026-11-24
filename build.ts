@@ -50,6 +50,7 @@ const GOARCH = [
 const GOOS = [
   "windows",
   "linux",
+  "android",
   "darwin",
   "freebsd",
   "netbsd",
@@ -73,7 +74,10 @@ function getTargets(): Target[] {
         os === "darwin" && arch === "386" ||
         os === "plan9" && arch !== "386" ||
         os !== "linux" && arch === "loong64" ||
-        os !== "linux" && arch === "ppc64le"
+        os !== "linux" && arch === "ppc64le" ||
+        // Every android port except arm64 requires cgo, and builds here run
+        // with CGO_ENABLED=0. android/arm64 is what Termux needs.
+        os === "android" && arch !== "arm64"
       ) {
         continue;
       }

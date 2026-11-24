@@ -110,6 +110,8 @@ func TestZigStyleSysInfo(t *testing.T) {
 	switch defaultOS {
 	case "darwin":
 		defaultOS = "macos"
+	case "android":
+		defaultOS = "linux"
 	}
 
 	tests := []struct {
@@ -153,6 +155,13 @@ func TestZigStyleSysInfo(t *testing.T) {
 			envArch:  "amd64",
 			wantOS:   "macos",
 			wantArch: "x86_64",
+		},
+		{
+			name:     "android uses zig's linux builds",
+			envOS:    "android",
+			envArch:  "arm64",
+			wantOS:   "linux",
+			wantArch: "aarch64",
 		},
 		{
 			name:     "override arch 386 maps to x86",

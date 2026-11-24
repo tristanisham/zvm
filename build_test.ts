@@ -69,7 +69,11 @@ exit 2
         }
         if (!fail) {
           for (
-            const archive of ["zvm-linux-386.tar", "zvm-windows-amd64.zip"]
+            const archive of [
+              "zvm-linux-386.tar",
+              "zvm-windows-amd64.zip",
+              "zvm-android-arm64.tar",
+            ]
           ) {
             const info = await Deno.stat(join(buildDir, archive));
             if (info.size === 0) throw new Error(`empty archive: ${archive}`);

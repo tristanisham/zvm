@@ -788,6 +788,10 @@ func zigStyleSysInfo() (arch string, osName string) {
 	switch osName {
 	case "darwin":
 		osName = "macos"
+	case "android":
+		// Zig publishes no android builds. Its static linux binaries run on
+		// Android (e.g. under Termux), so use those.
+		osName = "linux"
 	}
 
 	return arch, osName
